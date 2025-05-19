@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Half Awake Eyes | EPK</title>
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+ <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+
+  <style>
+body {
+  font-family: 'Oswald', sans-serif;
+  margin: 0;
+  background: #0d0d0d;
+  color: #e0e0e0;
+  line-height: 1.6;
+}
+
+header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 4rem 1rem 3rem;
+  background: #111;
+  border-bottom: 1px solid #222;
+}
+
+header img {
+  width: 160px;
+  border-radius: 12px;
+  margin-bottom: 1rem;
+}
+
+h1 {
+  font-size: 2.8rem;
+  margin-bottom: 0.3rem;
+  color: #ff5555;
+}
+
+p.subtitle {
+  font-size: 1.1rem;
+  margin: 0;
+  color: #aaa;
+}
+
+h2 {
+  font-size: 1.6rem;
+  margin-bottom: 1rem;
+  color: #ff5555;
+  border-left: 4px solid #ff5555;
+  padding-left: 1rem;
+}
+
+section {
+  padding: 3rem 1rem;
+  max-width: 960px;
+  margin: auto;
+}
+
+a {
+  color: #ff5555;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+a:hover {
+  color: #ff7777;
+  text-decoration: underline;
+}
+
+a.download-link {
+  display: inline-block;
+  margin-top: 1rem;
+  font-weight: 600;
+}
+
+.stats {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  margin-top: 1.5rem;
+}
+
+.stat-box {
+  background: #1a1a1a;
+  padding: 1rem;
+  border-radius: 8px;
+  text-align: center;
+  border: 1px solid #2a2a2a;
+}
+
+.media-grid {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+}
+
+.media-grid img {
+  width: 100%;
+  height: 400px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid #333;
+  background-color: #000;
+}
+
+iframe,
+img {
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+  border: 1px solid #333;
+  background-color: #000;
+}
+
+/* Track Grid */
+.track-grid {
+  display: grid;
+  gap: 2rem;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  margin-top: 1.5rem;
+}
+
+.track-card {
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 8px;
+  padding: 1rem;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.track-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.track-title {
+  margin-bottom: 0.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #e0e0e0;
+}
+
+/* Video and Carousel */
+video {
+  width: 100%;
+  max-height: 70vh;
+  border-radius: 8px;
+  border: 1px solid #333;
+  background-color: #000;
+  display: block;
+  object-fit: cover;
+}
+
+.carousel-control-prev,
+.carousel-control-next {
+  top: 50%;
+  transform: translateY(-50%);
+  width: auto;
+  padding: 1rem;
+  z-index: 2;
+}
+
+.carousel-control-prev-icon,
+.carousel-control-next-icon {
+  background-color: rgba(0, 0, 0, 0.7);
+  border-radius: 50%;
+  width: 3rem;
+  height: 3rem;
+  background-size: 1.5rem 1.5rem;
+}
+
+.carousel-control-prev-icon:hover,
+.carousel-control-next-icon:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.carousel-indicators {
+  bottom: -40px;
+}
+
+@media (max-width: 600px) {
+  h1 {
+    font-size: 2.2rem;
+  }
+
+  h2 {
+    font-size: 1.3rem;
+  }
+
+  .carousel-indicators {
+    bottom: -50px;
+  }
+}
+
+footer {
+  text-align: center;
+  padding: 2rem 1rem;
+  font-size: 0.9rem;
+  background: #111;
+  border-top: 1px solid #222;
+  color: #777;
+}
+
+.carousel-item {
+  position: relative;
+}
+
+.video-wrapper {
+  position: relative;
+}
+
+.video-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10;
+  background: rgba(0, 0, 0, 0.6);
+  border: 2px solid #fff;
+  border-radius: 50%;
+  width: 80px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.video-overlay::before {
+  content: '▶';
+  font-size: 2rem;
+  color: white;
+}
+
+.video-overlay:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+  </style>
+</head>
+<body>
+  <header>
+    <img src="assets/images/logo.jpg" alt="Half Awake Eyes">
+    <h1>Half Awake Eyes</h1>
+    <p class="subtitle">Progressive Metal | Glasgow, Scotland</p>
+  </header>
+
+<section>
+  <h2>About the Band</h2>
+  <p>Half Awake Eyes is a four-piece progressive metal band from Glasgow known for their blend of crushing riffs, intricate bass work, and dynamic vocals. Their music sits between the atmospheric and the aggressive — heavy enough to move you, textured enough to hold you there.</p>
+  <p>Influenced by modern progressive and post-metal, the band prioritises feel, space, and storytelling over constant intensity. Their sound is immersive and deliberate, offering a raw yet focused experience both live and in the studio.</p>
+  <p>Built on a strong collaborative foundation and a DIY mindset, Half Awake Eyes is currently recording their debut EP and building momentum following their first live appearance — ready to bring their distinct sound to more stages across Scotland and beyond.</p>
+</section>
+
+<section>
+  <h2>Demo Music</h2>
+  <div class="track-grid">
+
+    <div class="track-card">
+      <p class="track-title">The Taste of Death</p>
+      <iframe width="100%" height="200" scrolling="no" frameborder="no" allow="autoplay"
+        src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/2093458050%3Fsecret_token%3Ds-Us5t8BSixns&color=%23ff5555&show_user=true"></iframe>
+    </div>
+
+    <div class="track-card">
+      <p class="track-title">War</p>
+      <iframe width="100%" height="200" scrolling="no" frameborder="no" allow="autoplay"
+        src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/2093458053%3Fsecret_token%3Ds-ybXH0nBa1qs&color=%23ff5555&show_user=true"></iframe>
+    </div>
+
+    <div class="track-card">
+      <p class="track-title">Machine</p>
+      <iframe width="100%" height="200" scrolling="no" frameborder="no" allow="autoplay"
+        src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/2093458056%3Fsecret_token%3Ds-HQrtp5Xl9Qc&color=%23ff5555&show_user=true"></iframe>
+    </div>
+
+  </div>
+</section>
+
+
+<section>
+  <h2>Live Videos</h2>
+  <div id="videoCarousel" class="carousel slide" data-bs-ride="false">
+
+    <!-- Indicators -->
+    <div class="carousel-indicators">
+      <button type="button" data-bs-target="#videoCarousel" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Slide 1"></button>
+      <button type="button" data-bs-target="#videoCarousel" data-bs-slide-to="1" aria-label="Slide 2"></button>
+    </div>
+
+    <!-- Slides -->
+    <div class="carousel-inner">
+
+      <div class="carousel-item active">
+        <video class="d-block w-100" controls poster="thumbnails/video1.jpg" id="video1">
+          <source src="assets/videos/conquest.mp4" type="video/mp4">
+        </video>
+      </div>
+
+      <div class="carousel-item">
+        <video class="d-block w-100" controls poster="thumbnails/video2.jpg" id="video2">
+          <source src="assets/videos/war.mp4" type="video/mp4">
+        </video>
+      </div>
+
+    </div>
+
+    <!-- Arrows -->
+    <button class="carousel-control-prev" type="button" data-bs-target="#videoCarousel" data-bs-slide="prev">
+      <span class="carousel-control-prev-icon"></span>
+    </button>
+    <button class="carousel-control-next" type="button" data-bs-target="#videoCarousel" data-bs-slide="next">
+      <span class="carousel-control-next-icon"></span>
+    </button>
+  </div>
+</section>
+
+
+
+  <section>
+    <h2>Promo Photos</h2>
+    <div class="media-grid">
+      <img src="assets/images/IMG_3313.JPG" alt="Band Promo 1">
+      <img src="assets/images/iage.jpg" alt="Live Show">
+    </div>
+    <!-- <a class="download-link" href="photos/HalfAwakeEyes_PressPhotos.zip" download>Download High-Res Photos</a> -->
+  </section>
+
+<section>
+  <h2>Gig History</h2>
+
+  <div class="row g-4">
+    <!-- Past Gigs -->
+    <div class="col-md-6">
+      <div class="card bg-dark text-light border-secondary h-100">
+        <div class="card-header text-uppercase text-danger fw-bold">Past</div>
+        <ul class="list-group list-group-flush">
+          <li class="list-group-item bg-dark text-light border-secondary">
+            <strong>April 30, 2025</strong> – Once Awake - Ivory Blacks, Glasgow
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Upcoming Gigs -->
+    <div class="col-md-6">
+      <div class="card bg-dark text-light border-secondary h-100">
+        <div class="card-header text-uppercase text-danger fw-bold">Upcoming</div>
+        <ul class="list-group list-group-flush">
+          <li class="list-group-item bg-dark text-light border-secondary">
+            <strong>No Upcoming Gigs</strong>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+
+  </div>
+</section>
+
+
+
+  <section>
+    <h2>Technical Requirements</h2>
+    <p>For promoters and venues, please refer to our stage plot and input list.</p>
+    <a class="download-link" href="https://drive.google.com/file/d/1S4HP1FfKu0ul9h3p4obzZRDtj2I5AgcO/view?usp=drive_link" download>Download Tech Requirements</a>
+  </section>
+
+  <section>
+    <h2>Contact & Social</h2>
+    <p>Booking & Inquiries: <a href="mailto:halfawakeeyes@gmail.com">halfawakeeyes@gmail.com</a></p>
+    <p>Instagram: <a href="https://instagram.com/halfawakeeyes" target="_blank">@halfawakeeyes</a></p>
+    <p>Facebook: <a href="https://www.facebook.com/profile.php?id=61570906200948" target="_blank">facebook.com/halfawakeeyes</a></p>
+  </section>
+
+  <footer>
+    &copy; 2025 Half Awake Eyes. All rights reserved.
+  </footer>
+
+</body>
+
+<script>
+  const videos = document.querySelectorAll('video');
+  const carousel = document.getElementById('videoCarousel');
+
+  carousel.addEventListener('slid.bs.carousel', () => {
+    videos.forEach(video => {
+      video.pause();
+      video.currentTime = 0;
+    });
+  });
+</script>
+
+
+</html>
