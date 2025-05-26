@@ -450,78 +450,63 @@
         });
     </script>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-        import { getFirestore, collection, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyAv7G28uXxlQNG_HMLbBkuz4xseXzOzm4Y",
-            authDomain: "half-awake-eyes.firebaseapp.com",
-            projectId: "half-awake-eyes"
-        };
+    const firebaseConfig = {
+        apiKey: "AIzaSyAv7G28uXxlQNG_HMLbBkuz4xseXzOzm4Y",
+        authDomain: "half-awake-eyes.firebaseapp.com",
+        projectId: "half-awake-eyes"
+    };
 
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
-        const params = new URLSearchParams(window.location.search);
-        const userId = params.get("id") || "unknown";
+    const params = new URLSearchParams(window.location.search);
+    const userId = params.get("id") || "unknown";
 
-        const logEvent = async (action, target = "") => {
-        try {
-            const docId = `${userId}-${Date.now()}-${action}`;
-            await setDoc(doc(db, "site-actions", docId), {
-            userId,
-            action,
-            target,
-            page: window.location.pathname,
-            timestamp: new Date()
-            });
-        } catch (e) {
-            console.error("Logging error:", e);
+    const logEvent = async (action, target = "") => {
+      try {
+        const docId = `${userId}-${Date.now()}-${action}`;
+        await setDoc(doc(db, "site-actions", docId), {
+          userId,
+          action,
+          target,
+          page: window.location.pathname,
+          timestamp: new Date()
+        });
+      } catch (e) {
+        console.error("Logging error:", e);
+      }
+    };
+
+    if (!window.location.pathname.includes("analytics.html")) {
+      logEvent("page_view");
+
+      document.addEventListener("click", (e) => {
+        const el = e.target.closest("a, button");
+        if (el) {
+          let label = "";
+          if (el.tagName === "A") {
+            const text = el.innerText.trim() || "link";
+            const href = el.href || "#";
+            label = `${text} → ${href}`;
+          } else if (el.tagName === "BUTTON") {
+            label = `button → ${el.innerText.trim() || "Unnamed button"}`;
+          }
+          logEvent("click", label);
         }
-        };
+      });
 
-        // Log page view
-        logEvent("page_view");
-
-        // Track button and link clicks
-        document.addEventListener("click", (e) => {
-            const el = e.target.closest("a, button");
-            if (el) {
-            let label = "";
-            if (el.tagName === "A") {
-                const text = el.innerText.trim() || "link";
-                const href = el.href || "#";
-                label = `${text} → ${href}`;
-            } else if (el.tagName === "BUTTON") {
-                label = `button → ${el.innerText.trim() || "Unnamed button"}`;
-            }
-            logEvent("click", label);
-            }
+      document.querySelectorAll("video").forEach(video => {
+        video.addEventListener("play", () => {
+          const title = video.getAttribute("data-title") || video.querySelector("source")?.src?.split("/").pop() || "Unnamed video";
+          logEvent("video_play", title);
         });
-
-        // Track video plays (use data-title or filename fallback)
-        const trackableVideos = document.querySelectorAll("video");
-        trackableVideos.forEach(video => {
-            video.addEventListener("play", () => {
-            const title =
-                video.getAttribute("data-title") ||
-                video.querySelector("source")?.src?.split("/").pop() ||
-                "Unnamed video";
-            logEvent("video_play", title);
-            });
-        });
-
-        // Track SoundCloud iframe interaction
-        // document.querySelectorAll(".soundcloud-wrapper").forEach(wrapper => {
-        //     const track = wrapper.dataset.track || "Unknown SoundCloud track";
-        //     wrapper.addEventListener("click", () => {
-        //         logEvent("soundcloud_click", track);
-        //     });
-        // });
-
-    </script>
-
+      });
+    }
+  </script>
 </body>
 
 </html>
