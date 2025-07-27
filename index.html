@@ -389,31 +389,20 @@
         </div>
     </section>
 
-
     <section>
         <h2>Gig History</h2>
         <div class="row g-4">
             <div class="col-md-6">
-                <div class="card bg-dark text-light border-secondary h-100">
-                    <div class="card-header text-uppercase text-gig-label  fw-bold">Past</div>
-                    <ul class="list-group list-group-flush">
-                        <li class="list-group-item bg-dark text-light border-secondary">
-                            <strong>April 30, 2025</strong> – Once Awake - Ivory Blacks, Glasgow
-                        </li>
-                    </ul>
-                </div>
+            <div class="card bg-dark text-light border-secondary h-100">
+                <div class="card-header text-uppercase text-gig-label fw-bold">Past</div>
+                <ul id="past-gigs" class="list-group list-group-flush"></ul>
             </div>
-
+            </div>
             <div class="col-md-6">
-                <div class="card bg-dark text-light border-secondary h-100">
-                    <div class="card-header text-uppercase text-gig-label fw-bold">Upcoming</div>
-                    <ul class="list-group list-group-flush">
-                        <li class="list-group-item bg-dark text-light border-secondary">
-                            <!-- <strong>No Upcoming Gigs</strong> -->
-                             <strong>August 28, 2025</strong> – Midweek Nectar – Classic Grand
-                        </li>
-                    </ul>
-                </div>
+            <div class="card bg-dark text-light border-secondary h-100">
+                <div class="card-header text-uppercase text-gig-label fw-bold">Upcoming</div>
+                <ul id="upcoming-gigs" class="list-group list-group-flush"></ul>
+            </div>
             </div>
         </div>
     </section>
@@ -461,7 +450,7 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { getFirestore, doc, setDoc, getDocs, collection, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyAv7G28uXxlQNG_HMLbBkuz4xseXzOzm4Y",
@@ -515,6 +504,56 @@
         });
       });
     }
+
+    // Get today's date with no time for clean comparison
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Query the gigs collection
+    const gigsRef = collection(db, "gigs");
+    const q = query(gigsRef, orderBy("date", "asc"));
+
+    try {
+    const snapshot = await getDocs(q);
+    const pastEl = document.getElementById("past-gigs");
+    const upcomingEl = document.getElementById("upcoming-gigs");
+
+    if (snapshot.empty) {
+        pastEl.innerHTML = `<li class="list-group-item bg-dark text-light border-secondary">No past gigs.</li>`;
+        upcomingEl.innerHTML = `<li class="list-group-item bg-dark text-light border-secondary">No upcoming gigs.</li>`;
+    }
+
+    snapshot.forEach(doc => {
+        const gig = doc.data();
+
+        // Convert to Date object
+        const gigDate = new Date(gig.date);
+        gigDate.setHours(0, 0, 0, 0);
+
+        // Format as "April 30, 2025"
+        const formattedDate = gigDate.toLocaleDateString("en-US", {
+            year: "numeric",
+            month: "long",
+            day: "numeric"
+        });
+
+        const eventStr = gig.event ? ` – ${gig.event}` : "";
+        const locationStr = `${gig.venue}${gig.city ? ", " + gig.city : ""}`;
+
+        const li = document.createElement("li");
+        li.className = "list-group-item bg-dark text-light border-secondary";
+        li.innerHTML = `<strong>${formattedDate}</strong>${eventStr} – ${locationStr}`;
+
+        if (gigDate < today) {
+            pastEl.appendChild(li);
+        } else {
+            upcomingEl.appendChild(li);
+        }
+    });
+    } catch (e) {
+        console.error("Error fetching gig history:", e);
+    }
+
   </script>
 </body>
 
