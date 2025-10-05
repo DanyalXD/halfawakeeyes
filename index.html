@@ -231,6 +231,16 @@
             color: #777;
         }
 
+        /* Center the Spotify embed and limit its width */
+        .track-card-spotify {
+            max-width: 380px; /* nice medium width for the player */
+        }
+
+        .spotify-wrapper {
+            max-width: 100%;
+        }
+
+
         /* Responsive tweaks */
         @media (max-width: 576px) {
             h1 {
@@ -278,59 +288,32 @@
 
     <section>
         <h2>About the Band</h2>
-        <p>Half Awake Eyes is a four-piece progressive metal band from Glasgow known for their blend of crushing riffs,
-            intricate bass work, and dynamic vocals.
-            Their music strikes a balance — intense and immersive,
-            it sits between the atmospheric and the aggressive.</p>
-        <p>Influenced by modern progressive and post-metal, the band prioritises feel, space, and storytelling over
-            constant intensity. Their sound is immersive and deliberate, offering a raw yet focused experience both live
-            and in the studio.</p>
-        <p>Built on a strong collaborative foundation and a DIY mindset, Half Awake Eyes are recording their debut EP
-            while building momentum from their first live appearance — ready to bring their distinct sound to more
-            stages across Scotland and beyond.</p>
+        <p>Half Awake Eyes are a four-piece alternative metal band from Glasgow, formed in late 2024. 
+           Known for their blend of crushing riffs, intricate rhythm work, and dynamic vocals, they create music that balances atmosphere and intensity. 
+           Influenced by modern progressive and post-metal, the band focus on feel, space, and storytelling over constant heaviness. 
+           Built on a collaborative foundation and a DIY mindset, Half Awake Eyes will release their debut single Malice on 3rd October 2025, followed by their full debut EP on 31st October 2025.</p>
     </section>
 
     <section>
-        <h2>Demo Music</h2>
-        <div class="track-grid">
-
-            <div class="track-card">
-                <p class="track-title">The Taste of Death</p>
-                <div class="ratio ratio-16x9">
-                    <iframe
-                        src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/2093458050%3Fsecret_token%3Ds-rhnv16MQHe3&color=%23ff55554&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true"
-                        allow="autoplay"></iframe>
-                </div>
-            </div>
-
-            <div class="track-card">
-                <p class="track-title">Malice</p>
-                <div class="ratio ratio-16x9">
-                    <iframe
-                        src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/2093458053%3Fsecret_token%3Ds-rkBzVYIT15I&color=%23ff5555&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true"
-                        allow="autoplay"></iframe>
-                </div>
-            </div>
-
-            <div class="track-card">
-                <p class="track-title">Dispossession</p>
-                <div class="ratio ratio-16x9">
-                    <iframe
-                        src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/2130640029%3Fsecret_token%3Ds-vSG6H2c1sNs&color=%23ff5555&show_user=true"
-                        allow="autoplay"></iframe>
-                </div>
-            </div>
-
-            <!-- <div class="track-card">
-                <p class="track-title">Machine</p>
-                <div class="ratio ratio-16x9">
-                    <iframe
-                        src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/2093458056%3Fsecret_token%3Ds-HQrtp5Xl9Qc&color=%23ff5555&show_user=true"
-                        allow="autoplay"></iframe>
-                </div>
-            </div> -->
+    <h2>Music</h2>
+    <div class="track-grid">
+        <div class="track-card track-card-spotify">
+        <p class="track-title">Malice</p>
+        <div class="spotify-wrapper">
+            <iframe
+                style="border-radius:12px"
+                src="https://open.spotify.com/embed/track/3FFdAKH3pxBVtNETyHqxHu?utm_source=generator"
+                width="100%"
+                height="152"
+                frameborder="0"
+                allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                loading="lazy">
+            </iframe>
         </div>
+        </div>
+    </div>
     </section>
+
 
     <section>
         <h2>Band Photos</h2>
@@ -444,7 +427,7 @@
         <h2>Contact & Social</h2>
         <p>Booking & Inquiries: <a href="mailto:halfawakeeyes@gmail.com">halfawakeeyes@gmail.com</a></p>
         <p>Instagram: <a href="https://instagram.com/halfawakeeyes" target="_blank">@halfawakeeyes</a></p>
-        <p>Facebook: <a href="https://www.facebook.com/profile.php?id=61570906200948"
+        <p>Facebook: <a href="https://www.facebook.com/halfawakeeyes"
                 target="_blank">facebook.com/halfawakeeyes</a></p>
     </section>
 
