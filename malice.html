@@ -16,7 +16,7 @@
     s.parentNode.insertBefore(t,s)}(window, document,'script',
     'https://connect.facebook.net/en_US/fbevents.js');
     
-    fbq('init', 'YOUR_PIXEL_ID');           // ← Replace this with your actual Pixel ID
+    fbq('init', '2221554155032633');           // ← Replace this with your actual Pixel ID
     fbq('track', 'PageView');
     fbq('trackCustom', 'SpotifyRedirect');
   </script>
@@ -27,12 +27,10 @@
     const webLink = `https://open.spotify.com/track/${trackId}?utm_source=meta&utm_medium=redirect`;
 
     window.onload = function() {
-      // Attempt to open the Spotify app
       window.location = appLink;
-      // Fallback to web player if app not installed
-      // setTimeout(() => {
-      //   window.location.href = webLink;
-      // }, 1000);
+      setTimeout(() => {
+        window.location.href = webLink;
+      }, 5000);
     };
   </script>
 
