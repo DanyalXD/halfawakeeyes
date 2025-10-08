@@ -6,6 +6,7 @@
   <title>Opening Spotify...</title>
 
   <!-- Meta Pixel -->
+  <!-- Facebook Pixel Code -->
   <script>
     !function(f,b,e,v,n,t,s)
     {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
@@ -15,43 +16,26 @@
     t.src=v;s=b.getElementsByTagName(e)[0];
     s.parentNode.insertBefore(t,s)}(window, document,'script',
     'https://connect.facebook.net/en_US/fbevents.js');
-
-    const pixelId = '2221554155032633';
-    fbq('init', pixelId);
-
-    function sendBeaconEvent(ev) {
-      const params = new URLSearchParams({
-        id: pixelId,
-        ev: ev,
-        dl: location.href,
-        rl: document.referrer,
-        v: '2.9.234',
-        ts: Date.now()
-      });
-      navigator.sendBeacon('https://www.facebook.com/tr/?' + params.toString());
-    }
-
-    window.addEventListener('load', () => {
-      // Fire fbq and beacon (redundant for reliability)
-      fbq('track', 'PageView');
-      fbq('trackCustom', 'SpotifyRedirect');
-      sendBeaconEvent('PageView');
-      sendBeaconEvent('SpotifyRedirect');
-
-      const trackId = '3FFdAKH3pxBVtNETyHqxHu';
-      const appLink = `spotify://track/${trackId}`;
-      const webLink = `https://open.spotify.com/track/${trackId}?utm_source=meta&utm_medium=redirect`;
-
-      // Wait briefly to ensure events are sent before redirect
-      // setTimeout(() => {
-      //   window.location = appLink;
-      //   setTimeout(() => (window.location.href = webLink), 2000);
-      // }, 1000);
-    });
+    fbq('init', '2221554155032633');
+    fbq('track', 'PageView');
   </script>
+  <noscript>
+    <img height="1" width="1" style="display:none" 
+        src="https://www.facebook.com/tr?id=2221554155032633&ev=PageView&noscript=1"/>
+  </noscript>
 
+  <script>
+    const trackId = '3FFdAKH3pxBVtNETyHqxHu';
+    const appLink = `spotify://track/${trackId}`;
+    const webLink = `https://open.spotify.com/track/${trackId}?utm_source=meta&utm_medium=redirect`;
 
-
+    window.onload = function() {
+      window.location = appLink;
+      // setTimeout(() => {
+      //   window.location.href = webLink;
+      // }, 2000); // 1 second = fast + visible notice
+    };
+  </script>
 
   <style>
     body {
@@ -85,10 +69,5 @@
     document.getElementById('manual-link').href = `https://open.spotify.com/track/${trackId}`;
   </script>
 
-  <!-- Meta Pixel fallback -->
-  <noscript>
-    <img height="1" width="1" style="display:none"
-         src="https://www.facebook.com/tr?id=2221554155032633&ev=PageView&noscript=1"/>
-  </noscript>
 </body>
 </html>
