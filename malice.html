@@ -26,12 +26,13 @@
     const appLink = `spotify://track/${trackId}`;
     const webLink = `https://open.spotify.com/track/${trackId}?utm_source=meta&utm_medium=redirect`;
 
-    window.onload = function() {
+    // give Meta 600 ms to fire its events
+    setTimeout(() => {
       window.location = appLink;
       setTimeout(() => {
         window.location.href = webLink;
-      }, 2000); // 1 second = fast + visible notice
-    };
+      }, 1500); // fallback after another 1.5 s
+    }, 600);
   </script>
 
   <style>
