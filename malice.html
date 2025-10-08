@@ -1,23 +1,72 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Redirecting...</title>
-  <meta http-equiv="refresh" content="0; url=https://open.spotify.com/track/3FFdAKH3pxBVtNETyHqxHu">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Opening Spotify...</title>
+
+  <!-- Meta Pixel -->
   <script>
+    !function(f,b,e,v,n,t,s)
+    {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+    n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+    if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+    n.queue=[];t=b.createElement(e);t.async=!0;
+    t.src=v;s=b.getElementsByTagName(e)[0];
+    s.parentNode.insertBefore(t,s)}(window, document,'script',
+    'https://connect.facebook.net/en_US/fbevents.js');
+    
+    fbq('init', 'YOUR_PIXEL_ID');           // ← Replace this with your actual Pixel ID
+    fbq('track', 'PageView');
+    fbq('trackCustom', 'SpotifyRedirect');
+  </script>
+
+  <script>
+    const trackId = '3FFdAKH3pxBVtNETyHqxHu';
+    const appLink = `spotify://track/${trackId}`;
+    const webLink = `https://open.spotify.com/track/${trackId}?utm_source=meta&utm_medium=redirect`;
+
     window.onload = function() {
-      // Try opening in Spotify app first
-      window.location = "spotify:track:3FFdAKH3pxBVtNETyHqxHu";
-      // If app not installed, open in browser after short delay
-      setTimeout(function() {
-        window.location = "https://open.spotify.com/track/3FFdAKH3pxBVtNETyHqxHu";
-      }, 500);
+      // Attempt to open the Spotify app
+      window.location = appLink;
+      // Fallback to web player if app not installed
+      // setTimeout(() => {
+      //   window.location.href = webLink;
+      // }, 1000);
     };
   </script>
+
   <style>
-    html, body { background: #000; height: 100%; margin: 0; }
+    body {
+      background-color: #000;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      flex-direction: column;
+      text-align: center;
+      font-family: sans-serif;
+    }
+    h1 {
+      font-size: 1.5rem;
+      margin-bottom: 0.5rem;
+    }
+    p {
+      opacity: 0.8;
+      font-size: 1rem;
+    }
+    a {
+      color: #1DB954;
+    }
   </style>
 </head>
-<body></body>
+<body>
+  <h1>Opening Spotify...</h1>
+  <p>If nothing happens, <a href="#" id="manual-link">tap here</a>.</p>
+
+  <script>
+    document.getElementById('manual-link').href = `https://open.spotify.com/track/${trackId}`;
+  </script>
+</body>
 </html>
