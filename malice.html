@@ -16,7 +16,7 @@
     s.parentNode.insertBefore(t,s)}(window, document,'script',
     'https://connect.facebook.net/en_US/fbevents.js');
     
-    fbq('init', '2221554155032633');           // ← Replace this with your actual Pixel ID
+    fbq('init', '2221554155032633');
     fbq('track', 'PageView');
     fbq('trackCustom', 'SpotifyRedirect');
   </script>
@@ -30,41 +30,46 @@
       window.location = appLink;
       setTimeout(() => {
         window.location.href = webLink;
-      }, 5000);
+      }, 3000); // 1 second = fast + visible notice
     };
   </script>
 
   <style>
     body {
-      background-color: #000;
-      color: #fff;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-      flex-direction: column;
-      text-align: center;
-      font-family: sans-serif;
+      background:#000;
+      color:#fff;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      height:100vh;
+      text-align:center;
+      font-family:sans-serif;
+      margin:0;
     }
-    h1 {
-      font-size: 1.5rem;
-      margin-bottom: 0.5rem;
-    }
-    p {
-      opacity: 0.8;
-      font-size: 1rem;
-    }
-    a {
-      color: #1DB954;
+    h1 {font-size:1.5rem;margin-bottom:.5rem;}
+    p {opacity:.8;font-size:1rem;margin:0.25rem 0;}
+    a {color:#1DB954;}
+    small {
+      font-size:0.7rem;
+      color:#777;
+      margin-top:0.5rem;
     }
   </style>
 </head>
 <body>
   <h1>Opening Spotify...</h1>
   <p>If nothing happens, <a href="#" id="manual-link">tap here</a>.</p>
+  <small>This page uses Meta Pixel for anonymous ad tracking.</small>
 
   <script>
     document.getElementById('manual-link').href = `https://open.spotify.com/track/${trackId}`;
   </script>
+
+  <!-- Meta Pixel fallback -->
+  <noscript>
+    <img height="1" width="1" style="display:none"
+         src="https://www.facebook.com/tr?id=2221554155032633&ev=PageView&noscript=1"/>
+  </noscript>
 </body>
 </html>
