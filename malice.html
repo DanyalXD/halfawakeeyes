@@ -18,25 +18,23 @@
 
     fbq('init', '2221554155032633');
 
-    // Ensure events fire *after* pixel is ready
     window.addEventListener('load', () => {
       fbq('track', 'PageView');
       fbq('trackCustom', 'SpotifyRedirect');
+
+      const trackId = '3FFdAKH3pxBVtNETyHqxHu';
+      const appLink = `spotify://track/${trackId}`;
+      const webLink = `https://open.spotify.com/track/${trackId}?utm_source=meta&utm_medium=redirect`;
+
+      // Wait before redirecting to give fbq time to send requests
+      setTimeout(() => {
+        window.location = appLink;
+        // Optional web fallback
+        setTimeout(() => { window.location.href = webLink; }, 1500);
+      }, 1200);
     });
   </script>
 
-  <script>
-    const trackId = '3FFdAKH3pxBVtNETyHqxHu';
-    const appLink = `spotify://track/${trackId}`;
-    const webLink = `https://open.spotify.com/track/${trackId}?utm_source=meta&utm_medium=redirect`;
-
-    window.onload = function() {
-      window.location = appLink;
-      // setTimeout(() => {
-      //   window.location.href = webLink;
-      // }, 2000); // 1 second = fast + visible notice
-    };
-  </script>
 
   <style>
     body {
