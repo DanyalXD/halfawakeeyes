@@ -5,35 +5,79 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Opening Spotify...</title>
 
-  <!-- Meta Pixel Code -->
-  <script>
-    !function(f,b,e,v,n,t,s)
-    {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-    n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-    if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-    n.queue=[];t=b.createElement(e);t.async=!0;
-    t.src=v;s=b.getElementsByTagName(e)[0];
-    s.parentNode.insertBefore(t,s)}(window, document,'script',
-    'https://connect.facebook.net/en_US/fbevents.js');
-    fbq('init', '2221554155032633');
-    fbq('trackCustom', 'SpotifyRedirect');
-  </script>
-  <noscript>
-    <img height="1" width="1" style="display:none"
-    src="https://www.facebook.com/tr?id=2221554155032633&ev=PageView&noscript=1"
-  /></noscript>
+  <!-- Firebase Logging -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-  <script>
-    const trackId = '3FFdAKH3pxBVtNETyHqxHu';
-    const appLink = `spotify://track/${trackId}`;
-    const webLink = `https://open.spotify.com/track/${trackId}?utm_source=meta&utm_medium=redirect`;
-
-    window.onload = function() {
-      window.location = appLink;
-      setTimeout(() => {
-        window.location.href = webLink;
-      }, 2500); 
+    // --- Firebase config ---
+    const firebaseConfig = {
+        apiKey: "AIzaSyAv7G28uXxlQNG_HMLbBkuz4xseXzOzm4Y",
+        authDomain: "half-awake-eyes.firebaseapp.com",
+        projectId: "half-awake-eyes"
     };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // --- Helper for logging ---
+    const params = new URLSearchParams(window.location.search);
+    const userId = params.get("id") || "unknown";
+
+    const logEvent = async (action, target = "") => {
+      try {
+        const docId = `${Date.now()}-${action}`;
+        const path = window.location.pathname || "/";
+        await setDoc(doc(db, "ad-tracking", docId), {
+          action,
+          target,
+          page: path,           // e.g. "/malice"
+          full_url: window.location.href, // optional full link, useful for analytics
+          timestamp: new Date()
+        });
+      } catch (e) {
+        console.error("Logging error:", e);
+      }
+    };
+
+    // --- Redirect setup ---
+    const trackId = "3FFdAKH3pxBVtNETyHqxHu";
+    const appLink = `spotify://track/${trackId}`;
+    const webLink = `https://open.spotify.com/track/${trackId}?utm_source=firebase&utm_medium=redirect`;
+
+    window.onload = async () => {
+      await logEvent("page_view");
+      await logEvent("redirect_start", trackId);
+
+      let fallbackFired = false;
+
+      // --- Set fallback timer ---
+      // const fallbackTimer = setTimeout(async () => {
+      //   fallbackFired = true;
+      //   await logEvent("redirect_fallback", trackId);
+      //   window.location.href = webLink;
+      // }, 2500);
+
+      // --- Attempt to open Spotify app ---
+      window.location = appLink;
+
+      // --- Detect if user switched away (likely to Spotify app) ---
+      document.addEventListener("visibilitychange", async () => {
+        if (document.hidden && !fallbackFired) {
+          // clearTimeout(fallbackTimer);
+          await logEvent("redirect_success_app", trackId);
+        }
+      });
+    };
+
+    // --- Manual link click ---
+    window.addEventListener("DOMContentLoaded", () => {
+      const link = document.getElementById("manual-link");
+      link.href = webLink;
+      link.addEventListener("click", async () => {
+        await logEvent("manual_click", trackId);
+      });
+    });
   </script>
 
   <style>
@@ -49,24 +93,35 @@
       font-family:sans-serif;
       margin:0;
     }
-    h1 {font-size:1.5rem;margin-bottom:.5rem;}
-    p {opacity:.8;font-size:1rem;margin:0.25rem 0;}
-    a {color:#1DB954;}
+    h1 {
+      font-size:1.5rem;
+      margin-bottom:.5rem;
+      color:#1DB954;
+    }
+    p {
+      opacity:.9;
+      font-size:1rem;
+      margin:0.25rem 0;
+    }
+    a {
+      color:#1DB954;
+      text-decoration:underline;
+    }
     small {
-      font-size:0.7rem;
+      font-size:0.75rem;
       color:#777;
       margin-top:0.5rem;
+      line-height:1.4;
     }
   </style>
 </head>
+
 <body>
   <h1>Opening Spotify...</h1>
   <p>If nothing happens, <a href="#" id="manual-link">tap here</a>.</p>
-  <small>This page uses Meta Pixel for anonymous ad tracking.</small>
-
-  <script>
-    document.getElementById('manual-link').href = `https://open.spotify.com/track/${trackId}`;
-  </script>
-
+  <small>
+    Redirect tracked anonymously via Firebase. 
+    <a href="/privacy.html" target="_blank">Privacy Policy</a>.
+  </small>
 </body>
 </html>

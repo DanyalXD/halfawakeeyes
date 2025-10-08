@@ -1,27 +1,128 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Analytics Dashboard</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
   <style>
+    body {
+      background: #f8f9fa;
+      color: #212529;
+    }
+
     .table-responsive {
       overflow-x: auto;
     }
+
     #dashboard {
       display: none;
     }
+
+    .nav-tabs .nav-link.active {
+      background-color: #0d6efd;
+      color: #fff;
+    }
+
+    /* ✅ Improve table appearance */
+    table {
+      table-layout: fixed;
+      word-wrap: break-word;
+      font-size: 0.9rem;
+    }
+
+    th, td {
+      vertical-align: middle !important;
+    }
+
+    th {
+      text-transform: capitalize;
+      white-space: nowrap;
+    }
+
+    td {
+      white-space: normal;
+    }
+
+    /* Long text wrapping */
+    td:nth-child(n+3) {
+      word-break: break-all;
+    }
+
+    /* Reduce horizontal scroll bar prominence */
+    ::-webkit-scrollbar {
+      height: 6px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #999;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #666;
+    }
   </style>
+</head>
+
+<body class="bg-light text-dark">
+  <div class="container py-5">
+    <!-- Login -->
+    <div id="login">
+      <h1 class="mb-4 text-center">🔐 Enter Credentials</h1>
+      <form id="login-form" class="text-center">
+        <div class="mb-3">
+          <input type="text" id="username" class="form-control" placeholder="Username" required />
+        </div>
+        <div class="mb-3">
+          <input type="password" id="password" class="form-control" placeholder="Password" required />
+        </div>
+        <button type="submit" class="btn btn-primary">Unlock</button>
+      </form>
+    </div>
+
+    <!-- Dashboard -->
+    <div id="dashboard">
+      <h1 class="mb-4 text-center text-md-start">📊 Analytics Dashboard</h1>
+
+      <!-- Tabs -->
+      <ul class="nav nav-tabs mb-4">
+        <li class="nav-item">
+          <a class="nav-link active" href="#" data-collection="site-actions">Site Actions</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#" data-collection="ad-tracking">Ad Tracking</a>
+        </li>
+      </ul>
+
+      <!-- Summary -->
+      <div class="mb-3">
+        <h5>Event Counts</h5>
+        <div id="summary" class="mb-4"></div>
+      </div>
+
+      <!-- Table -->
+      <div class="table-responsive">
+        <table class="table table-bordered table-hover align-middle">
+          <thead class="table-dark" id="log-head"></thead>
+          <tbody id="log-rows"></tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      <nav>
+        <ul class="pagination justify-content-center" id="pagination"></ul>
+      </nav>
+    </div>
+  </div>
+
+  <!-- ✅ Script at bottom -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getFirestore, collection, getDocs, query, orderBy, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
     const firebaseConfig = {
-        apiKey: "AIzaSyAv7G28uXxlQNG_HMLbBkuz4xseXzOzm4Y",
-        authDomain: "half-awake-eyes.firebaseapp.com",
-        projectId: "half-awake-eyes"
+      apiKey: "AIzaSyAv7G28uXxlQNG_HMLbBkuz4xseXzOzm4Y",
+      authDomain: "half-awake-eyes.firebaseapp.com",
+      projectId: "half-awake-eyes"
     };
 
     const app = initializeApp(firebaseConfig);
@@ -29,19 +130,57 @@
 
     const PAGE_SIZE = 10;
     let logs = [];
+    let currentCollection = "site-actions";
+    let dynamicFields = [];
 
-    async function loadLogs() {
-      const logsRef = collection(db, "site-actions");
-      const q = query(logsRef, orderBy("timestamp", "desc"));
-      const querySnapshot = await getDocs(q);
-      logs = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      renderPage(1);
-      renderSummary();
+    async function loadLogs(collectionName) {
+      try {
+        let querySnapshot;
+        try {
+          const q = query(collection(db, collectionName), orderBy("timestamp", "desc"));
+          querySnapshot = await getDocs(q);
+        } catch {
+          console.warn(`⚠️ ${collectionName} missing timestamp — loading unordered`);
+          querySnapshot = await getDocs(collection(db, collectionName));
+        }
+
+        logs = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+        if (logs.length > 0) {
+          const fieldSet = new Set();
+          logs.forEach(l => Object.keys(l).forEach(f => fieldSet.add(f)));
+          // ✅ Sort fields alphabetically for consistent order
+          dynamicFields = Array.from(fieldSet).filter(f => f !== "id").sort((a, b) => a.localeCompare(b));
+        } else {
+          dynamicFields = [];
+        }
+
+        renderTable(1);
+        renderSummary();
+      } catch (e) {
+        console.error("Error loading logs:", e);
+        alert("Failed to load data from Firestore. Check console for details.");
+      }
     }
 
-    function renderPage(page) {
-      const tableBody = document.getElementById("log-rows");
-      tableBody.innerHTML = "";
+    function renderTable(page) {
+      const head = document.getElementById("log-head");
+      const body = document.getElementById("log-rows");
+      head.innerHTML = "";
+      body.innerHTML = "";
+
+      if (logs.length === 0) {
+        body.innerHTML = `<tr><td colspan="5" class="text-center text-muted">No data found.</td></tr>`;
+        return;
+      }
+
+      const headerRow = document.createElement("tr");
+      dynamicFields.forEach(field => {
+        const th = document.createElement("th");
+        th.textContent = field;
+        headerRow.appendChild(th);
+      });
+      head.appendChild(headerRow);
 
       const start = (page - 1) * PAGE_SIZE;
       const end = start + PAGE_SIZE;
@@ -49,14 +188,16 @@
 
       pageLogs.forEach(data => {
         const row = document.createElement("tr");
-        row.innerHTML = `
-          <td>${data.userId || "-"}</td>
-          <td>${data.action}</td>
-          <td>${data.target || "-"}</td>
-          <td>${data.page || "-"}</td>
-          <td>${new Date(data.timestamp?.seconds * 1000).toLocaleString()}</td>
-        `;
-        tableBody.appendChild(row);
+        dynamicFields.forEach(field => {
+          const td = document.createElement("td");
+          let value = data[field];
+          if (field === "timestamp" && value?.seconds) {
+            value = new Date(value.seconds * 1000).toLocaleString();
+          }
+          td.textContent = value ?? "-";
+          row.appendChild(td);
+        });
+        body.appendChild(row);
       });
 
       renderPagination(page);
@@ -69,42 +210,64 @@
 
       for (let i = 1; i <= pageCount; i++) {
         const li = document.createElement("li");
-        li.className = `page-item ${i === currentPage ? 'active' : ''}`;
+        li.className = `page-item ${i === currentPage ? "active" : ""}`;
         li.innerHTML = `<a class="page-link" href="#">${i}</a>`;
         li.addEventListener("click", (e) => {
           e.preventDefault();
-          renderPage(i);
+          renderTable(i);
         });
         pagination.appendChild(li);
       }
     }
 
     function renderSummary() {
+      const summary = document.getElementById("summary");
+      if (logs.length === 0) {
+        summary.innerHTML = `<span class="text-muted">No data.</span>`;
+        return;
+      }
+
+      const summaryField = dynamicFields.includes("action")
+        ? "action"
+        : dynamicFields[0];
+
       const counts = {};
-      logs.forEach(data => {
-        counts[data.action] = (counts[data.action] || 0) + 1;
+      logs.forEach(l => {
+        const val = l[summaryField] ?? "Unknown";
+        counts[val] = (counts[val] || 0) + 1;
       });
 
-      const summary = document.getElementById("summary");
       summary.innerHTML = Object.entries(counts)
-        .map(([action, count]) => `<span class="badge bg-primary me-2">${action}: ${count}</span>`)
+        .map(([key, count]) => `<span class="badge bg-primary me-2">${key}: ${count}</span>`)
         .join(" ");
     }
 
     function showDashboard() {
       document.getElementById("login").style.display = "none";
       document.getElementById("dashboard").style.display = "block";
-      loadLogs();
+      loadLogs(currentCollection);
+    }
+
+    function setActiveCollection(name) {
+      currentCollection = name;
+      document.querySelectorAll(".nav-link").forEach(link => link.classList.remove("active"));
+      document.querySelector(`[data-collection="${name}"]`).classList.add("active");
+
+      document.getElementById("log-head").innerHTML = "";
+      document.getElementById("log-rows").innerHTML = `
+        <tr><td colspan="5" class="text-center text-muted">Loading ${name}...</td></tr>
+      `;
+
+      loadLogs(name);
     }
 
     window.addEventListener("DOMContentLoaded", () => {
+      console.log("Attaching tab listeners...");
       const form = document.getElementById("login-form");
 
-      // Auto-login if valid session found
       const lastLogin = localStorage.getItem("dashboardLogin");
       if (lastLogin && Date.now() - parseInt(lastLogin, 10) < 24 * 60 * 60 * 1000) {
         showDashboard();
-        return;
       }
 
       form.addEventListener("submit", async (e) => {
@@ -123,57 +286,15 @@
           alert("Incorrect username or password");
         }
       });
+
+      document.querySelectorAll(".nav-link").forEach(link => {
+        link.addEventListener("click", (e) => {
+          e.preventDefault();
+          const name = e.target.getAttribute("data-collection");
+          setActiveCollection(name);
+        });
+      });
     });
   </script>
-</head>
-
-<body class="bg-light text-dark">
-  <div class="container py-5">
-    <div id="login">
-      <h1 class="mb-4 text-center">🔐 Enter Credentials</h1>
-      <form id="login-form" class="text-center">
-        <div class="mb-3">
-          <input type="text" id="username" class="form-control" placeholder="Username" required>
-        </div>
-        <div class="mb-3">
-          <input type="password" id="password" class="form-control" placeholder="Password" required>
-        </div>
-        <button type="submit" class="btn btn-primary">Unlock</button>
-      </form>
-    </div>
-
-    <div id="dashboard">
-      <h1 class="mb-4 text-center text-md-start">📊 Site Analytics Dashboard</h1>
-
-      <div class="mb-3">
-        <h5>Event Counts</h5>
-        <div id="summary" class="mb-4"></div>
-      </div>
-
-      <div class="table-responsive">
-        <table class="table table-bordered table-hover">
-          <thead class="table-dark">
-            <tr>
-              <th>User ID</th>
-              <th>Action</th>
-              <th>Target</th>
-              <th>Page</th>
-              <th>Timestamp</th>
-            </tr>
-          </thead>
-          <tbody id="log-rows">
-            <!-- Logs will be injected here -->
-          </tbody>
-        </table>
-      </div>
-
-      <nav>
-        <ul class="pagination justify-content-center" id="pagination">
-          <!-- Pagination buttons will appear here -->
-        </ul>
-      </nav>
-    </div>
-  </div>
 </body>
-
 </html>
