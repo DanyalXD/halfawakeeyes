@@ -7,33 +7,53 @@
 
   <!-- Meta Pixel -->
   <script>
-    !function(f,b,e,v,n,t,s)
-    {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-    n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-    if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-    n.queue=[];t=b.createElement(e);t.async=!0;
-    t.src=v;s=b.getElementsByTagName(e)[0];
-    s.parentNode.insertBefore(t,s)}(window, document,'script',
-    'https://connect.facebook.net/en_US/fbevents.js');
+    !(function (f, b, e, v, n, t, s) {
+      if (f.fbq) return;
+      n = f.fbq = function () {
+        n.callMethod
+          ? n.callMethod.apply(n, arguments)
+          : n.queue.push(arguments);
+      };
+      if (!f._fbq) f._fbq = n;
+      n.push = n;
+      n.loaded = true;
+      n.version = '2.0';
+      n.queue = [];
+      t = b.createElement(e);
+      t.async = true;
+      t.src = v;
+      s = b.getElementsByTagName(e)[0];
+      s.parentNode.insertBefore(t, s);
+    })(
+      window,
+      document,
+      'script',
+      'https://connect.facebook.net/en_US/fbevents.js'
+    );
 
     fbq('init', '2221554155032633');
 
-    window.addEventListener('load', () => {
+    // delay events until fbq is ready
+    function triggerEvents() {
+      console.log('Triggering Meta Pixel events...');
       fbq('track', 'PageView');
       fbq('trackCustom', 'SpotifyRedirect');
+    }
+
+    window.addEventListener('load', () => {
+      triggerEvents();
 
       const trackId = '3FFdAKH3pxBVtNETyHqxHu';
       const appLink = `spotify://track/${trackId}`;
       const webLink = `https://open.spotify.com/track/${trackId}?utm_source=meta&utm_medium=redirect`;
 
-      // Wait before redirecting to give fbq time to send requests
       // setTimeout(() => {
       //   window.location = appLink;
-      //   // Optional web fallback
-      //   setTimeout(() => { window.location.href = webLink; }, 1500);
-      // }, 1200);
+      //   setTimeout(() => (window.location.href = webLink), 2000);
+      // }, 1000);
     });
   </script>
+
 
 
   <style>
