@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Redirecting...</title>
+  <meta http-equiv="refresh" content="0; url=https://open.spotify.com/track/3FFdAKH3pxBVtNETyHqxHu">
+  <script>
+    window.onload = function() {
+      // Try opening in Spotify app first
+      window.location = "spotify:track:3FFdAKH3pxBVtNETyHqxHu";
+      // If app not installed, open in browser after short delay
+      setTimeout(function() {
+        window.location = "https://open.spotify.com/track/3FFdAKH3pxBVtNETyHqxHu";
+      }, 500);
+    };
+  </script>
+  <style>
+    html, body { background: #000; height: 100%; margin: 0; }
+  </style>
+</head>
+<body></body>
+</html>
