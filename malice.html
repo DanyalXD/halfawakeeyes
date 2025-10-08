@@ -52,11 +52,11 @@
       let fallbackFired = false;
 
       // --- Set fallback timer ---
-      // const fallbackTimer = setTimeout(async () => {
-      //   fallbackFired = true;
-      //   await logEvent("redirect_fallback", trackId);
-      //   window.location.href = webLink;
-      // }, 2500);
+      const fallbackTimer = setTimeout(async () => {
+        fallbackFired = true;
+        await logEvent("redirect_fallback", trackId);
+        window.location.href = webLink;
+      }, 2500);
 
       // --- Attempt to open Spotify app ---
       window.location = appLink;
@@ -64,7 +64,7 @@
       // --- Detect if user switched away (likely to Spotify app) ---
       document.addEventListener("visibilitychange", async () => {
         if (document.hidden && !fallbackFired) {
-          // clearTimeout(fallbackTimer);
+          clearTimeout(fallbackTimer);
           await logEvent("redirect_success_app", trackId);
         }
       });
