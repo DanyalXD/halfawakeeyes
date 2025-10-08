@@ -27,11 +27,11 @@
       const webLink = `https://open.spotify.com/track/${trackId}?utm_source=meta&utm_medium=redirect`;
 
       // Wait before redirecting to give fbq time to send requests
-      setTimeout(() => {
-        window.location = appLink;
-        // Optional web fallback
-        setTimeout(() => { window.location.href = webLink; }, 1500);
-      }, 1200);
+      // setTimeout(() => {
+      //   window.location = appLink;
+      //   // Optional web fallback
+      //   setTimeout(() => { window.location.href = webLink; }, 1500);
+      // }, 1200);
     });
   </script>
 
