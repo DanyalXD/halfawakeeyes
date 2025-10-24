@@ -138,9 +138,10 @@
         .track-grid {
             display: grid;
             gap: 2rem;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            grid-template-columns: repeat(2, 1fr); /* exactly two side-by-side columns */
             margin-top: 1.5rem;
         }
+
 
         .track-card {
             background: #1a1a1a;
@@ -302,20 +303,37 @@
     <section>
     <h2>Music</h2>
     <div class="track-grid">
+
         <div class="track-card track-card-spotify">
         <p class="track-title">Malice</p>
         <div class="spotify-wrapper">
             <iframe
-                style="border-radius:12px"
-                src="https://open.spotify.com/embed/track/3FFdAKH3pxBVtNETyHqxHu?utm_source=generator"
-                width="100%"
-                height="152"
-                frameborder="0"
-                allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-                loading="lazy">
+            style="border-radius:12px"
+            src="https://open.spotify.com/embed/track/3FFdAKH3pxBVtNETyHqxHu?utm_source=generator"
+            width="100%"
+            height="152"
+            frameborder="0"
+            allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+            loading="lazy">
             </iframe>
         </div>
         </div>
+
+        <div class="track-card track-card-spotify">
+        <p class="track-title">Dispossession</p>
+        <div class="spotify-wrapper">
+            <iframe
+            style="border-radius:12px"
+            src="https://open.spotify.com/embed/track/38MsJMGTCcX9HliOWxNHQM?utm_source=generator"
+            width="100%"
+            height="152"
+            frameborder="0"
+            allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+            loading="lazy">
+            </iframe>
+        </div>
+        </div>
+
     </div>
     </section>
 
