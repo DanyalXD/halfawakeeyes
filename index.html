@@ -245,6 +245,16 @@
             clip-path: circle();
         }
 
+        .content-warning {
+            margin: 1rem 0 2rem;
+            padding: 0.75rem 1rem;
+            border-left: 4px solid #ff8c00;
+            background: rgba(255, 140, 0, 0.08);
+            color: #eaeaf0;
+            font-size: 0.95rem;
+        }
+
+
 
 
         /* Responsive tweaks */
@@ -352,6 +362,11 @@
 
     <section>
         <h2>Live Videos</h2>
+        <div class="content-warning" role="alert">
+            <strong>Content warning:</strong>
+            Some videos contain flashing lights and strobe effects.
+        </div>
+
         <div id="videoCarousel" class="carousel slide" data-bs-ride="false">
 
             <div class="carousel-indicators">
@@ -363,10 +378,20 @@
                     aria-label="Slide 3"></button>
                 <button type="button" data-bs-target="#videoCarousel" data-bs-slide-to="3"
                     aria-label="Slide 4"></button>
+                <button type="button" data-bs-target="#videoCarousel" data-bs-slide-to="4" 
+                    aria-label="Slide 5"></button>
             </div>
 
             <div class="carousel-inner">
                 <div class="carousel-item active">
+                    <div class="ratio ratio-16x9">
+                        <video controls poster="thumbnails/video1.jpg">
+                            <source src="https://halfawakeeyes.s3.eu-west-2.amazonaws.com/Hug%20N%20Pint%20-%20Severance.mp4" type="video/mp4">
+                        </video>
+                    </div>
+                </div>
+
+                <div class="carousel-item">
                     <div class="ratio ratio-16x9">
                         <video controls poster="thumbnails/video1.jpg">
                             <source src="https://halfawakeeyes.s3.eu-west-2.amazonaws.com/Classic%20Grand%20-%20Machine.mp4" type="video/mp4">
