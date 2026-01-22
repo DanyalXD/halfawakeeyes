@@ -135,32 +135,38 @@
         }
 
         /* Track section */
-        .track-grid {
+        .track-grid{
             display: grid;
-            gap: 2rem;
-            grid-template-columns: repeat(2, 1fr); /* exactly two side-by-side columns */
+            gap: 1.25rem;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            align-items: start;
             margin-top: 1.5rem;
         }
 
-
-        .track-card {
+        .track-card{
             background: #1a1a1a;
             border: 1px solid #333;
-            border-radius: 8px;
+            border-radius: 12px;
             padding: 1rem;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
 
-        .track-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-        }
-
-        .track-title {
-            margin-bottom: 0.5rem;
-            font-size: 1rem;
-            font-weight: 600;
+        .track-title{
+            margin: 0 0 .75rem;
+            font-size: 1.05rem;
+            font-weight: 700;
             color: #e0e0e0;
+            letter-spacing: .3px;
+        }
+
+        /* remove these if you keep them elsewhere */
+        .track-card-spotify{ max-width: none; }
+        .spotify-wrapper{ max-width: none; }
+
+        /* Optional: make iframe feel integrated */
+        .track-card iframe{
+            display: block;
+            width: 100%;
+            border-radius: 12px;
         }
 
         /* Global video style (no fixed height) */
@@ -311,41 +317,35 @@
     </section>
 
     <section>
-    <h2>Music</h2>
-    <div class="track-grid">
+        <h2>Music</h2>
 
-        <div class="track-card track-card-spotify">
-        <p class="track-title">Malice</p>
-        <div class="spotify-wrapper">
+        <div class="track-grid">
+            <div class="track-card">
+            <p class="track-title">Malice</p>
             <iframe
-            style="border-radius:12px"
-            src="https://open.spotify.com/embed/track/3FFdAKH3pxBVtNETyHqxHu?utm_source=generator"
-            width="100%"
-            height="152"
-            frameborder="0"
-            allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-            loading="lazy">
-            </iframe>
-        </div>
-        </div>
+                style="border-radius:12px"
+                src="https://open.spotify.com/embed/track/3FFdAKH3pxBVtNETyHqxHu?utm_source=generator"
+                width="100%"
+                height="152"
+                frameborder="0"
+                allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                loading="lazy"></iframe>
+            </div>
 
-        <div class="track-card track-card-spotify">
-        <p class="track-title">Dispossession</p>
-        <div class="spotify-wrapper">
+            <div class="track-card">
+            <p class="track-title">Dispossession</p>
             <iframe
-            style="border-radius:12px"
-            src="https://open.spotify.com/embed/track/38MsJMGTCcX9HliOWxNHQM?utm_source=generator"
-            width="100%"
-            height="152"
-            frameborder="0"
-            allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-            loading="lazy">
-            </iframe>
+                style="border-radius:12px"
+                src="https://open.spotify.com/embed/track/38MsJMGTCcX9HliOWxNHQM?utm_source=generator"
+                width="100%"
+                height="152"
+                frameborder="0"
+                allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                loading="lazy"></iframe>
+            </div>
         </div>
-        </div>
-
-    </div>
     </section>
+
 
 
     <section>
@@ -364,7 +364,7 @@
         <h2>Live Videos</h2>
         <div class="content-warning" role="alert">
             <strong>Content warning:</strong>
-            Some videos contain flashing lights and strobe effects.
+            Some videos contain flashing lights.
         </div>
 
         <div id="videoCarousel" class="carousel slide" data-bs-ride="false">
