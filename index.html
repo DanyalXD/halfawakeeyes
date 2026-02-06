@@ -56,7 +56,7 @@
         h1 {
             font-size: 2.8rem;
             margin-bottom: 0.3rem;
-            color: #C1954F;
+            color: #5f615f;
         }
 
         p.subtitle {
@@ -68,8 +68,8 @@
         h2 {
             font-size: 1.6rem;
             margin-bottom: 1rem;
-            color: #C1954F;
-            border-left: 4px solid #C1954F;
+            color: #5f615f;
+            border-left: 4px solid #5f615f;
             padding-left: 1rem;
         }
 
@@ -80,13 +80,13 @@
         }
 
         a {
-            color: #C1954F;
+            color: #5f615f;
             text-decoration: none;
             transition: color 0.2s ease;
         }
 
         a:hover {
-            color: #C1954F;
+            color: #5f615f;
             text-decoration: underline;
         }
 
@@ -225,7 +225,7 @@
         }
 
         .text-gig-label {
-            color: #C1954F;
+            color: #5f615f;
         }
 
         /* Footer */
@@ -252,12 +252,30 @@
         }
 
         .content-warning {
-            margin: 1rem 0 2rem;
-            padding: 0.75rem 1rem;
-            border-left: 4px solid #ff8c00;
-            background: rgba(255, 140, 0, 0.08);
-            color: #eaeaf0;
-            font-size: 0.95rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin: 0.5rem 0 1.5rem;
+            padding: 0.35rem 0.75rem;
+            border: 1px solid #3a2a12;
+            border-radius: 999px;
+            background: rgba(255, 140, 0, 0.06);
+            color: #d8c6a2;
+            font-size: 0.85rem;
+        }
+
+        .content-warning::before {
+            content: "!";
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            border: 1px solid #9b6a1a;
+            color: #ffb347;
+            font-weight: 700;
+            line-height: 1;
         }
 
 
@@ -310,10 +328,9 @@
 
     <section>
         <h2>About the Band</h2>
-        <p>Half Awake Eyes are a four-piece alternative / progessive metal band from Glasgow, formed in late 2024. 
-           Known for their blend of crushing riffs, intricate rhythm work, and dynamic vocals, they create music that balances atmosphere and intensity. 
-           Influenced by modern progressive and post-metal, the band focus on feel, space, and storytelling over constant heaviness. 
-           Built on a collaborative foundation and a DIY mindset, Half Awake Eyes will release their debut single Malice on 3rd October 2025, followed by their full debut EP later this year.</p>
+        <p>Half Awake Eyes are a four-piece alternative / progressive metal band from Glasgow, formed in late 2024. Blending crushing riffs with intricate rhythm work and dynamic, emotive vocals, the band create music that balances atmosphere and intensity, prioritising feel, space, and storytelling over constant heaviness. Influenced by modern progressive and post-metal, their sound sits between weight and restraint.<br><br>
+           Since forming, the band have built strong early momentum through a DIY approach and consistent live activity. Their track “Dispossession” received airplay on BBC Introducing Scotland, marking an early milestone and helping establish the project beyond the local scene. The band have also secured upcoming support opportunities, including supporting The Cost at G2, along with planned showcase appearances such as Metal 2 the Masses.<br><br>
+           Half Awake Eyes will release their debut EP on the 11th of February 2026.</p>
     </section>
 
     <section>
@@ -362,9 +379,9 @@
 
     <section>
         <h2>Live Videos</h2>
-        <div class="content-warning" role="alert">
-            <strong>Content warning:</strong>
-            Some videos contain flashing lights.
+        <div class="content-warning" role="note">
+            <strong>Content warning</strong>
+            Flashing lights in some videos.
         </div>
 
         <div id="videoCarousel" class="carousel slide" data-bs-ride="false">
@@ -483,11 +500,13 @@
     </section>
 
     <footer>
-        &copy; 2025 Half Awake Eyes. All rights reserved.
+        &copy; <span id="footer-year"></span> Half Awake Eyes. All rights reserved.
         <a href="/privacy.html">Privacy Policy</a>
     </footer>
 
     <script>
+        document.getElementById("footer-year").textContent = new Date().getFullYear();
+
         const videos = document.querySelectorAll('video');
         const carousel = document.getElementById('videoCarousel');
 
@@ -503,11 +522,25 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getFirestore, doc, setDoc, getDocs, collection, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-    const firebaseConfig = {
+    const isLocal =
+      window.location.protocol === "file:" ||
+      window.location.hostname === "localhost" ||
+      window.location.hostname === "127.0.0.1" ||
+      window.location.hostname === "";
+
+    if (isLocal) {
+      const pastEl = document.getElementById("past-gigs");
+      const upcomingEl = document.getElementById("upcoming-gigs");
+      if (pastEl && upcomingEl) {
+        pastEl.innerHTML = `<li class="list-group-item bg-dark text-light border-secondary">Local mode: Firebase disabled.</li>`;
+        upcomingEl.innerHTML = `<li class="list-group-item bg-dark text-light border-secondary">Local mode: Firebase disabled.</li>`;
+      }
+    } else {
+      const firebaseConfig = {
         apiKey: "AIzaSyAv7G28uXxlQNG_HMLbBkuz4xseXzOzm4Y",
         authDomain: "half-awake-eyes.firebaseapp.com",
         projectId: "half-awake-eyes"
-    };
+      };
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
@@ -605,6 +638,7 @@
         console.error("Error fetching gig history:", e);
     }
 
+    }
   </script>
 </body>
 
