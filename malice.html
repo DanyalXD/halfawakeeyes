@@ -23,16 +23,44 @@
     // --- Helper for logging ---
     const params = new URLSearchParams(window.location.search);
     const userId = params.get("id") || "unknown";
+    const campaign = params.get("campaign") || params.get("utm_campaign") || "";
+    const source = params.get("source") || params.get("utm_source") || "";
+    const medium = params.get("utm_medium") || "";
+    const pagePath = window.location.pathname || "/";
 
-    const logEvent = async (action, target = "") => {
+    const getSessionId = () => {
       try {
-        const docId = `${Date.now()}-${action}`;
+        const existing = sessionStorage.getItem("hae-session-id");
+        if (existing) {
+          return existing;
+        }
+        const created = `s-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+        sessionStorage.setItem("hae-session-id", created);
+        return created;
+      } catch (error) {
+        return `s-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      }
+    };
+
+    const sessionId = getSessionId();
+
+    const logEvent = async (action, details = {}) => {
+      try {
+        const docId = `${userId}-${sessionId}-${Date.now()}-${action}`;
         const path = window.location.pathname || "/";
         await setDoc(doc(db, "ad-tracking", docId), {
+          userId,
+          sessionId,
           action,
-          target,
-          page: path,           // e.g. "/malice"
-          full_url: window.location.href, // optional full link, useful for analytics
+          target: details.target || "",
+          label: details.label || "",
+          source,
+          medium,
+          campaign,
+          page: path,
+          referrer: document.referrer || "",
+          full_url: window.location.href,
+          viewport: `${window.innerWidth}x${window.innerHeight}`,
           timestamp: new Date()
         });
       } catch (e) {
@@ -46,15 +74,15 @@
     const webLink = `https://open.spotify.com/track/${trackId}?utm_source=firebase&utm_medium=redirect`;
 
     window.onload = async () => {
-      await logEvent("page_view");
-      await logEvent("redirect_start", trackId);
+      await logEvent("page_view", { target: pagePath, label: document.title });
+      await logEvent("redirect_start", { target: trackId, label: "Spotify app redirect" });
 
       let fallbackFired = false;
 
       // --- Set fallback timer ---
       const fallbackTimer = setTimeout(async () => {
         fallbackFired = true;
-        await logEvent("redirect_fallback", trackId);
+        await logEvent("redirect_fallback", { target: trackId, label: "Web fallback redirect" });
         window.location.href = webLink;
       }, 2500);
 
@@ -65,7 +93,7 @@
       document.addEventListener("visibilitychange", async () => {
         if (document.hidden && !fallbackFired) {
           clearTimeout(fallbackTimer);
-          await logEvent("redirect_success_app", trackId);
+          await logEvent("redirect_success_app", { target: trackId, label: "Spotify app opened" });
         }
       });
     };
@@ -75,7 +103,7 @@
       const link = document.getElementById("manual-link");
       link.href = webLink;
       link.addEventListener("click", async () => {
-        await logEvent("manual_click", trackId);
+        await logEvent("manual_click", { target: trackId, label: "Manual fallback click" });
       });
     });
   </script>
