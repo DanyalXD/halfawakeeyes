@@ -339,6 +339,34 @@
       margin-bottom: 1.25rem;
     }
 
+    .view-toggle {
+      display: inline-grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.35rem;
+      width: fit-content;
+      padding: 0.3rem;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .view-toggle-button {
+      min-height: 40px;
+      padding: 0.45rem 0.95rem;
+      border: 0;
+      border-radius: 999px;
+      background: transparent;
+      color: var(--muted);
+      font-size: 0.9rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .view-toggle-button.active {
+      background: var(--accent);
+      color: #111;
+    }
+
     .summary-panel {
       padding: 1rem 1.1rem;
       margin-bottom: 1.25rem;
@@ -408,9 +436,10 @@
     }
 
     table {
-      width: 100%;
+      width: max-content;
+      min-width: 100%;
       margin: 0;
-      table-layout: fixed;
+      table-layout: auto;
       color: var(--text);
     }
 
@@ -432,18 +461,95 @@
       padding: 0.85rem 0.9rem;
       border-bottom: 1px solid var(--line);
       vertical-align: top;
-      word-break: break-word;
+      white-space: nowrap;
+      word-break: normal;
     }
 
     tbody tr:hover {
       background: rgba(255, 255, 255, 0.03);
     }
 
+    .session-row:hover {
+      background: transparent;
+    }
+
+    .session-row-cell {
+      background: rgba(255, 255, 255, 0.035);
+      border-bottom-color: rgba(255, 255, 255, 0.07);
+    }
+
+    .session-row-content {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .session-row-main {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      min-width: 0;
+    }
+
+    .session-row-title {
+      color: var(--accent-strong);
+      font-weight: 700;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .session-row-count {
+      padding: 0.22rem 0.55rem;
+      border-radius: 999px;
+      border: 1px solid rgba(143, 148, 142, 0.25);
+      background: var(--chip);
+      color: var(--text);
+      font-size: 0.78rem;
+      white-space: nowrap;
+    }
+
+    .session-row-meta {
+      color: var(--muted);
+      font-size: 0.84rem;
+      white-space: nowrap;
+    }
+
+    .session-row-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
     .cell-value {
-      display: inline-block;
-      max-width: 100%;
-      white-space: pre-wrap;
-      word-break: break-word;
+      display: block;
+      max-width: 220px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .cell-value[data-field="timestamp"] {
+      max-width: 170px;
+    }
+
+    .cell-value[data-field="page"],
+    .cell-value[data-field="section"],
+    .cell-value[data-field="target"],
+    .cell-value[data-field="source"],
+    .cell-value[data-field="medium"],
+    .cell-value[data-field="campaign"] {
+      max-width: 160px;
+    }
+
+    .cell-value[data-field="label"],
+    .cell-value[data-field="href"],
+    .cell-value[data-field="referrer"],
+    .cell-value[data-field="sessionId"],
+    .cell-value[data-field="id"] {
+      max-width: 280px;
     }
 
     .cell-value.code {
@@ -454,23 +560,41 @@
 
     .action-cell,
     .action-head {
-      width: 110px;
+      width: 92px;
       text-align: right;
+    }
+
+    .row-actions {
+      display: flex;
+      justify-content: flex-end;
     }
 
     .row-action {
       min-height: 36px;
       padding: 0.45rem 0.75rem;
       border-radius: 999px;
-      border: 1px solid rgba(255, 130, 130, 0.25);
-      background: rgba(120, 20, 20, 0.18);
-      color: #ffd0d0;
       font-size: 0.84rem;
       font-weight: 700;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text);
     }
 
     .row-action:hover,
     .row-action:focus {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: var(--line-strong);
+      color: var(--text);
+    }
+
+    .row-action.delete-action {
+      border-color: rgba(255, 130, 130, 0.25);
+      background: rgba(120, 20, 20, 0.18);
+      color: #ffd0d0;
+    }
+
+    .row-action.delete-action:hover,
+    .row-action.delete-action:focus {
       background: rgba(160, 28, 28, 0.24);
       border-color: rgba(255, 160, 160, 0.35);
       color: #fff0f0;
@@ -479,9 +603,87 @@
     .mobile-card-actions {
       display: flex;
       justify-content: flex-end;
+      gap: 0.5rem;
       margin-top: 0.7rem;
       padding-top: 0.65rem;
       border-top: 1px solid var(--line);
+    }
+
+    .details-dialog {
+      width: min(760px, calc(100% - 1.5rem));
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: var(--text);
+    }
+
+    .details-dialog::backdrop {
+      background: rgba(0, 0, 0, 0.74);
+      backdrop-filter: blur(8px);
+    }
+
+    .details-dialog-card {
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      background: linear-gradient(180deg, rgba(20, 20, 20, 0.98), rgba(14, 14, 14, 0.96));
+      box-shadow: var(--shadow);
+      padding: 1.4rem;
+    }
+
+    .details-dialog h2 {
+      margin: 0.7rem 0 0.35rem;
+      color: var(--accent-strong);
+      font-size: 1.4rem;
+    }
+
+    .details-dialog-subtitle {
+      color: var(--muted);
+      margin: 0;
+    }
+
+    .details-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.85rem;
+      margin-top: 1rem;
+      max-height: min(70vh, 620px);
+      overflow: auto;
+      padding-right: 0.2rem;
+    }
+
+    .details-field {
+      display: grid;
+      gap: 0.3rem;
+      padding: 0.85rem 0.95rem;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .details-field-label {
+      color: var(--muted);
+      font-size: 0.76rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .details-field-value {
+      color: var(--text);
+      word-break: break-word;
+      white-space: pre-wrap;
+    }
+
+    .details-field-value.code {
+      font-family: Consolas, monospace;
+      font-size: 0.84rem;
+      color: #d8d4cc;
+    }
+
+    .details-dialog-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.75rem;
+      margin-top: 1rem;
     }
 
     .delete-dialog {
@@ -643,6 +845,36 @@
       background: rgba(255, 255, 255, 0.03);
     }
 
+    .mobile-session-header {
+      display: grid;
+      gap: 0.3rem;
+      padding: 0.75rem 0.85rem;
+      border: 1px solid rgba(143, 148, 142, 0.18);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .mobile-session-title {
+      color: var(--accent-strong);
+      font-size: 0.92rem;
+      font-weight: 700;
+      word-break: break-word;
+    }
+
+    .mobile-session-meta {
+      color: var(--muted);
+      font-size: 0.82rem;
+      line-height: 1.35;
+    }
+
+    .mobile-session-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-top: 0.35rem;
+    }
+
     .mobile-card-header {
       display: flex;
       align-items: flex-start;
@@ -796,6 +1028,10 @@
         gap: 0.7rem;
       }
 
+      .view-toggle {
+        width: 100%;
+      }
+
       .stat-card {
         padding: 0.8rem 0.9rem;
         border-radius: 14px;
@@ -826,6 +1062,21 @@
         justify-content: space-between;
         padding: 0.38rem 0.7rem;
         font-size: 0.88rem;
+      }
+
+      .session-row-content {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .session-row-main,
+      .session-row-meta,
+      .session-row-actions {
+        width: 100%;
+      }
+
+      .session-row-actions {
+        justify-content: stretch;
       }
 
       .table-panel {
@@ -873,8 +1124,21 @@
         border-radius: 18px;
       }
 
+      .details-dialog-card {
+        padding: 1.1rem;
+        border-radius: 18px;
+      }
+
+      .details-grid {
+        grid-template-columns: 1fr;
+      }
+
       .delete-dialog-actions {
         flex-direction: column-reverse;
+      }
+
+      .details-dialog-actions .ghost-button {
+        width: 100%;
       }
 
       .danger-button,
@@ -971,6 +1235,11 @@
           </div>
         </div>
 
+        <div class="view-toggle" role="tablist" aria-label="Analytics view">
+          <button type="button" class="view-toggle-button active" data-view-mode="events">Events</button>
+          <button type="button" class="view-toggle-button" data-view-mode="sessions">Sessions</button>
+        </div>
+
         <div class="controls-secondary">
           <div>
             <input type="date" id="date-from" class="form-control" aria-label="Filter from date" />
@@ -1039,6 +1308,19 @@
     </div>
   </dialog>
 
+  <dialog id="details-dialog" class="details-dialog">
+    <div class="details-dialog-card">
+      <span class="eyebrow">Entry Details</span>
+      <h2 id="details-dialog-title">Analytics Entry</h2>
+      <p id="details-dialog-subtitle" class="details-dialog-subtitle">Full event details</p>
+      <div id="details-dialog-grid" class="details-grid"></div>
+      <div class="details-dialog-actions">
+        <button type="button" id="details-delete" class="btn danger-button">Delete Entry</button>
+        <button type="button" id="close-details" class="btn ghost-button">Close</button>
+      </div>
+    </div>
+  </dialog>
+
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { collection, deleteDoc, doc, getDocs, getFirestore, orderBy, query, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
@@ -1055,16 +1337,21 @@
     const state = {
       allLogs: [],
       filteredLogs: [],
+      sessionGroups: [],
       currentCollection: "site-actions",
       dynamicFields: [],
       page: 1,
       pageSize: 25,
+      viewMode: "events",
       searchTerm: "",
       dateFrom: "",
       dateTo: "",
       isRefreshing: false,
+      activeDetailsId: null,
+      expandedSessions: new Set(),
       deletingIds: new Set(),
-      pendingDeleteId: null,
+      deletingSessions: new Set(),
+      pendingDeleteTarget: null,
       refreshAfterDeleteClose: false
     };
 
@@ -1084,6 +1371,7 @@
       dateFrom: document.getElementById("date-from"),
       dateTo: document.getElementById("date-to"),
       refreshButton: document.getElementById("refresh-data"),
+      viewModeButtons: Array.from(document.querySelectorAll("[data-view-mode]")),
       exportCsv: document.getElementById("export-csv"),
       pageSize: document.getElementById("page-size"),
       fieldCount: document.getElementById("field-count"),
@@ -1091,6 +1379,12 @@
       heroCollection: document.getElementById("hero-collection"),
       heroUpdated: document.getElementById("hero-updated"),
       filterCaption: document.getElementById("filter-caption"),
+      detailsDialog: document.getElementById("details-dialog"),
+      detailsDialogTitle: document.getElementById("details-dialog-title"),
+      detailsDialogSubtitle: document.getElementById("details-dialog-subtitle"),
+      detailsDialogGrid: document.getElementById("details-dialog-grid"),
+      detailsDelete: document.getElementById("details-delete"),
+      closeDetails: document.getElementById("close-details"),
       deleteDialog: document.getElementById("delete-dialog"),
       deleteDialogEvent: document.getElementById("delete-dialog-event"),
       deleteDialogTimestamp: document.getElementById("delete-dialog-timestamp"),
@@ -1140,6 +1434,13 @@
       }
 
       return { text: String(value), isCode: String(value).length > 60 };
+    }
+
+    function formatFieldLabel(field) {
+      return field
+        .replace(/_/g, " ")
+        .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+        .replace(/\b\w/g, (char) => char.toUpperCase());
     }
 
     function getDateForFilter(value) {
@@ -1221,6 +1522,93 @@
       });
     }
 
+    function getVisibleTableFields() {
+      const presets = {
+        "site-actions": ["timestamp", "action", "label", "page", "target"],
+        "ad-tracking": ["timestamp", "action", "target", "source", "campaign"]
+      };
+
+      const fallbackPriority = [
+        "actionSubtype",
+        "section",
+        "pageName",
+        "outbound",
+        "medium",
+        "referrer"
+      ];
+
+      const preferred = (presets[state.currentCollection] || ["timestamp", "action", "label", "target", "page"])
+        .filter((field) => state.dynamicFields.includes(field));
+
+      const filler = fallbackPriority
+        .filter((field) => state.dynamicFields.includes(field) && !preferred.includes(field))
+        .slice(0, Math.max(0, 5 - preferred.length));
+
+      const tableFields = [...preferred, ...filler];
+      return tableFields.length ? tableFields : state.dynamicFields.slice(0, 5);
+    }
+
+    function getSessionGroupKey(entry, index) {
+      const rawSession = entry?.sessionId ? String(entry.sessionId).trim() : "";
+      return rawSession || `no-session-${entry?.id || index}`;
+    }
+
+    function getSessionGroupLabel(entry, index) {
+      const rawSession = entry?.sessionId ? String(entry.sessionId).trim() : "";
+      return rawSession || `No session (${String(entry?.id || index).slice(0, 6)})`;
+    }
+
+    function getSessionGroups(entries) {
+      const groups = new Map();
+
+      entries.forEach((entry, index) => {
+        const rawSession = entry?.sessionId ? String(entry.sessionId).trim() : "";
+        if (!rawSession) {
+          return;
+        }
+
+        const key = getSessionGroupKey(entry, index);
+        if (!groups.has(key)) {
+          groups.set(key, {
+            key,
+            label: getSessionGroupLabel(entry, index),
+            entries: [],
+            latestAt: null,
+            startedAt: null
+          });
+        }
+
+        const group = groups.get(key);
+        group.entries.push(entry);
+
+        const eventDate = getDateForFilter(entry.timestamp);
+        if (eventDate && (!group.latestAt || eventDate > group.latestAt)) {
+          group.latestAt = eventDate;
+        }
+        if (eventDate && (!group.startedAt || eventDate < group.startedAt)) {
+          group.startedAt = eventDate;
+        }
+      });
+
+      return [...groups.values()].sort((a, b) => {
+        const timeA = a.latestAt ? a.latestAt.getTime() : 0;
+        const timeB = b.latestAt ? b.latestAt.getTime() : 0;
+        return timeB - timeA;
+      });
+    }
+
+    function getActiveEntries() {
+      if (state.viewMode === "sessions") {
+        return state.sessionGroups.flatMap((group) => group.entries);
+      }
+
+      return state.filteredLogs;
+    }
+
+    function getSessionGroupByKey(sessionKey) {
+      return state.sessionGroups.find((group) => group.key === sessionKey) || null;
+    }
+
     function getBestGroupingField() {
       const candidates = [
         "action",
@@ -1241,13 +1629,24 @@
       elements.heroUpdated.textContent = `Updated: ${updatedAt}`;
     }
 
+    function syncViewModeButtons() {
+      elements.viewModeButtons.forEach((button) => {
+        const isActive = button.dataset.viewMode === state.viewMode;
+        button.classList.toggle("active", isActive);
+        button.setAttribute("aria-pressed", isActive ? "true" : "false");
+      });
+    }
+
     function renderStats() {
       const latestWithTimestamp = state.allLogs.find((entry) => formatTimestamp(entry.timestamp));
       const latestTimestamp = latestWithTimestamp ? formatTimestamp(latestWithTimestamp.timestamp) : "No timestamp";
-      const visibleCount = state.filteredLogs.length;
+      const activeEntries = getActiveEntries();
+      const visibleCount = activeEntries.length;
+      const sessionCount = state.sessionGroups.length;
       const groupingField = getBestGroupingField();
+      const tableFields = getVisibleTableFields();
       const uniqueActions = groupingField
-        ? new Set(state.allLogs.map((entry) => entry[groupingField]).filter(Boolean)).size
+        ? new Set(activeEntries.map((entry) => entry[groupingField]).filter(Boolean)).size
         : 0;
 
       elements.statsGrid.innerHTML = `
@@ -1274,22 +1673,35 @@
       `;
 
       elements.fieldCount.textContent = `${state.dynamicFields.length} fields detected`;
-      elements.collectionNote.textContent = `Viewing ${visibleCount} result${visibleCount === 1 ? "" : "s"} from ${state.currentCollection}.`;
-      elements.filterCaption.textContent = state.dateFrom || state.dateTo
+      elements.collectionNote.textContent = state.viewMode === "sessions"
+        ? `Viewing ${visibleCount} event${visibleCount === 1 ? "" : "s"} across ${sessionCount} session${sessionCount === 1 ? "" : "s"} from ${state.currentCollection}.`
+        : `Viewing ${visibleCount} result${visibleCount === 1 ? "" : "s"} from ${state.currentCollection}.`;
+      const baseCaption = state.dateFrom || state.dateTo
         ? `Filters applied: ${state.dateFrom || "any date"} to ${state.dateTo || "any date"}${state.searchTerm ? `, plus "${state.searchTerm}"` : ""}.`
         : `Search, date range, and collection filters apply to the table and export${state.searchTerm ? `, including "${state.searchTerm}".` : "."}`;
+      const visibilityNote = state.dynamicFields.length > tableFields.length
+        ? ` Table shows ${tableFields.length} key columns; open Details for the full event or export CSV for every field.`
+        : "";
+      const sessionNote = state.viewMode === "sessions"
+        ? " Session view groups filtered events by sessionId, hides events without a sessionId, and paginates by session."
+        : "";
+      elements.filterCaption.textContent = `${baseCaption}${visibilityNote}${sessionNote}`;
     }
 
     function renderSummary() {
+      const activeEntries = getActiveEntries();
+
       if (!state.allLogs.length) {
         elements.summary.innerHTML = `<span class="chip">No data available</span>`;
         elements.summaryCaption.textContent = "No event data loaded";
         return;
       }
 
-      if (!state.filteredLogs.length) {
-        elements.summary.innerHTML = `<span class="chip">No matching events</span>`;
-        elements.summaryCaption.textContent = "Current filters returned no rows";
+      if (!activeEntries.length) {
+        elements.summary.innerHTML = `<span class="chip">${state.viewMode === "sessions" ? "No matching sessions" : "No matching events"}</span>`;
+        elements.summaryCaption.textContent = state.viewMode === "sessions"
+          ? "Current filters returned no session-based rows"
+          : "Current filters returned no rows";
         return;
       }
 
@@ -1302,7 +1714,7 @@
       }
 
       const counts = {};
-      state.filteredLogs.forEach((entry) => {
+      activeEntries.forEach((entry) => {
         const key = entry[summaryField] ?? "Unknown";
         counts[key] = (counts[key] || 0) + 1;
       });
@@ -1317,6 +1729,188 @@
       elements.summaryCaption.textContent = `Grouped by ${summaryField}`;
     }
 
+    function createEventRow(entry, tableFields) {
+      const row = document.createElement("tr");
+
+      tableFields.forEach((field) => {
+        const cell = document.createElement("td");
+        const span = document.createElement("span");
+        const { text, isCode } = formatValue(entry[field], field);
+        span.className = `cell-value${isCode ? " code" : ""}`;
+        span.dataset.field = field;
+        span.textContent = text;
+        if (text && text !== "-") {
+          span.title = text;
+        }
+        cell.appendChild(span);
+        row.appendChild(cell);
+      });
+
+      const actionCell = document.createElement("td");
+      actionCell.className = "action-cell";
+      const actionsWrap = document.createElement("div");
+      actionsWrap.className = "row-actions";
+      actionsWrap.appendChild(createDetailsButton(entry.id));
+      actionCell.appendChild(actionsWrap);
+      row.appendChild(actionCell);
+
+      return row;
+    }
+
+    function createSessionHeaderRow(group, colSpan) {
+      const row = document.createElement("tr");
+      row.className = "session-row";
+
+      const cell = document.createElement("td");
+      cell.className = "session-row-cell";
+      cell.colSpan = colSpan;
+
+      const latestText = group.latestAt ? formatTimestamp(group.latestAt) : "No timestamp";
+      const wrap = document.createElement("div");
+      wrap.className = "session-row-content";
+
+      const main = document.createElement("div");
+      main.className = "session-row-main";
+
+      const title = document.createElement("span");
+      title.className = "session-row-title";
+      title.textContent = group.label;
+
+      const count = document.createElement("span");
+      count.className = "session-row-count";
+      count.textContent = `${group.entries.length} event${group.entries.length === 1 ? "" : "s"}`;
+
+      const meta = document.createElement("div");
+      meta.className = "session-row-meta";
+      meta.textContent = `Latest ${latestText}`;
+
+      const actions = document.createElement("div");
+      actions.className = "session-row-actions";
+
+      const toggleButton = document.createElement("button");
+      toggleButton.type = "button";
+      toggleButton.className = "row-action";
+      toggleButton.textContent = state.expandedSessions.has(group.key) ? "Collapse" : "Expand";
+      toggleButton.disabled = state.deletingSessions.has(group.key);
+      toggleButton.addEventListener("click", () => {
+        toggleSessionExpanded(group.key);
+      });
+
+      const deleteButton = document.createElement("button");
+      deleteButton.type = "button";
+      deleteButton.className = "row-action delete-action";
+      deleteButton.textContent = state.deletingSessions.has(group.key) ? "Deleting..." : "Delete Session";
+      deleteButton.disabled = state.deletingSessions.has(group.key);
+      deleteButton.addEventListener("click", () => {
+        openDeleteSessionDialog(group.key);
+      });
+
+      actions.appendChild(toggleButton);
+      actions.appendChild(deleteButton);
+      main.appendChild(title);
+      main.appendChild(count);
+      wrap.appendChild(main);
+      wrap.appendChild(meta);
+      wrap.appendChild(actions);
+
+      cell.appendChild(wrap);
+      row.appendChild(cell);
+      return row;
+    }
+
+    function createMobileEventCard(entry, titleText, indexText, tableFields) {
+      const card = document.createElement("article");
+      card.className = "mobile-card";
+
+      const cardHeader = document.createElement("div");
+      cardHeader.className = "mobile-card-header";
+
+      const title = document.createElement("div");
+      title.className = "mobile-card-title";
+      title.textContent = titleText;
+
+      const itemIndex = document.createElement("div");
+      itemIndex.className = "mobile-card-index";
+      itemIndex.textContent = indexText;
+
+      cardHeader.appendChild(title);
+      cardHeader.appendChild(itemIndex);
+      card.appendChild(cardHeader);
+
+      const grid = document.createElement("div");
+      grid.className = "mobile-card-grid";
+
+      tableFields.forEach((field) => {
+        const fieldWrap = document.createElement("div");
+        fieldWrap.className = "mobile-field";
+
+        const label = document.createElement("div");
+        label.className = "mobile-field-label";
+        label.textContent = formatFieldLabel(field);
+
+        const value = document.createElement("div");
+        const formatted = formatValue(entry[field], field);
+        value.className = `mobile-field-value${formatted.isCode ? " code" : ""}`;
+        value.textContent = formatted.text;
+
+        fieldWrap.appendChild(label);
+        fieldWrap.appendChild(value);
+        grid.appendChild(fieldWrap);
+      });
+
+      card.appendChild(grid);
+
+      const actions = document.createElement("div");
+      actions.className = "mobile-card-actions";
+      actions.appendChild(createDetailsButton(entry.id));
+      card.appendChild(actions);
+
+      return card;
+    }
+
+    function createMobileSessionHeader(group) {
+      const header = document.createElement("div");
+      header.className = "mobile-session-header";
+
+      const title = document.createElement("div");
+      title.className = "mobile-session-title";
+      title.textContent = group.label;
+
+      const meta = document.createElement("div");
+      meta.className = "mobile-session-meta";
+      const latestText = group.latestAt ? formatTimestamp(group.latestAt) : "No timestamp";
+      meta.textContent = `${group.entries.length} event${group.entries.length === 1 ? "" : "s"} - Latest ${latestText}`;
+
+      const actions = document.createElement("div");
+      actions.className = "mobile-session-actions";
+
+      const toggleButton = document.createElement("button");
+      toggleButton.type = "button";
+      toggleButton.className = "row-action";
+      toggleButton.textContent = state.expandedSessions.has(group.key) ? "Collapse" : "Expand";
+      toggleButton.disabled = state.deletingSessions.has(group.key);
+      toggleButton.addEventListener("click", () => {
+        toggleSessionExpanded(group.key);
+      });
+
+      const deleteButton = document.createElement("button");
+      deleteButton.type = "button";
+      deleteButton.className = "row-action delete-action";
+      deleteButton.textContent = state.deletingSessions.has(group.key) ? "Deleting..." : "Delete Session";
+      deleteButton.disabled = state.deletingSessions.has(group.key);
+      deleteButton.addEventListener("click", () => {
+        openDeleteSessionDialog(group.key);
+      });
+
+      actions.appendChild(toggleButton);
+      actions.appendChild(deleteButton);
+
+      header.appendChild(title);
+      header.appendChild(meta);
+      header.appendChild(actions);
+      return header;
+    }
+
     function renderTable() {
       elements.tableHead.innerHTML = "";
       elements.tableBody.innerHTML = "";
@@ -1328,10 +1922,11 @@
         return;
       }
 
+      const tableFields = getVisibleTableFields();
       const headerRow = document.createElement("tr");
-      state.dynamicFields.forEach((field) => {
+      tableFields.forEach((field) => {
         const th = document.createElement("th");
-        th.textContent = field;
+        th.textContent = formatFieldLabel(field);
         headerRow.appendChild(th);
       });
       const actionHead = document.createElement("th");
@@ -1340,116 +1935,215 @@
       headerRow.appendChild(actionHead);
       elements.tableHead.appendChild(headerRow);
 
-      if (!state.filteredLogs.length) {
+      if (!getActiveEntries().length) {
         const row = document.createElement("tr");
         const cell = document.createElement("td");
-        cell.colSpan = state.dynamicFields.length + 1;
-        cell.innerHTML = `<div class="empty-state">No matching events. Try a broader search.</div>`;
+        cell.colSpan = tableFields.length + 1;
+        cell.innerHTML = `<div class="empty-state">${state.viewMode === "sessions" ? "No matching sessions. Try a broader search or switch back to Events." : "No matching events. Try a broader search."}</div>`;
         row.appendChild(cell);
         elements.tableBody.appendChild(row);
-        elements.mobileCards.innerHTML = `<div class="empty-state">No matching events. Try a broader search.</div>`;
+        elements.mobileCards.innerHTML = `<div class="empty-state">${state.viewMode === "sessions" ? "No matching sessions. Try a broader search or switch back to Events." : "No matching events. Try a broader search."}</div>`;
         return;
       }
 
       const start = (state.page - 1) * state.pageSize;
+
+      if (state.viewMode === "sessions") {
+        const pageGroups = state.sessionGroups.slice(start, start + state.pageSize);
+        pageGroups.forEach((group) => {
+          elements.tableBody.appendChild(createSessionHeaderRow(group, tableFields.length + 1));
+          if (state.expandedSessions.has(group.key)) {
+            group.entries.forEach((entry) => {
+              elements.tableBody.appendChild(createEventRow(entry, tableFields));
+            });
+          }
+
+          elements.mobileCards.appendChild(createMobileSessionHeader(group));
+          if (state.expandedSessions.has(group.key)) {
+            group.entries.forEach((entry, index) => {
+              const titleText = entry.label || entry.action || entry.target || entry.page || state.currentCollection;
+              const indexText = formatTimestamp(entry.timestamp) || `Event ${index + 1}`;
+              elements.mobileCards.appendChild(createMobileEventCard(entry, titleText, indexText, tableFields));
+            });
+          }
+        });
+
+        return;
+      }
+
       const pageItems = state.filteredLogs.slice(start, start + state.pageSize);
 
       pageItems.forEach((entry) => {
-        const row = document.createElement("tr");
-
-        state.dynamicFields.forEach((field) => {
-          const cell = document.createElement("td");
-          const span = document.createElement("span");
-          const { text, isCode } = formatValue(entry[field], field);
-          span.className = `cell-value${isCode ? " code" : ""}`;
-          span.textContent = text;
-          cell.appendChild(span);
-          row.appendChild(cell);
-        });
-
-        const actionCell = document.createElement("td");
-        actionCell.className = "action-cell";
-        actionCell.appendChild(createDeleteButton(entry.id));
-        row.appendChild(actionCell);
-
-        elements.tableBody.appendChild(row);
+        elements.tableBody.appendChild(createEventRow(entry, tableFields));
       });
 
       pageItems.forEach((entry, index) => {
-        const card = document.createElement("article");
-        card.className = "mobile-card";
-
-        const cardHeader = document.createElement("div");
-        cardHeader.className = "mobile-card-header";
-
-        const title = document.createElement("div");
-        title.className = "mobile-card-title";
-        title.textContent = entry.action || entry.page || state.currentCollection;
-
-        const itemIndex = document.createElement("div");
-        itemIndex.className = "mobile-card-index";
-        itemIndex.textContent = `#${start + index + 1}`;
-
-        cardHeader.appendChild(title);
-        cardHeader.appendChild(itemIndex);
-        card.appendChild(cardHeader);
-
-        const grid = document.createElement("div");
-        grid.className = "mobile-card-grid";
-
-        state.dynamicFields.forEach((field) => {
-          const fieldWrap = document.createElement("div");
-          fieldWrap.className = "mobile-field";
-
-          const label = document.createElement("div");
-          label.className = "mobile-field-label";
-          label.textContent = field;
-
-          const value = document.createElement("div");
-          const formatted = formatValue(entry[field], field);
-          value.className = `mobile-field-value${formatted.isCode ? " code" : ""}`;
-          value.textContent = formatted.text;
-
-          fieldWrap.appendChild(label);
-          fieldWrap.appendChild(value);
-          grid.appendChild(fieldWrap);
-        });
-
-        card.appendChild(grid);
-
-        const actions = document.createElement("div");
-        actions.className = "mobile-card-actions";
-        actions.appendChild(createDeleteButton(entry.id));
-        card.appendChild(actions);
-
-        elements.mobileCards.appendChild(card);
+        const titleText = entry.label || entry.action || entry.target || entry.page || state.currentCollection;
+        const indexText = `#${start + index + 1}`;
+        elements.mobileCards.appendChild(createMobileEventCard(entry, titleText, indexText, tableFields));
       });
     }
 
-    function createDeleteButton(id) {
+    function createDetailsButton(id) {
       const button = document.createElement("button");
       button.type = "button";
       button.className = "row-action";
-      button.textContent = state.deletingIds.has(id) ? "Deleting..." : "Delete";
-      button.disabled = state.deletingIds.has(id);
+      button.textContent = "View";
       button.addEventListener("click", () => {
-        openDeleteDialog(id);
+        openDetailsDialog(id);
       });
       return button;
     }
 
-    function getDeleteDialogCopy(id) {
-      const entry = state.allLogs.find((item) => item.id === id);
-      const eventLabel = entry?.label || entry?.target || entry?.action || entry?.page || id;
+    function getEntryById(id) {
+      return state.allLogs.find((item) => item.id === id);
+    }
+
+    function closeDetailsDialog() {
+      if (elements.detailsDialog.open) {
+        elements.detailsDialog.close();
+      }
+    }
+
+    function openDetailsDialog(id) {
+      const entry = getEntryById(id);
+      if (!entry) {
+        return;
+      }
+
+      state.activeDetailsId = id;
+      const entryTitle = entry.label || entry.action || entry.target || entry.page || "Analytics Entry";
+      const timestamp = formatTimestamp(entry.timestamp);
+      const visibleFields = state.dynamicFields.filter((field) => {
+        const value = entry[field];
+        return value !== null && value !== undefined && value !== "";
+      });
+
+      elements.detailsDialogTitle.textContent = entryTitle;
+      elements.detailsDialogSubtitle.textContent = timestamp
+        ? `${state.currentCollection} - ${timestamp}`
+        : `Full ${state.currentCollection} event details`;
+      elements.detailsDelete.disabled = state.deletingIds.has(id);
+      elements.detailsDelete.textContent = state.deletingIds.has(id) ? "Deleting..." : "Delete Entry";
+      elements.detailsDialogGrid.innerHTML = "";
+
+      visibleFields.forEach((field) => {
+        const fieldCard = document.createElement("div");
+        fieldCard.className = "details-field";
+
+        const label = document.createElement("div");
+        label.className = "details-field-label";
+        label.textContent = formatFieldLabel(field);
+
+        const value = document.createElement("div");
+        const formatted = formatValue(entry[field], field);
+        value.className = `details-field-value${formatted.isCode ? " code" : ""}`;
+        value.textContent = formatted.text;
+
+        fieldCard.appendChild(label);
+        fieldCard.appendChild(value);
+        elements.detailsDialogGrid.appendChild(fieldCard);
+      });
+
+      if (!visibleFields.length) {
+        elements.detailsDialogGrid.innerHTML = `<div class="empty-state">No additional fields available for this entry.</div>`;
+      }
+
+      if (!elements.detailsDialog.open) {
+        elements.detailsDialog.showModal();
+      }
+    }
+
+    function openDeleteFromDetails() {
+      const id = state.activeDetailsId;
+      if (!id) {
+        return;
+      }
+
+      closeDetailsDialog();
+      openDeleteDialog(id);
+    }
+
+    function toggleSessionExpanded(sessionKey) {
+      if (!sessionKey) {
+        return;
+      }
+
+      if (state.expandedSessions.has(sessionKey)) {
+        state.expandedSessions.delete(sessionKey);
+      } else {
+        state.expandedSessions.add(sessionKey);
+      }
+
+      renderTable();
+    }
+
+    function isDeleteTargetInProgress(target) {
+      if (!target) {
+        return false;
+      }
+
+      if (target.type === "session") {
+        return state.deletingSessions.has(target.sessionKey);
+      }
+
+      return state.deletingIds.has(target.id);
+    }
+
+    function openDeleteSessionDialog(sessionKey) {
+      const group = getSessionGroupByKey(sessionKey);
+      if (!group || state.deletingSessions.has(sessionKey)) {
+        return;
+      }
+
+      state.pendingDeleteTarget = {
+        type: "session",
+        sessionKey,
+        ids: group.entries.map((entry) => entry.id),
+        label: group.label,
+        count: group.entries.length,
+        latestAt: group.latestAt ? formatTimestamp(group.latestAt) : "No timestamp available"
+      };
+      state.refreshAfterDeleteClose = false;
+      elements.deleteDialogError.textContent = "";
+      const { eventLabel, timestamp } = getDeleteDialogCopy(state.pendingDeleteTarget);
+      elements.deleteDialogEvent.textContent = eventLabel;
+      elements.deleteDialogTimestamp.textContent = timestamp;
+      syncDeleteDialogState();
+
+      if (!elements.deleteDialog.open) {
+        elements.deleteDialog.showModal();
+      }
+    }
+
+    function getDeleteDialogCopy(target) {
+      if (!target) {
+        return { eventLabel: "-", timestamp: "-" };
+      }
+
+      if (target.type === "session") {
+        return {
+          eventLabel: target.label,
+          timestamp: `${target.count} event${target.count === 1 ? "" : "s"} in this session`
+        };
+      }
+
+      const entry = getEntryById(target.id);
+      const eventLabel = entry?.label || entry?.target || entry?.action || entry?.page || target.id;
       const timestamp = entry ? (formatTimestamp(entry.timestamp) || "No timestamp available") : "No timestamp available";
       return { eventLabel, timestamp };
     }
 
     function syncDeleteDialogState() {
-      const isDeleting = Boolean(state.pendingDeleteId && state.deletingIds.has(state.pendingDeleteId));
-      elements.confirmDelete.disabled = !state.pendingDeleteId || isDeleting;
+      const isDeleting = isDeleteTargetInProgress(state.pendingDeleteTarget);
+      const isSessionDelete = state.pendingDeleteTarget?.type === "session";
+      elements.confirmDelete.disabled = !state.pendingDeleteTarget || isDeleting;
       elements.cancelDelete.disabled = isDeleting;
-      elements.confirmDelete.textContent = isDeleting ? "Deleting..." : "Delete Entry";
+      elements.confirmDelete.textContent = isDeleting
+        ? "Deleting..."
+        : isSessionDelete
+          ? "Delete Session"
+          : "Delete Entry";
     }
 
     function syncRefreshButton() {
@@ -1472,11 +2166,11 @@
         return;
       }
 
-      state.pendingDeleteId = id;
+      state.pendingDeleteTarget = { type: "entry", id };
       state.refreshAfterDeleteClose = false;
       elements.deleteDialogError.textContent = "";
 
-      const { eventLabel, timestamp } = getDeleteDialogCopy(id);
+      const { eventLabel, timestamp } = getDeleteDialogCopy(state.pendingDeleteTarget);
       elements.deleteDialogEvent.textContent = eventLabel;
       elements.deleteDialogTimestamp.textContent = timestamp;
       syncDeleteDialogState();
@@ -1487,26 +2181,40 @@
     }
 
     async function confirmDeleteEntry() {
-      const id = state.pendingDeleteId;
-      if (!id || state.deletingIds.has(id)) {
+      const target = state.pendingDeleteTarget;
+      if (!target || isDeleteTargetInProgress(target)) {
         return;
       }
 
-      state.deletingIds.add(id);
+      if (target.type === "session") {
+        state.deletingSessions.add(target.sessionKey);
+      } else {
+        state.deletingIds.add(target.id);
+      }
       elements.deleteDialogError.textContent = "";
       renderTable();
       syncDeleteDialogState();
 
       try {
-        await deleteDoc(doc(db, state.currentCollection, id));
+        if (target.type === "session") {
+          await Promise.all(target.ids.map((id) => deleteDoc(doc(db, state.currentCollection, id))));
+        } else {
+          await deleteDoc(doc(db, state.currentCollection, target.id));
+        }
         state.refreshAfterDeleteClose = true;
         closeDeleteDialog();
       } catch (error) {
         console.error("Failed to delete entry:", error);
-        state.deletingIds.delete(id);
+        if (target.type === "session") {
+          state.deletingSessions.delete(target.sessionKey);
+        } else {
+          state.deletingIds.delete(target.id);
+        }
         renderTable();
         syncDeleteDialogState();
-        elements.deleteDialogError.textContent = "Could not delete this entry. Check the console for details.";
+        elements.deleteDialogError.textContent = target.type === "session"
+          ? "Could not delete this session. Check the console for details."
+          : "Could not delete this entry. Check the console for details.";
       }
     }
 
@@ -1542,13 +2250,14 @@
     }
 
     function renderPagination() {
-      const totalResults = state.filteredLogs.length;
+      const totalResults = state.viewMode === "sessions" ? state.sessionGroups.length : state.filteredLogs.length;
       const totalPages = Math.max(1, Math.ceil(totalResults / state.pageSize));
       state.page = Math.min(state.page, totalPages);
 
       const start = totalResults === 0 ? 0 : (state.page - 1) * state.pageSize + 1;
       const end = Math.min(state.page * state.pageSize, totalResults);
-      elements.paginationMeta.textContent = `Showing ${start}-${end} of ${totalResults} result${totalResults === 1 ? "" : "s"}`;
+      const itemLabel = state.viewMode === "sessions" ? "session" : "result";
+      elements.paginationMeta.textContent = `Showing ${start}-${end} of ${totalResults} ${itemLabel}${totalResults === 1 ? "" : "s"}`;
       elements.pagination.innerHTML = "";
 
       elements.pagination.appendChild(createPageItem("Prev", state.page - 1, { disabled: state.page === 1 }));
@@ -1610,7 +2319,10 @@
         return matchesSearch && matchesFrom && matchesTo;
       });
 
+      state.sessionGroups = getSessionGroups(state.filteredLogs);
+      state.expandedSessions = new Set();
       state.page = 1;
+      syncViewModeButtons();
       renderStats();
       renderSummary();
       renderTable();
@@ -1641,6 +2353,7 @@
         console.error("Error loading logs:", error);
         state.allLogs = [];
         state.filteredLogs = [];
+        state.sessionGroups = [];
         state.dynamicFields = [];
         updateHeroMeta("Load failed");
         renderStats();
@@ -1674,31 +2387,67 @@
       loadLogs(collectionName);
     }
 
+    function setViewMode(mode) {
+      if (!mode || mode === state.viewMode) {
+        return;
+      }
+
+      state.viewMode = mode;
+      if (mode === "sessions") {
+        state.expandedSessions = new Set();
+      }
+      state.page = 1;
+      syncViewModeButtons();
+      renderStats();
+      renderTable();
+      renderPagination();
+    }
+
     document.addEventListener("DOMContentLoaded", () => {
       const form = document.getElementById("login-form");
       syncDeleteDialogState();
       syncRefreshButton();
+      syncViewModeButtons();
 
       const lastLogin = localStorage.getItem("dashboardLogin");
       if (lastLogin && Date.now() - Number.parseInt(lastLogin, 10) < 24 * 60 * 60 * 1000) {
         showDashboard();
       }
 
+      elements.detailsDialog.addEventListener("close", () => {
+        state.activeDetailsId = null;
+        elements.detailsDialogTitle.textContent = "Analytics Entry";
+        elements.detailsDialogSubtitle.textContent = "Full event details";
+        elements.detailsDialogGrid.innerHTML = "";
+        elements.detailsDelete.disabled = false;
+        elements.detailsDelete.textContent = "Delete Entry";
+      });
+
+      elements.detailsDelete.addEventListener("click", () => {
+        openDeleteFromDetails();
+      });
+
+      elements.closeDetails.addEventListener("click", () => {
+        closeDetailsDialog();
+      });
+
       elements.deleteDialog.addEventListener("cancel", (event) => {
-        if (state.pendingDeleteId && state.deletingIds.has(state.pendingDeleteId)) {
+        if (isDeleteTargetInProgress(state.pendingDeleteTarget)) {
           event.preventDefault();
         }
       });
 
       elements.deleteDialog.addEventListener("close", () => {
         const shouldReload = state.refreshAfterDeleteClose;
-        const pendingId = state.pendingDeleteId;
+        const pendingTarget = state.pendingDeleteTarget;
 
-        if (pendingId) {
-          state.deletingIds.delete(pendingId);
+        if (pendingTarget?.type === "session") {
+          state.deletingSessions.delete(pendingTarget.sessionKey);
+        } else if (pendingTarget?.type === "entry") {
+          state.deletingIds.delete(pendingTarget.id);
         }
 
-        state.pendingDeleteId = null;
+        state.pendingDeleteTarget = null;
         state.refreshAfterDeleteClose = false;
         elements.deleteDialogError.textContent = "";
         elements.deleteDialogEvent.textContent = "-";
@@ -1753,6 +2502,12 @@
         link.addEventListener("click", (event) => {
           event.preventDefault();
           setActiveCollection(event.currentTarget.dataset.collection);
+        });
+      });
+
+      elements.viewModeButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+          setViewMode(button.dataset.viewMode);
         });
       });
 
