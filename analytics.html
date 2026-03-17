@@ -199,6 +199,14 @@
       padding: 1.5rem;
     }
 
+    .dashboard-page {
+      display: none;
+    }
+
+    .dashboard-page.active {
+      display: block;
+    }
+
     .tabs-wrap {
       display: flex;
       flex-wrap: wrap;
@@ -833,6 +841,172 @@
       min-height: 1.3rem;
     }
 
+    .manager-panel {
+      display: grid;
+      grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+      gap: 1rem;
+      margin-top: 1.35rem;
+    }
+
+    .manager-card {
+      padding: 1rem 1.1rem;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .gig-form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.85rem;
+    }
+
+    .gig-form-grid .full-span {
+      grid-column: 1 / -1;
+    }
+
+    .manager-subcopy {
+      margin: 0 0 0.95rem;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .gig-manager-status {
+      min-height: 1.35rem;
+      margin-top: 0.8rem;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .gig-manager-status.is-success {
+      color: #b9dec0;
+    }
+
+    .gig-manager-status.is-error {
+      color: #ffb7b7;
+    }
+
+    .gig-admin-list {
+      display: grid;
+      gap: 0.75rem;
+    }
+
+    .gig-admin-item {
+      display: grid;
+      gap: 0.3rem;
+      padding: 0.85rem 0.95rem;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.025);
+    }
+
+    .gig-admin-item.is-hidden {
+      opacity: 0.82;
+      border-color: rgba(255, 196, 128, 0.22);
+      background: rgba(255, 196, 128, 0.03);
+    }
+
+    .gig-admin-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .gig-admin-date {
+      color: var(--accent-strong);
+      font-size: 0.86rem;
+      font-weight: 700;
+    }
+
+    .gig-admin-main {
+      color: var(--text);
+      font-size: 1rem;
+      font-weight: 700;
+    }
+
+    .gig-admin-meta {
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .gig-admin-badge {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      padding: 0.22rem 0.65rem;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--muted);
+      font-size: 0.76rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .gig-admin-badge.hidden {
+      border-color: rgba(255, 196, 128, 0.25);
+      background: rgba(255, 196, 128, 0.08);
+      color: #f0d3a8;
+    }
+
+    .gig-admin-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.55rem;
+      margin-top: 0.3rem;
+      flex-wrap: wrap;
+    }
+
+    .gig-admin-empty {
+      padding: 0.85rem 0;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .gig-edit-form {
+      display: grid;
+      gap: 0.9rem;
+      margin-top: 0.8rem;
+    }
+
+    .gig-edit-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.85rem;
+    }
+
+    .gig-edit-grid .full-span {
+      grid-column: 1 / -1;
+    }
+
+    .gig-edit-toggle {
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+      padding: 0.85rem 0.95rem;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.03);
+      color: var(--text);
+      font-size: 0.95rem;
+    }
+
+    .gig-edit-toggle input {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--accent);
+      margin: 0;
+      flex: 0 0 auto;
+    }
+
+    .gig-edit-helper {
+      color: var(--muted);
+      font-size: 0.88rem;
+      line-height: 1.45;
+    }
+
     .mobile-card-list {
       display: none;
       gap: 0.85rem;
@@ -963,6 +1137,12 @@
         width: 100%;
         justify-content: space-between;
         margin-left: 0;
+      }
+
+      .manager-panel,
+      .gig-form-grid,
+      .gig-edit-grid {
+        grid-template-columns: 1fr;
       }
     }
 
@@ -1197,10 +1377,13 @@
       <div class="tabs-wrap">
         <ul class="nav nav-tabs">
           <li class="nav-item">
-            <a class="nav-link active tab-label" href="#" data-collection="site-actions">Site Actions</a>
+            <a class="nav-link active tab-label" href="#" data-page="analytics" data-collection="site-actions">Site Actions</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link tab-label" href="#" data-collection="ad-tracking">Ad Tracking</a>
+            <a class="nav-link tab-label" href="#" data-page="analytics" data-collection="ad-tracking">Ad Tracking</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link tab-label" href="#" data-page="gigs">Gigs</a>
           </li>
         </ul>
         <div class="tabs-meta">
@@ -1209,75 +1392,127 @@
         </div>
       </div>
 
-      <div class="stats-grid" id="stats-grid">
-        <article class="stat-card">
-          <div class="label">Total Events</div>
-          <div class="value">0</div>
-          <div class="detail">Nothing loaded yet</div>
-        </article>
+      <div id="analytics-page" class="dashboard-page active">
+        <div class="stats-grid" id="stats-grid">
+          <article class="stat-card">
+            <div class="label">Total Events</div>
+            <div class="value">0</div>
+            <div class="detail">Nothing loaded yet</div>
+          </article>
+        </div>
+
+        <div class="control-stack">
+          <div class="controls">
+            <div class="search-wrap">
+              <input type="search" id="search-input" class="form-control" placeholder="Search by action, page, campaign, ID, or any field..." />
+            </div>
+            <div>
+              <select id="page-size" class="form-select" aria-label="Rows per page">
+                <option value="10">10 rows</option>
+                <option value="25" selected>25 rows</option>
+                <option value="50">50 rows</option>
+                <option value="100">100 rows</option>
+              </select>
+            </div>
+            <div>
+              <div id="field-count" class="meta-pill">0 fields detected</div>
+            </div>
+          </div>
+
+          <div class="view-toggle" role="tablist" aria-label="Analytics view">
+            <button type="button" class="view-toggle-button active" data-view-mode="events">Events</button>
+            <button type="button" class="view-toggle-button" data-view-mode="sessions">Sessions</button>
+          </div>
+
+          <div class="controls-secondary">
+            <div>
+              <input type="date" id="date-from" class="form-control" aria-label="Filter from date" />
+            </div>
+            <div>
+              <input type="date" id="date-to" class="form-control" aria-label="Filter to date" />
+            </div>
+            <div class="export-wrap">
+              <button type="button" id="export-csv" class="btn ghost-button w-100">Export CSV</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="summary-panel">
+          <div class="section-title">
+            <h3>Event Breakdown</h3>
+            <span id="summary-caption">No data loaded</span>
+          </div>
+          <div class="helper-copy" id="filter-caption">Search, date range, and collection filters apply to the table and export.</div>
+          <div class="chip-list" id="summary"></div>
+        </div>
+
+        <div class="table-panel">
+          <div class="table-responsive">
+            <table>
+              <thead id="log-head"></thead>
+              <tbody id="log-rows"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="mobile-card-list" id="mobile-log-cards"></div>
+
+        <div class="pagination-bar">
+          <div class="pagination-meta" id="pagination-meta">0 results</div>
+          <nav aria-label="Analytics pagination">
+            <ul class="pagination" id="pagination"></ul>
+          </nav>
+        </div>
       </div>
 
-      <div class="control-stack">
-        <div class="controls">
-          <div class="search-wrap">
-            <input type="search" id="search-input" class="form-control" placeholder="Search by action, page, campaign, ID, or any field..." />
+      <div id="gigs-page" class="dashboard-page">
+        <div class="summary-panel">
+          <div class="section-title">
+            <h3>Gig Manager</h3>
+            <span>Manage the `gigs` collection</span>
           </div>
-          <div>
-            <select id="page-size" class="form-select" aria-label="Rows per page">
-              <option value="10">10 rows</option>
-              <option value="25" selected>25 rows</option>
-              <option value="50">50 rows</option>
-              <option value="100">100 rows</option>
-            </select>
-          </div>
-          <div>
-            <div id="field-count" class="meta-pill">0 fields detected</div>
-          </div>
+          <div class="helper-copy">Add and review the shows that appear in the EPK gig history section.</div>
         </div>
 
-        <div class="view-toggle" role="tablist" aria-label="Analytics view">
-          <button type="button" class="view-toggle-button active" data-view-mode="events">Events</button>
-          <button type="button" class="view-toggle-button" data-view-mode="sessions">Sessions</button>
-        </div>
-
-        <div class="controls-secondary">
-          <div>
-            <input type="date" id="date-from" class="form-control" aria-label="Filter from date" />
+        <div class="manager-panel">
+          <div class="manager-card">
+            <div class="section-title">
+              <h3>Add Gig</h3>
+              <span>Write to Firestore</span>
+            </div>
+            <p class="manager-subcopy">Use the same `date`, `event`, `venue`, and `city` fields the public site already reads.</p>
+            <form id="gig-form">
+              <div class="gig-form-grid">
+                <div>
+                  <input type="date" id="gig-date" class="form-control" aria-label="Gig date" required />
+                </div>
+                <div>
+                  <input type="text" id="gig-event" class="form-control" placeholder="Event or show name" aria-label="Gig event" required />
+                </div>
+                <div>
+                  <input type="text" id="gig-venue" class="form-control" placeholder="Venue" aria-label="Gig venue" required />
+                </div>
+                <div>
+                  <input type="text" id="gig-city" class="form-control" placeholder="City (optional)" aria-label="Gig city" />
+                </div>
+                <div class="full-span">
+                  <button type="submit" id="save-gig" class="btn btn-accent w-100">Save Gig</button>
+                </div>
+              </div>
+            </form>
+            <div id="gig-status" class="gig-manager-status" aria-live="polite"></div>
           </div>
-          <div>
-            <input type="date" id="date-to" class="form-control" aria-label="Filter to date" />
+
+          <div class="manager-card">
+            <div class="section-title">
+              <h3>Current Gigs</h3>
+              <span id="gig-count">No gigs loaded</span>
+            </div>
+            <div id="gig-list" class="gig-admin-list">
+              <div class="gig-admin-empty">No gigs loaded yet.</div>
+            </div>
           </div>
-          <div class="export-wrap">
-            <button type="button" id="export-csv" class="btn ghost-button w-100">Export CSV</button>
-          </div>
         </div>
-      </div>
-
-      <div class="summary-panel">
-        <div class="section-title">
-          <h3>Event Breakdown</h3>
-          <span id="summary-caption">No data loaded</span>
-        </div>
-        <div class="helper-copy" id="filter-caption">Search, date range, and collection filters apply to the table and export.</div>
-        <div class="chip-list" id="summary"></div>
-      </div>
-
-      <div class="table-panel">
-        <div class="table-responsive">
-          <table>
-            <thead id="log-head"></thead>
-            <tbody id="log-rows"></tbody>
-          </table>
-        </div>
-      </div>
-
-      <div class="mobile-card-list" id="mobile-log-cards"></div>
-
-      <div class="pagination-bar">
-        <div class="pagination-meta" id="pagination-meta">0 results</div>
-        <nav aria-label="Analytics pagination">
-          <ul class="pagination" id="pagination"></ul>
-        </nav>
       </div>
     </section>
   </div>
@@ -1285,8 +1520,8 @@
   <dialog id="delete-dialog" class="delete-dialog">
     <div class="delete-dialog-card">
       <span class="eyebrow">Delete Entry</span>
-      <h2>Remove this analytics entry?</h2>
-      <p>This action will permanently delete the selected record from the current collection.</p>
+      <h2 id="delete-dialog-title">Remove this analytics entry?</h2>
+      <p id="delete-dialog-description">This action will permanently delete the selected record from the current collection.</p>
 
       <div class="delete-dialog-meta">
         <div class="delete-dialog-row">
@@ -1321,9 +1556,49 @@
     </div>
   </dialog>
 
+  <dialog id="gig-edit-dialog" class="details-dialog">
+    <div class="details-dialog-card">
+      <span class="eyebrow">Edit Gig</span>
+      <h2 id="gig-edit-title">Update gig entry</h2>
+      <p class="details-dialog-subtitle">Change the gig details, hide it from the public site, or remove it entirely.</p>
+
+      <form id="gig-edit-form" class="gig-edit-form">
+        <div class="gig-edit-grid">
+          <div>
+            <input type="date" id="gig-edit-date" class="form-control" aria-label="Edit gig date" required />
+          </div>
+          <div>
+            <input type="text" id="gig-edit-event" class="form-control" placeholder="Event or show name" aria-label="Edit gig event" required />
+          </div>
+          <div>
+            <input type="text" id="gig-edit-venue" class="form-control" placeholder="Venue" aria-label="Edit gig venue" required />
+          </div>
+          <div>
+            <input type="text" id="gig-edit-city" class="form-control" placeholder="City (optional)" aria-label="Edit gig city" />
+          </div>
+          <div class="full-span">
+            <label class="gig-edit-toggle" for="gig-edit-hidden">
+              <input type="checkbox" id="gig-edit-hidden" />
+              <span>Hide this gig from the public EPK gig history.</span>
+            </label>
+          </div>
+        </div>
+        <div class="gig-edit-helper">Hidden gigs stay in Firestore and remain manageable here, but they no longer show on the public site.</div>
+      </form>
+
+      <div id="gig-edit-error" class="status-message" aria-live="polite"></div>
+
+      <div class="details-dialog-actions">
+        <button type="button" id="gig-delete" class="btn danger-button">Delete Gig</button>
+        <button type="button" id="close-gig-edit" class="btn ghost-button">Close</button>
+        <button type="submit" form="gig-edit-form" id="save-gig-edit" class="btn btn-accent">Save Changes</button>
+      </div>
+    </div>
+  </dialog>
+
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { collection, deleteDoc, doc, getDocs, getFirestore, orderBy, query, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { addDoc, collection, deleteDoc, doc, getDocs, getFirestore, orderBy, query, updateDoc, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyAv7G28uXxlQNG_HMLbBkuz4xseXzOzm4Y",
@@ -1338,6 +1613,8 @@
       allLogs: [],
       filteredLogs: [],
       sessionGroups: [],
+      gigs: [],
+      activePage: "analytics",
       currentCollection: "site-actions",
       dynamicFields: [],
       page: 1,
@@ -1347,9 +1624,14 @@
       dateFrom: "",
       dateTo: "",
       isRefreshing: false,
+      isLoadingGigs: false,
+      isSavingGig: false,
+      isUpdatingGig: false,
       activeDetailsId: null,
+      activeGigId: null,
       expandedSessions: new Set(),
       deletingIds: new Set(),
+      deletingGigIds: new Set(),
       deletingSessions: new Set(),
       pendingDeleteTarget: null,
       refreshAfterDeleteClose: false
@@ -1359,6 +1641,9 @@
       dashboard: document.getElementById("dashboard"),
       login: document.getElementById("login"),
       loginError: document.getElementById("login-error"),
+      analyticsPage: document.getElementById("analytics-page"),
+      gigsPage: document.getElementById("gigs-page"),
+      pageTabs: Array.from(document.querySelectorAll("[data-page]")),
       summary: document.getElementById("summary"),
       summaryCaption: document.getElementById("summary-caption"),
       statsGrid: document.getElementById("stats-grid"),
@@ -1375,6 +1660,27 @@
       exportCsv: document.getElementById("export-csv"),
       pageSize: document.getElementById("page-size"),
       fieldCount: document.getElementById("field-count"),
+      gigForm: document.getElementById("gig-form"),
+      gigDate: document.getElementById("gig-date"),
+      gigEvent: document.getElementById("gig-event"),
+      gigVenue: document.getElementById("gig-venue"),
+      gigCity: document.getElementById("gig-city"),
+      saveGig: document.getElementById("save-gig"),
+      gigStatus: document.getElementById("gig-status"),
+      gigList: document.getElementById("gig-list"),
+      gigCount: document.getElementById("gig-count"),
+      gigEditDialog: document.getElementById("gig-edit-dialog"),
+      gigEditTitle: document.getElementById("gig-edit-title"),
+      gigEditForm: document.getElementById("gig-edit-form"),
+      gigEditDate: document.getElementById("gig-edit-date"),
+      gigEditEvent: document.getElementById("gig-edit-event"),
+      gigEditVenue: document.getElementById("gig-edit-venue"),
+      gigEditCity: document.getElementById("gig-edit-city"),
+      gigEditHidden: document.getElementById("gig-edit-hidden"),
+      gigEditError: document.getElementById("gig-edit-error"),
+      gigDelete: document.getElementById("gig-delete"),
+      closeGigEdit: document.getElementById("close-gig-edit"),
+      saveGigEdit: document.getElementById("save-gig-edit"),
       collectionNote: document.getElementById("collection-note"),
       heroCollection: document.getElementById("hero-collection"),
       heroUpdated: document.getElementById("hero-updated"),
@@ -1386,6 +1692,8 @@
       detailsDelete: document.getElementById("details-delete"),
       closeDetails: document.getElementById("close-details"),
       deleteDialog: document.getElementById("delete-dialog"),
+      deleteDialogTitle: document.getElementById("delete-dialog-title"),
+      deleteDialogDescription: document.getElementById("delete-dialog-description"),
       deleteDialogEvent: document.getElementById("delete-dialog-event"),
       deleteDialogTimestamp: document.getElementById("delete-dialog-timestamp"),
       deleteDialogError: document.getElementById("delete-dialog-error"),
@@ -1441,6 +1749,23 @@
         .replace(/_/g, " ")
         .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
         .replace(/\b\w/g, (char) => char.toUpperCase());
+    }
+
+    function formatGigDate(value) {
+      if (!value) {
+        return "No date";
+      }
+
+      const date = new Date(`${value}T00:00:00`);
+      if (Number.isNaN(date.getTime())) {
+        return value;
+      }
+
+      return date.toLocaleDateString("en-GB", {
+        day: "numeric",
+        month: "short",
+        year: "numeric"
+      });
     }
 
     function getDateForFilter(value) {
@@ -1624,9 +1949,269 @@
         || state.dynamicFields.find((field) => field !== "timestamp");
     }
 
+    function getActiveCollectionLabel() {
+      return state.activePage === "gigs" ? "gigs" : state.currentCollection;
+    }
+
     function updateHeroMeta(updatedAt = "Not loaded") {
-      elements.heroCollection.textContent = `Collection: ${state.currentCollection}`;
+      elements.heroCollection.textContent = `Collection: ${getActiveCollectionLabel()}`;
       elements.heroUpdated.textContent = `Updated: ${updatedAt}`;
+    }
+
+    function setGigStatus(message = "", type = "") {
+      elements.gigStatus.textContent = message;
+      elements.gigStatus.classList.remove("is-success", "is-error");
+      if (type) {
+        elements.gigStatus.classList.add(type);
+      }
+    }
+
+    function getGigById(id) {
+      return state.gigs.find((gig) => gig.id === id) || null;
+    }
+
+    function isGigHidden(gig) {
+      return gig?.hidden === true;
+    }
+
+    function syncGigFormState() {
+      elements.saveGig.disabled = state.isSavingGig;
+      elements.saveGig.textContent = state.isSavingGig ? "Saving..." : "Save Gig";
+    }
+
+    function syncGigEditState() {
+      const hasActiveGig = Boolean(state.activeGigId);
+      elements.saveGigEdit.disabled = state.isUpdatingGig || !hasActiveGig;
+      elements.saveGigEdit.textContent = state.isUpdatingGig ? "Saving..." : "Save Changes";
+      elements.gigDelete.disabled = state.isUpdatingGig || !hasActiveGig || state.deletingGigIds.has(state.activeGigId);
+      elements.gigDelete.textContent = state.deletingGigIds.has(state.activeGigId) ? "Deleting..." : "Delete Gig";
+      elements.closeGigEdit.disabled = state.isUpdatingGig;
+    }
+
+    function resetGigEditDialog() {
+      state.activeGigId = null;
+      state.isUpdatingGig = false;
+      elements.gigEditTitle.textContent = "Update gig entry";
+      elements.gigEditForm.reset();
+      elements.gigEditHidden.checked = false;
+      elements.gigEditError.textContent = "";
+      syncGigEditState();
+    }
+
+    function closeGigEditDialog() {
+      if (elements.gigEditDialog.open) {
+        elements.gigEditDialog.close();
+      }
+    }
+
+    function openGigEditDialog(id) {
+      const gig = getGigById(id);
+      if (!gig) {
+        return;
+      }
+
+      state.activeGigId = id;
+      state.isUpdatingGig = false;
+      elements.gigEditTitle.textContent = gig.event || "Live show";
+      elements.gigEditDate.value = gig.date || "";
+      elements.gigEditEvent.value = gig.event || "";
+      elements.gigEditVenue.value = gig.venue || "";
+      elements.gigEditCity.value = gig.city || "";
+      elements.gigEditHidden.checked = isGigHidden(gig);
+      elements.gigEditError.textContent = "";
+      syncGigEditState();
+
+      if (!elements.gigEditDialog.open) {
+        elements.gigEditDialog.showModal();
+      }
+    }
+
+    function renderGigs() {
+      const hiddenCount = state.gigs.filter((gig) => isGigHidden(gig)).length;
+      elements.gigCount.textContent = state.gigs.length
+        ? `${state.gigs.length} gig${state.gigs.length === 1 ? "" : "s"} loaded${hiddenCount ? ` • ${hiddenCount} hidden` : ""}`
+        : "No gigs loaded";
+
+      if (state.gigs.length) {
+        elements.gigCount.textContent = `${state.gigs.length} gig${state.gigs.length === 1 ? "" : "s"} loaded${hiddenCount ? ` | ${hiddenCount} hidden` : ""}`;
+      }
+
+      if (!state.gigs.length) {
+        elements.gigList.innerHTML = `<div class="gig-admin-empty">No gigs loaded yet.</div>`;
+        if (state.activePage === "gigs") {
+          syncActivePageUI();
+        }
+        return;
+      }
+
+      elements.gigList.innerHTML = "";
+      state.gigs.forEach((gig) => {
+        const item = document.createElement("div");
+        item.className = `gig-admin-item${isGigHidden(gig) ? " is-hidden" : ""}`;
+
+        const top = document.createElement("div");
+        top.className = "gig-admin-top";
+
+        const date = document.createElement("div");
+        date.className = "gig-admin-date";
+        date.textContent = formatGigDate(gig.date);
+
+        top.appendChild(date);
+
+        if (isGigHidden(gig)) {
+          const badge = document.createElement("span");
+          badge.className = "gig-admin-badge hidden";
+          badge.textContent = "Hidden";
+          top.appendChild(badge);
+        }
+
+        const main = document.createElement("div");
+        main.className = "gig-admin-main";
+        main.textContent = gig.event || "Live show";
+
+        const meta = document.createElement("div");
+        meta.className = "gig-admin-meta";
+        meta.textContent = `${gig.venue || "Venue"}${gig.city ? `, ${gig.city}` : ""}`;
+
+        const actions = document.createElement("div");
+        actions.className = "gig-admin-actions";
+
+        const editButton = document.createElement("button");
+        editButton.type = "button";
+        editButton.className = "row-action";
+        editButton.textContent = "Edit";
+        editButton.addEventListener("click", () => {
+          openGigEditDialog(gig.id);
+        });
+
+        actions.appendChild(editButton);
+
+        item.appendChild(top);
+        item.appendChild(main);
+        item.appendChild(meta);
+        item.appendChild(actions);
+        elements.gigList.appendChild(item);
+      });
+
+      if (state.activePage === "gigs") {
+        syncActivePageUI();
+      }
+    }
+
+    async function loadGigs() {
+      state.isLoadingGigs = true;
+      syncRefreshButton();
+      elements.gigCount.textContent = "Loading gigs...";
+      elements.gigList.innerHTML = `<div class="gig-admin-empty">Loading gigs...</div>`;
+      if (state.activePage === "gigs") {
+        elements.collectionNote.textContent = "Loading gigs from Firestore...";
+        updateHeroMeta("Loading...");
+      }
+
+      try {
+        let snapshot;
+        try {
+          snapshot = await getDocs(query(collection(db, "gigs"), orderBy("date", "asc")));
+        } catch (error) {
+          console.warn("Falling back to unordered gig load.", error);
+          snapshot = await getDocs(collection(db, "gigs"));
+        }
+
+        state.gigs = snapshot.docs
+          .map((gigDoc) => ({ id: gigDoc.id, ...gigDoc.data() }))
+          .sort((a, b) => String(a.date || "").localeCompare(String(b.date || "")));
+        renderGigs();
+        if (state.activePage === "gigs") {
+          updateHeroMeta(new Date().toLocaleString());
+        }
+      } catch (error) {
+        console.error("Error loading gigs:", error);
+        state.gigs = [];
+        elements.gigCount.textContent = "Load failed";
+        elements.gigList.innerHTML = `<div class="gig-admin-empty">Could not load gigs. Check the browser console for details.</div>`;
+        if (state.activePage === "gigs") {
+          updateHeroMeta("Load failed");
+          syncActivePageUI();
+        }
+      } finally {
+        state.isLoadingGigs = false;
+        syncRefreshButton();
+        if (state.activePage === "gigs") {
+          syncActivePageUI();
+        }
+      }
+    }
+
+    async function saveGig(event) {
+      event.preventDefault();
+      if (state.isSavingGig) {
+        return;
+      }
+
+      const payload = {
+        date: elements.gigDate.value,
+        event: elements.gigEvent.value.trim(),
+        venue: elements.gigVenue.value.trim(),
+        city: elements.gigCity.value.trim()
+      };
+
+      if (!payload.date || !payload.event || !payload.venue) {
+        setGigStatus("Date, event, and venue are required.", "is-error");
+        return;
+      }
+
+      state.isSavingGig = true;
+      syncGigFormState();
+      setGigStatus("");
+
+      try {
+        await addDoc(collection(db, "gigs"), payload);
+        elements.gigForm.reset();
+        setGigStatus("Gig saved to Firestore.", "is-success");
+        await loadGigs();
+      } catch (error) {
+        console.error("Error saving gig:", error);
+        setGigStatus("Could not save gig. Check the browser console for details.", "is-error");
+      } finally {
+        state.isSavingGig = false;
+        syncGigFormState();
+      }
+    }
+
+    async function saveGigEdit(event) {
+      event.preventDefault();
+      if (state.isUpdatingGig || !state.activeGigId) {
+        return;
+      }
+
+      const payload = {
+        date: elements.gigEditDate.value,
+        event: elements.gigEditEvent.value.trim(),
+        venue: elements.gigEditVenue.value.trim(),
+        city: elements.gigEditCity.value.trim(),
+        hidden: elements.gigEditHidden.checked
+      };
+
+      if (!payload.date || !payload.event || !payload.venue) {
+        elements.gigEditError.textContent = "Date, event, and venue are required.";
+        return;
+      }
+
+      state.isUpdatingGig = true;
+      elements.gigEditError.textContent = "";
+      syncGigEditState();
+
+      try {
+        await updateDoc(doc(db, "gigs", state.activeGigId), payload);
+        await loadGigs();
+        closeGigEditDialog();
+      } catch (error) {
+        console.error("Error updating gig:", error);
+        elements.gigEditError.textContent = "Could not update gig. Check the browser console for details.";
+      } finally {
+        state.isUpdatingGig = false;
+        syncGigEditState();
+      }
     }
 
     function syncViewModeButtons() {
@@ -1673,9 +2258,11 @@
       `;
 
       elements.fieldCount.textContent = `${state.dynamicFields.length} fields detected`;
-      elements.collectionNote.textContent = state.viewMode === "sessions"
-        ? `Viewing ${visibleCount} event${visibleCount === 1 ? "" : "s"} across ${sessionCount} session${sessionCount === 1 ? "" : "s"} from ${state.currentCollection}.`
-        : `Viewing ${visibleCount} result${visibleCount === 1 ? "" : "s"} from ${state.currentCollection}.`;
+      if (state.activePage === "analytics") {
+        elements.collectionNote.textContent = state.viewMode === "sessions"
+          ? `Viewing ${visibleCount} event${visibleCount === 1 ? "" : "s"} across ${sessionCount} session${sessionCount === 1 ? "" : "s"} from ${state.currentCollection}.`
+          : `Viewing ${visibleCount} result${visibleCount === 1 ? "" : "s"} from ${state.currentCollection}.`;
+      }
       const baseCaption = state.dateFrom || state.dateTo
         ? `Filters applied: ${state.dateFrom || "any date"} to ${state.dateTo || "any date"}${state.searchTerm ? `, plus "${state.searchTerm}"` : ""}.`
         : `Search, date range, and collection filters apply to the table and export${state.searchTerm ? `, including "${state.searchTerm}".` : "."}`;
@@ -2083,6 +2670,10 @@
         return false;
       }
 
+      if (target.type === "gig") {
+        return state.deletingGigIds.has(target.id);
+      }
+
       if (target.type === "session") {
         return state.deletingSessions.has(target.sessionKey);
       }
@@ -2109,6 +2700,7 @@
       const { eventLabel, timestamp } = getDeleteDialogCopy(state.pendingDeleteTarget);
       elements.deleteDialogEvent.textContent = eventLabel;
       elements.deleteDialogTimestamp.textContent = timestamp;
+      syncDeleteDialogCopy();
       syncDeleteDialogState();
 
       if (!elements.deleteDialog.open) {
@@ -2116,9 +2708,17 @@
       }
     }
 
-    function getDeleteDialogCopy(target) {
+    function getDeleteDialogCopyLegacy(target) {
       if (!target) {
         return { eventLabel: "-", timestamp: "-" };
+      }
+
+      if (target.type === "gig") {
+        const gig = getGigById(target.id);
+        return {
+          eventLabel: gig?.event || "Live show",
+          timestamp: gig ? `${formatGigDate(gig.date)} • ${gig.venue || "Venue"}${gig.city ? `, ${gig.city}` : ""}` : "No gig details available"
+        };
       }
 
       if (target.type === "session") {
@@ -2137,17 +2737,103 @@
     function syncDeleteDialogState() {
       const isDeleting = isDeleteTargetInProgress(state.pendingDeleteTarget);
       const isSessionDelete = state.pendingDeleteTarget?.type === "session";
+      const isGigDelete = state.pendingDeleteTarget?.type === "gig";
       elements.confirmDelete.disabled = !state.pendingDeleteTarget || isDeleting;
       elements.cancelDelete.disabled = isDeleting;
       elements.confirmDelete.textContent = isDeleting
         ? "Deleting..."
+        : isGigDelete
+          ? "Delete Gig"
         : isSessionDelete
           ? "Delete Session"
           : "Delete Entry";
     }
 
+    function getDeleteDialogCopy(target) {
+      if (!target) {
+        return { eventLabel: "-", timestamp: "-" };
+      }
+
+      if (target.type === "gig") {
+        const gig = getGigById(target.id);
+        return {
+          eventLabel: gig?.event || "Live show",
+          timestamp: gig ? `${formatGigDate(gig.date)} | ${gig.venue || "Venue"}${gig.city ? `, ${gig.city}` : ""}` : "No gig details available"
+        };
+      }
+
+      if (target.type === "session") {
+        return {
+          eventLabel: target.label,
+          timestamp: `${target.count} event${target.count === 1 ? "" : "s"} in this session`
+        };
+      }
+
+      const entry = getEntryById(target.id);
+      const eventLabel = entry?.label || entry?.target || entry?.action || entry?.page || target.id;
+      const timestamp = entry ? (formatTimestamp(entry.timestamp) || "No timestamp available") : "No timestamp available";
+      return { eventLabel, timestamp };
+    }
+
+    function syncDeleteDialogCopy() {
+      if (!state.pendingDeleteTarget) {
+        elements.deleteDialogTitle.textContent = "Remove this analytics entry?";
+        elements.deleteDialogDescription.textContent = "This action will permanently delete the selected record from the current collection.";
+        return;
+      }
+
+      if (state.pendingDeleteTarget.type === "gig") {
+        elements.deleteDialogTitle.textContent = "Remove this gig?";
+        elements.deleteDialogDescription.textContent = "This action will permanently delete the selected gig from the gigs collection.";
+        return;
+      }
+
+      if (state.pendingDeleteTarget.type === "session") {
+        elements.deleteDialogTitle.textContent = "Remove this session?";
+        elements.deleteDialogDescription.textContent = "This action will permanently delete every event in the selected session from the current collection.";
+        return;
+      }
+
+      elements.deleteDialogTitle.textContent = "Remove this analytics entry?";
+      elements.deleteDialogDescription.textContent = "This action will permanently delete the selected record from the current collection.";
+    }
+
+    function syncActivePageUI() {
+      const isAnalyticsPage = state.activePage === "analytics";
+      elements.analyticsPage.classList.toggle("active", isAnalyticsPage);
+      elements.gigsPage.classList.toggle("active", !isAnalyticsPage);
+
+      elements.pageTabs.forEach((link) => {
+        const isAnalyticsTab = link.dataset.page === "analytics";
+        const isActive = isAnalyticsTab
+          ? isAnalyticsPage && link.dataset.collection === state.currentCollection
+          : !isAnalyticsPage && link.dataset.page === state.activePage;
+        link.classList.toggle("active", isActive);
+      });
+
+      if (isAnalyticsPage) {
+        const visibleCount = state.viewMode === "sessions" ? state.sessionGroups.length : state.filteredLogs.length;
+        elements.collectionNote.textContent = state.viewMode === "sessions"
+          ? `Viewing ${getActiveEntries().length} event${getActiveEntries().length === 1 ? "" : "s"} across ${visibleCount} session${visibleCount === 1 ? "" : "s"} from ${state.currentCollection}.`
+          : `Viewing ${visibleCount} result${visibleCount === 1 ? "" : "s"} from ${state.currentCollection}.`;
+      } else {
+        elements.collectionNote.textContent = state.isLoadingGigs
+          ? "Loading gigs from Firestore..."
+          : `Managing ${state.gigs.length} gig${state.gigs.length === 1 ? "" : "s"} in the gigs collection.`;
+      }
+
+      elements.heroCollection.textContent = `Collection: ${getActiveCollectionLabel()}`;
+      syncRefreshButton();
+    }
+
     function syncRefreshButton() {
       if (!elements.refreshButton) {
+        return;
+      }
+
+      if (state.activePage === "gigs") {
+        elements.refreshButton.disabled = state.isLoadingGigs;
+        elements.refreshButton.textContent = state.isLoadingGigs ? "Refreshing..." : "Refresh Gigs";
         return;
       }
 
@@ -2173,6 +2859,27 @@
       const { eventLabel, timestamp } = getDeleteDialogCopy(state.pendingDeleteTarget);
       elements.deleteDialogEvent.textContent = eventLabel;
       elements.deleteDialogTimestamp.textContent = timestamp;
+      syncDeleteDialogCopy();
+      syncDeleteDialogState();
+
+      if (!elements.deleteDialog.open) {
+        elements.deleteDialog.showModal();
+      }
+    }
+
+    function openDeleteGigDialog(id) {
+      if (!id || state.deletingGigIds.has(id)) {
+        return;
+      }
+
+      state.pendingDeleteTarget = { type: "gig", id };
+      state.refreshAfterDeleteClose = false;
+      elements.deleteDialogError.textContent = "";
+
+      const { eventLabel, timestamp } = getDeleteDialogCopy(state.pendingDeleteTarget);
+      elements.deleteDialogEvent.textContent = eventLabel;
+      elements.deleteDialogTimestamp.textContent = timestamp;
+      syncDeleteDialogCopy();
       syncDeleteDialogState();
 
       if (!elements.deleteDialog.open) {
@@ -2186,17 +2893,25 @@
         return;
       }
 
-      if (target.type === "session") {
+      if (target.type === "gig") {
+        state.deletingGigIds.add(target.id);
+      } else if (target.type === "session") {
         state.deletingSessions.add(target.sessionKey);
       } else {
         state.deletingIds.add(target.id);
       }
       elements.deleteDialogError.textContent = "";
-      renderTable();
+      if (state.activePage === "gigs") {
+        renderGigs();
+      } else {
+        renderTable();
+      }
       syncDeleteDialogState();
 
       try {
-        if (target.type === "session") {
+        if (target.type === "gig") {
+          await deleteDoc(doc(db, "gigs", target.id));
+        } else if (target.type === "session") {
           await Promise.all(target.ids.map((id) => deleteDoc(doc(db, state.currentCollection, id))));
         } else {
           await deleteDoc(doc(db, state.currentCollection, target.id));
@@ -2205,14 +2920,22 @@
         closeDeleteDialog();
       } catch (error) {
         console.error("Failed to delete entry:", error);
-        if (target.type === "session") {
+        if (target.type === "gig") {
+          state.deletingGigIds.delete(target.id);
+        } else if (target.type === "session") {
           state.deletingSessions.delete(target.sessionKey);
         } else {
           state.deletingIds.delete(target.id);
         }
-        renderTable();
+        if (state.activePage === "gigs") {
+          renderGigs();
+        } else {
+          renderTable();
+        }
         syncDeleteDialogState();
-        elements.deleteDialogError.textContent = target.type === "session"
+        elements.deleteDialogError.textContent = target.type === "gig"
+          ? "Could not delete this gig. Check the console for details."
+          : target.type === "session"
           ? "Could not delete this session. Check the console for details."
           : "Could not delete this entry. Check the console for details.";
       }
@@ -2376,14 +3099,23 @@
     function showDashboard() {
       elements.login.style.display = "none";
       elements.dashboard.style.display = "block";
+      syncGigFormState();
+      syncActivePageUI();
       loadLogs(state.currentCollection);
+      loadGigs();
     }
 
-    function setActiveCollection(collectionName) {
+    function setActivePage(page, collectionName = state.currentCollection) {
+      if (page === "gigs") {
+        state.activePage = "gigs";
+        syncActivePageUI();
+        loadGigs();
+        return;
+      }
+
+      state.activePage = "analytics";
       state.currentCollection = collectionName;
-      document.querySelectorAll("[data-collection]").forEach((link) => {
-        link.classList.toggle("active", link.dataset.collection === collectionName);
-      });
+      syncActivePageUI();
       loadLogs(collectionName);
     }
 
@@ -2406,8 +3138,12 @@
     document.addEventListener("DOMContentLoaded", () => {
       const form = document.getElementById("login-form");
       syncDeleteDialogState();
+      syncDeleteDialogCopy();
+      syncActivePageUI();
       syncRefreshButton();
       syncViewModeButtons();
+      syncGigFormState();
+      syncGigEditState();
 
       const lastLogin = localStorage.getItem("dashboardLogin");
       if (lastLogin && Date.now() - Number.parseInt(lastLogin, 10) < 24 * 60 * 60 * 1000) {
@@ -2423,12 +3159,30 @@
         elements.detailsDelete.textContent = "Delete Entry";
       });
 
+      elements.gigEditDialog.addEventListener("close", () => {
+        resetGigEditDialog();
+      });
+
       elements.detailsDelete.addEventListener("click", () => {
         openDeleteFromDetails();
       });
 
       elements.closeDetails.addEventListener("click", () => {
         closeDetailsDialog();
+      });
+
+      elements.closeGigEdit.addEventListener("click", () => {
+        closeGigEditDialog();
+      });
+
+      elements.gigDelete.addEventListener("click", () => {
+        const gigId = state.activeGigId;
+        if (!gigId) {
+          return;
+        }
+
+        closeGigEditDialog();
+        openDeleteGigDialog(gigId);
       });
 
       elements.deleteDialog.addEventListener("cancel", (event) => {
@@ -2441,7 +3195,9 @@
         const shouldReload = state.refreshAfterDeleteClose;
         const pendingTarget = state.pendingDeleteTarget;
 
-        if (pendingTarget?.type === "session") {
+        if (pendingTarget?.type === "gig") {
+          state.deletingGigIds.delete(pendingTarget.id);
+        } else if (pendingTarget?.type === "session") {
           state.deletingSessions.delete(pendingTarget.sessionKey);
         } else if (pendingTarget?.type === "entry") {
           state.deletingIds.delete(pendingTarget.id);
@@ -2450,14 +3206,23 @@
         state.pendingDeleteTarget = null;
         state.refreshAfterDeleteClose = false;
         elements.deleteDialogError.textContent = "";
+        syncDeleteDialogCopy();
         elements.deleteDialogEvent.textContent = "-";
         elements.deleteDialogTimestamp.textContent = "-";
         syncDeleteDialogState();
 
         if (shouldReload) {
-          loadLogs(state.currentCollection);
+          if (state.activePage === "gigs") {
+            loadGigs();
+          } else {
+            loadLogs(state.currentCollection);
+          }
         } else {
-          renderTable();
+          if (state.activePage === "gigs") {
+            renderGigs();
+          } else {
+            renderTable();
+          }
         }
       });
 
@@ -2498,10 +3263,14 @@
         }
       });
 
-      document.querySelectorAll("[data-collection]").forEach((link) => {
+      elements.gigForm.addEventListener("submit", saveGig);
+      elements.gigEditForm.addEventListener("submit", saveGigEdit);
+
+      elements.pageTabs.forEach((link) => {
         link.addEventListener("click", (event) => {
           event.preventDefault();
-          setActiveCollection(event.currentTarget.dataset.collection);
+          const target = event.currentTarget;
+          setActivePage(target.dataset.page, target.dataset.collection);
         });
       });
 
@@ -2531,6 +3300,11 @@
       });
 
       elements.refreshButton.addEventListener("click", () => {
+        if (state.activePage === "gigs") {
+          loadGigs();
+          return;
+        }
+
         loadLogs(state.currentCollection);
       });
 

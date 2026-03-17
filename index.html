@@ -1963,11 +1963,29 @@
             });
         }
 
+        const isGigHidden = (gig) => gig?.hidden === true;
+        const parseGigDate = (value) => {
+            if (!value) {
+                return null;
+            }
+
+            if (value instanceof Date) {
+                return Number.isNaN(value.getTime()) ? null : value;
+            }
+
+            if (typeof value === "object" && typeof value.seconds === "number") {
+                const fromTimestamp = new Date(value.seconds * 1000);
+                return Number.isNaN(fromTimestamp.getTime()) ? null : fromTimestamp;
+            }
+
+            const parsed = new Date(value);
+            return Number.isNaN(parsed.getTime()) ? null : parsed;
+        };
+
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
         const gigsRef = collection(db, "gigs");
-        const q = query(gigsRef, orderBy("date", "asc"));
 
         const renderGigItem = (gig, formattedDate) => {
             const li = document.createElement("li");
@@ -2000,33 +2018,62 @@
         };
 
         try {
-            const snapshot = await getDocs(q);
-            const pastEl = document.getElementById("past-gigs");
-            const upcomingEl = document.getElementById("upcoming-gigs");
-
-            if (snapshot.empty) {
-                pastEl.innerHTML = `<li class="gig-empty">No past gigs.</li>`;
-                upcomingEl.innerHTML = `<li class="gig-empty">No upcoming gigs.</li>`;
+            let snapshot;
+            try {
+                snapshot = await getDocs(query(gigsRef, orderBy("date", "asc")));
+            } catch (error) {
+                console.warn("Falling back to unordered gig load.", error);
+                snapshot = await getDocs(gigsRef);
             }
 
-            snapshot.forEach(doc => {
-                const gig = doc.data();
-                const gigDate = new Date(gig.date);
-                gigDate.setHours(0, 0, 0, 0);
-
-                const formattedDate = gigDate.toLocaleDateString("en-US", {
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric"
+            const pastEl = document.getElementById("past-gigs");
+            const upcomingEl = document.getElementById("upcoming-gigs");
+            const visibleGigs = snapshot.docs
+                .map(doc => ({ id: doc.id, ...doc.data() }))
+                .filter(gig => !isGigHidden(gig))
+                .sort((a, b) => {
+                    const dateA = parseGigDate(a.date);
+                    const dateB = parseGigDate(b.date);
+                    const timeA = dateA ? dateA.getTime() : Number.MAX_SAFE_INTEGER;
+                    const timeB = dateB ? dateB.getTime() : Number.MAX_SAFE_INTEGER;
+                    return timeA - timeB;
                 });
-                const li = renderGigItem(gig, formattedDate);
 
-                if (gigDate < today) {
-                    pastEl.appendChild(li);
-                } else {
-                    upcomingEl.appendChild(li);
+            if (!visibleGigs.length) {
+                pastEl.innerHTML = `<li class="gig-empty">No past gigs.</li>`;
+                upcomingEl.innerHTML = `<li class="gig-empty">No upcoming gigs.</li>`;
+            } else {
+                visibleGigs.forEach(gig => {
+                    const gigDate = parseGigDate(gig.date);
+                    const gigDateOnly = gigDate ? new Date(gigDate) : null;
+                    if (gigDateOnly) {
+                        gigDateOnly.setHours(0, 0, 0, 0);
+                    }
+
+                    const formattedDate = gigDateOnly
+                        ? gigDateOnly.toLocaleDateString("en-US", {
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric"
+                        })
+                        : (gig.date || "Date TBC");
+                    const li = renderGigItem(gig, formattedDate);
+
+                    if (gigDateOnly && gigDateOnly < today) {
+                        pastEl.appendChild(li);
+                    } else {
+                        upcomingEl.appendChild(li);
+                    }
+                });
+
+                if (!pastEl.children.length) {
+                    pastEl.innerHTML = `<li class="gig-empty">No past gigs.</li>`;
                 }
-            });
+
+                if (!upcomingEl.children.length) {
+                    upcomingEl.innerHTML = `<li class="gig-empty">No upcoming gigs.</li>`;
+                }
+            }
         } catch (e) {
             console.error("Error fetching gig history:", e);
             const pastEl = document.getElementById("past-gigs");
