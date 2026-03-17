@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Half Awake Eyes | Links</title>
+    <meta name="description" content="Official links for Half Awake Eyes." />
+    <link rel="icon" type="image/x-icon" href="assets/images/favicon.ico">
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600&family=Source+Sans+Pro:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        @font-face {
+            font-family: 'Roabla';
+            src: url('assets/fonts/Roabla-DemoVersion-Regular.woff2') format('woff2'),
+                url('assets/fonts/Roabla-DemoVersion-Regular.ttf') format('truetype'),
+                url('assets/fonts/Roabla-DemoVersion-Regular.otf') format('opentype');
+            font-weight: normal;
+            font-style: normal;
+        }
+
+        :root {
+            --bg: #0a0a0a;
+            --panel: rgba(12, 12, 12, 0.72);
+            --panel-soft: rgba(255, 255, 255, 0.04);
+            --line: rgba(255, 255, 255, 0.1);
+            --line-strong: rgba(255, 255, 255, 0.18);
+            --text: #f2eee7;
+            --muted: #b7b0a6;
+            --accent: #e1d2be;
+            --accent-soft: #8f948d;
+            --shadow: 0 28px 60px rgba(0, 0, 0, 0.34);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: 'Source Sans Pro', sans-serif;
+            color: var(--text);
+            background:
+                linear-gradient(180deg, rgba(5, 5, 5, 0.42) 0%, rgba(5, 5, 5, 0.78) 100%),
+                linear-gradient(90deg, rgba(6, 6, 6, 0.88) 0%, rgba(6, 6, 6, 0.4) 45%, rgba(6, 6, 6, 0.78) 100%),
+                url('assets/images/HalfAwakeEyes-annicmrn-07798.jpg') center center / cover no-repeat fixed;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(circle at 18% 16%, rgba(193, 132, 96, 0.16), transparent 22%),
+                radial-gradient(circle at 78% 12%, rgba(73, 102, 146, 0.18), transparent 24%),
+                rgba(0, 0, 0, 0.18);
+            pointer-events: none;
+        }
+
+        a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        .page {
+            position: relative;
+            z-index: 1;
+            width: min(100%, calc(100% - 1.25rem));
+            max-width: 620px;
+            margin: 0 auto;
+            min-height: 100vh;
+            display: grid;
+            align-items: center;
+            padding: 2rem 0;
+        }
+
+        .profile-shell {
+            border: 1px solid rgba(255, 255, 255, 0.11);
+            border-radius: 34px;
+            background: rgba(4, 4, 4, 0.86);
+            backdrop-filter: blur(16px);
+            box-shadow: var(--shadow);
+            padding: 1.55rem 1.25rem 1.2rem;
+        }
+
+        .profile-top {
+            display: grid;
+            justify-items: center;
+            text-align: center;
+            gap: 0.85rem;
+            padding: 0.15rem 0 1.1rem;
+        }
+
+        .avatar {
+            width: 96px;
+            height: 96px;
+            border-radius: 999px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            box-shadow: 0 18px 34px rgba(0, 0, 0, 0.3);
+        }
+
+        .avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .title {
+            margin: 0;
+            font-family: 'Roabla', 'Oswald', sans-serif;
+            text-transform: uppercase;
+            color: var(--accent);
+            font-size: clamp(2.4rem, 8vw, 3.8rem);
+            font-weight: 400;
+            line-height: 0.94;
+            letter-spacing: 0.02em;
+        }
+
+        .subtitle {
+            margin: 0;
+            color: #e2ddd5;
+            font-size: 1rem;
+        }
+
+        .bio {
+            max-width: 34ch;
+            margin: 0;
+            color: var(--muted);
+            font-size: 0.98rem;
+            line-height: 1.55;
+        }
+
+        .social-row {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 0.8rem;
+            margin-top: 0.1rem;
+        }
+
+        .social-link {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 48px;
+            height: 48px;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: rgba(255, 255, 255, 0.025);
+            color: var(--text);
+            transition: transform 0.16s ease, border-color 0.16s ease, background 0.16s ease;
+        }
+
+        .social-link:hover {
+            transform: translateY(-1px);
+            border-color: var(--line-strong);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .social-link svg {
+            width: 22px;
+            height: 22px;
+            fill: currentColor;
+            display: block;
+        }
+
+        .link-stack {
+            display: grid;
+            gap: 1.2rem;
+            margin-top: 1.25rem;
+        }
+
+        .links-section {
+            display: grid;
+            gap: 0.7rem;
+        }
+
+        .section-heading {
+            margin: 0;
+            text-align: center;
+            font-family: 'Source Sans Pro', sans-serif;
+            font-size: 1.28rem;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .section-links {
+            display: grid;
+            gap: 0.72rem;
+        }
+
+        .link-empty-note {
+            padding: 1rem 1.05rem;
+            border-radius: 18px;
+            border: 1px dashed var(--line);
+            background: rgba(255, 255, 255, 0.02);
+            color: var(--muted);
+            text-align: center;
+            font-size: 0.94rem;
+        }
+
+        .link-card {
+            display: grid;
+            grid-template-columns: 56px minmax(0, 1fr) auto;
+            gap: 0.95rem;
+            align-items: center;
+            min-height: 86px;
+            padding: 0.8rem 0.95rem;
+            border-radius: 22px;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            background: rgba(255, 255, 255, 0.035);
+            transition: transform 0.16s ease, border-color 0.16s ease, background 0.16s ease;
+        }
+
+        .link-card:hover {
+            transform: translateY(-1px);
+            border-color: rgba(255, 255, 255, 0.34);
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        .link-card.primary {
+            background: linear-gradient(135deg, rgba(225, 210, 190, 0.1), rgba(255, 255, 255, 0.04));
+            border-color: rgba(225, 210, 190, 0.26);
+        }
+
+        .link-thumb {
+            width: 56px;
+            height: 56px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 16px;
+            background:
+                radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.12), transparent 42%),
+                rgba(255, 255, 255, 0.04);
+            display: grid;
+            place-items: center;
+            color: var(--accent);
+            font-family: 'Roabla', 'Oswald', sans-serif;
+            font-size: 1rem;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            overflow: hidden;
+        }
+
+        .link-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .link-copy {
+            min-width: 0;
+        }
+
+        .kicker {
+            display: block;
+            margin-bottom: 0.18rem;
+            font-family: 'Roabla', 'Oswald', sans-serif;
+            text-transform: uppercase;
+            color: var(--muted);
+            font-size: 0.72rem;
+            letter-spacing: 0.08em;
+        }
+
+        .link-title {
+            display: block;
+            color: var(--text);
+            font-size: 1.08rem;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+
+        .link-meta {
+            margin-top: 0.18rem;
+            color: var(--muted);
+            font-size: 0.92rem;
+            line-height: 1.42;
+        }
+
+        .link-arrow {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 18px;
+            height: 18px;
+            color: rgba(255, 255, 255, 0.72);
+            font-size: 1.05rem;
+            flex: 0 0 auto;
+        }
+
+        .footer {
+            display: flex;
+            justify-content: center;
+            gap: 0.9rem;
+            flex-wrap: wrap;
+            margin-top: 1rem;
+            color: var(--muted);
+            font-size: 0.8rem;
+        }
+
+        .footer a {
+            color: inherit;
+        }
+
+        .footer a:hover {
+            color: var(--text);
+        }
+
+        @media (max-width: 576px) {
+            body {
+                background-attachment: scroll;
+            }
+
+            .page {
+                width: min(100%, calc(100% - 0.8rem));
+                padding: 0.7rem 0;
+            }
+
+            .profile-shell {
+                border-radius: 26px;
+                padding: 1.15rem 0.95rem 0.95rem;
+            }
+
+            .avatar {
+                width: 84px;
+                height: 84px;
+            }
+
+            .title {
+                font-size: 2.35rem;
+            }
+
+            .subtitle,
+            .bio,
+            .link-meta {
+                font-size: 0.94rem;
+            }
+
+            .social-row {
+                gap: 0.62rem;
+            }
+
+            .social-link {
+                width: 44px;
+                height: 44px;
+            }
+
+            .social-link svg {
+                width: 20px;
+                height: 20px;
+            }
+
+            .section-heading {
+                font-size: 1.12rem;
+            }
+
+            .link-card {
+                grid-template-columns: 48px minmax(0, 1fr) auto;
+                min-height: 78px;
+                padding: 0.72rem 0.75rem;
+                border-radius: 18px;
+            }
+
+            .link-title {
+                font-size: 1rem;
+            }
+
+            .link-thumb {
+                width: 48px;
+                height: 48px;
+                font-size: 0.86rem;
+                border-radius: 14px;
+            }
+
+            .link-arrow {
+                width: 16px;
+                height: 16px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <main class="page">
+        <section class="profile-shell">
+            <div class="profile-top">
+                <div class="avatar">
+                    <img src="assets/images/HalfAwakeEyes-annicmrn-07798.jpg" alt="Half Awake Eyes band photo">
+                </div>
+                <div>
+                    <h1 class="title">Half Awake Eyes</h1>
+                    <p class="subtitle">Alternative Metal | Glasgow, Scotland</p>
+                </div>
+                <p class="bio">The main places to listen, follow, and get in touch.</p>
+                <div class="social-row" id="social-links"></div>
+            </div>
+
+            <div class="link-stack" id="main-links"></div>
+
+            <div class="footer">
+                <a href="privacy.html" data-link-label="Privacy policy">Privacy Policy</a>
+            </div>
+        </section>
+    </main>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { collection, doc, getDocs, getFirestore, orderBy, query, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+        const isLocal =
+            window.location.protocol === "file:" ||
+            window.location.hostname === "localhost" ||
+            window.location.hostname === "127.0.0.1" ||
+            window.location.hostname === "";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAv7G28uXxlQNG_HMLbBkuz4xseXzOzm4Y",
+            authDomain: "half-awake-eyes.firebaseapp.com",
+            projectId: "half-awake-eyes"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        const params = new URLSearchParams(window.location.search);
+        const userId = params.get("id") || "unknown";
+        const campaign = params.get("campaign") || params.get("utm_campaign") || "";
+        const source = params.get("source") || params.get("utm_source") || "";
+        const medium = params.get("utm_medium") || "";
+        const pagePath = window.location.pathname || "/links.html";
+        const pageName = pagePath.split("/").pop() || "links";
+        const pageSessionKey = `hae-page-view:${pagePath}`;
+        const socialLinksRoot = document.getElementById("social-links");
+        const mainLinksRoot = document.getElementById("main-links");
+
+        const getDefaultLinks = () => ([
+            {
+                group: "social",
+                title: "Spotify",
+                url: "https://open.spotify.com/album/1McajSMOYTvWAYRFi19CG2?si=QpD9D5NfTAClj6vfGi3mow",
+                kicker: "",
+                description: "",
+                featured: false,
+                hidden: false,
+                sortOrder: 10
+            },
+            {
+                group: "social",
+                title: "Instagram",
+                url: "https://instagram.com/halfawakeeyes",
+                kicker: "",
+                description: "",
+                featured: false,
+                hidden: false,
+                sortOrder: 20
+            },
+            {
+                group: "social",
+                title: "Facebook",
+                url: "https://www.facebook.com/halfawakeeyes",
+                kicker: "",
+                description: "",
+                featured: false,
+                hidden: false,
+                sortOrder: 30
+            },
+            {
+                group: "social",
+                title: "Email",
+                url: "mailto:halfawakeeyes@gmail.com",
+                kicker: "",
+                description: "",
+                featured: false,
+                hidden: false,
+                sortOrder: 40
+            },
+            {
+                group: "main",
+                title: "Stream the Debut EP",
+                url: "https://open.spotify.com/album/1McajSMOYTvWAYRFi19CG2?si=QpD9D5NfTAClj6vfGi3mow",
+                imageUrl: "assets/images/logo.jpg",
+                section: "Releases",
+                kicker: "Listen",
+                description: "Open the current release on Spotify.",
+                featured: true,
+                hidden: false,
+                sortOrder: 100
+            },
+            {
+                group: "main",
+                title: "Press Kit",
+                url: "https://drive.google.com/drive/folders/1dFLq35JkF_NyhJypMFzKlsc7iXehKnWJ?usp=sharing",
+                imageUrl: "assets/images/HalfAwakeEyes-annicmrn-07798.jpg",
+                section: "Resources",
+                kicker: "Press",
+                description: "Promo photos for posters, listings, and announcements.",
+                featured: false,
+                hidden: false,
+                sortOrder: 110
+            },
+            {
+                group: "main",
+                title: "Technical Requirements",
+                url: "https://drive.google.com/file/d/17e3-Qarq7WukVpIeMCu_jQhFZtXjb_Uu/view?usp=drive_link",
+                imageUrl: "assets/images/logo.jpg",
+                section: "Resources",
+                kicker: "Shows",
+                description: "Stage plot and input list for promoters and venues.",
+                featured: false,
+                hidden: false,
+                sortOrder: 120
+            }
+        ]);
+
+        const getSessionId = () => {
+            try {
+                const existing = sessionStorage.getItem("hae-session-id");
+                if (existing) {
+                    return existing;
+                }
+                const created = `s-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+                sessionStorage.setItem("hae-session-id", created);
+                return created;
+            } catch (error) {
+                return `s-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+            }
+        };
+
+        const sessionId = getSessionId();
+
+        const buildEventPayload = (action, details = {}) => ({
+            userId,
+            sessionId,
+            action,
+            page: pagePath,
+            pageName,
+            target: details.target || "",
+            label: details.label || "",
+            href: details.href || "",
+            elementType: details.elementType || "",
+            actionSubtype: details.actionSubtype || "",
+            section: details.section || "links",
+            outbound: details.outbound ?? false,
+            campaign,
+            source,
+            medium,
+            referrer: document.referrer || "",
+            viewport: `${window.innerWidth}x${window.innerHeight}`,
+            timestamp: new Date()
+        });
+
+        const logEvent = async (action, details = {}) => {
+            if (isLocal) {
+                return;
+            }
+
+            try {
+                const docId = `${userId}-${sessionId}-${Date.now()}-${action}`;
+                await setDoc(doc(db, "site-actions", docId), buildEventPayload(action, details));
+            } catch (error) {
+                console.error("Logging error:", error);
+            }
+        };
+
+        const normalizeManagedLink = (link, fallbackSortOrder = 0) => {
+            const numericSortOrder = Number.parseInt(link?.sortOrder, 10);
+            return {
+                title: String(link?.title || "").trim(),
+                url: String(link?.url || "").trim(),
+                imageUrl: String(link?.imageUrl || "").trim(),
+                section: String(link?.section || "").trim(),
+                kicker: String(link?.kicker || "").trim(),
+                description: String(link?.description || "").trim(),
+                group: String(link?.group || "").trim().toLowerCase() === "social" ? "social" : "main",
+                featured: link?.featured === true,
+                hidden: link?.hidden === true || String(link?.hidden || "").toLowerCase() === "true",
+                sortOrder: Number.isFinite(numericSortOrder) ? numericSortOrder : fallbackSortOrder
+            };
+        };
+
+        const getLinkSection = (link) => {
+            const explicitSection = String(link?.section || "").trim();
+            if (explicitSection) {
+                return explicitSection;
+            }
+
+            const source = `${link?.title || ""} ${link?.kicker || ""} ${link?.description || ""} ${link?.url || ""}`.toLowerCase();
+            if (/release|ep|album|listen|spotify|apple|youtube|visuali[sz]er|single|track/.test(source)) {
+                return "Releases";
+            }
+            if (/show|gig|ticket|tour|songkick|bandsintown/.test(source)) {
+                return "Shows";
+            }
+            if (/store|shop|merch|bandcamp/.test(source)) {
+                return "Store";
+            }
+            if (/press|photo|tech|requirement|stage plot|input list|resource/.test(source)) {
+                return "Resources";
+            }
+            if (/email|book|contact/.test(source)) {
+                return "Contact";
+            }
+
+            return "Links";
+        };
+
+        const sortManagedLinks = (links) => [...links].sort((a, b) => {
+            if (a.sortOrder !== b.sortOrder) {
+                return a.sortOrder - b.sortOrder;
+            }
+            return a.title.localeCompare(b.title);
+        });
+
+        const attachLinkTracking = (element, label, sectionName = "links") => {
+            if (!element) {
+                return;
+            }
+            element.addEventListener("click", () => {
+                const href = element.getAttribute("href") || "";
+                const isOutbound = href.startsWith("http") || href.startsWith("mailto:");
+                logEvent("click", {
+                    label: label || href,
+                    target: label || href,
+                    href,
+                    elementType: "link",
+                    actionSubtype: "link",
+                    section: sectionName,
+                    outbound: isOutbound
+                });
+            });
+        };
+
+        const getSocialIconSvg = (link) => {
+            const source = `${link.title || ""} ${link.url || ""}`.toLowerCase();
+            if (source.includes("spotify")) {
+                return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.75a10.25 10.25 0 1 0 0 20.5 10.25 10.25 0 0 0 0-20.5Zm4.43 14.77a.9.9 0 0 1-1.24.3c-2.42-1.48-5.46-1.82-9.05-1.02a.9.9 0 1 1-.39-1.76c4.06-.9 7.57-.49 10.38 1.23a.9.9 0 0 1 .3 1.25Zm1.24-2.76a1.13 1.13 0 0 1-1.55.37c-2.78-1.71-7.01-2.2-10.3-1.18a1.13 1.13 0 0 1-.67-2.16c3.77-1.17 8.46-.61 12.15 1.66.53.33.7 1.02.37 1.56Zm.15-2.87C14.5 8.91 8.97 8.74 5.8 9.7a1.35 1.35 0 1 1-.77-2.59c3.64-1.08 9.69-.87 14.18 1.78a1.35 1.35 0 0 1-1.39 2.3Z"/></svg>`;
+            }
+            if (source.includes("instagram")) {
+                return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.25 2h9.5A5.25 5.25 0 0 1 22 7.25v9.5A5.25 5.25 0 0 1 16.75 22h-9.5A5.25 5.25 0 0 1 2 16.75v-9.5A5.25 5.25 0 0 1 7.25 2Zm0 1.8A3.45 3.45 0 0 0 3.8 7.25v9.5a3.45 3.45 0 0 0 3.45 3.45h9.5a3.45 3.45 0 0 0 3.45-3.45v-9.5a3.45 3.45 0 0 0-3.45-3.45h-9.5Zm9.95 1.6a1.05 1.05 0 1 1 0 2.1 1.05 1.05 0 0 1 0-2.1ZM12 7a5 5 0 1 1 0 10 5 5 0 0 1 0-10Zm0 1.8A3.2 3.2 0 1 0 12 15.2 3.2 3.2 0 0 0 12 8.8Z"/></svg>`;
+            }
+            if (source.includes("facebook")) {
+                return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13.4 21v-7.95h2.67l.4-3.1H13.4V7.97c0-.9.25-1.5 1.54-1.5h1.65V3.7c-.29-.04-1.28-.12-2.44-.12-2.42 0-4.08 1.48-4.08 4.2v2.17H7.33v3.1h2.74V21h3.33Z"/></svg>`;
+            }
+            if (source.includes("youtube")) {
+                return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21.58 7.19a2.98 2.98 0 0 0-2.1-2.11C17.62 4.5 12 4.5 12 4.5s-5.62 0-7.48.58a2.98 2.98 0 0 0-2.1 2.11A31.1 31.1 0 0 0 1.83 12c0 1.65.2 3.28.59 4.81a2.98 2.98 0 0 0 2.1 2.11c1.86.58 7.48.58 7.48.58s5.62 0 7.48-.58a2.98 2.98 0 0 0 2.1-2.11c.39-1.53.59-3.16.59-4.81 0-1.65-.2-3.28-.59-4.81ZM10.2 15.38V8.62L15.84 12 10.2 15.38Z"/></svg>`;
+            }
+            if (source.includes("bandcamp")) {
+                return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 17.5 9.84 6.5H20l-5.84 11H4Z"/></svg>`;
+            }
+            if (source.includes("soundcloud")) {
+                return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.8 9.2a4.9 4.9 0 0 1 8.66 2.9 2.82 2.82 0 1 1 .64 5.56H6.7a1.7 1.7 0 0 1-.31-3.37 3.9 3.9 0 0 1 3.41-5.09Z"/></svg>`;
+            }
+            if (source.includes("mail") || source.startsWith("mailto:") || source.includes("email")) {
+                return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.75 5.5h16.5a1.75 1.75 0 0 1 1.75 1.75v9.5A1.75 1.75 0 0 1 20.25 18.5H3.75A1.75 1.75 0 0 1 2 16.75v-9.5A1.75 1.75 0 0 1 3.75 5.5Zm0 1.8v.16L12 12.74l8.25-5.28V7.3H3.75Zm16.5 9.4v-7.1L12.48 14.6a.9.9 0 0 1-.96 0L3.8 9.6v7.1h16.45Z"/></svg>`;
+            }
+            return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5a9.5 9.5 0 1 0 0 19 9.5 9.5 0 0 0 0-19Zm.9 5.3v4.3h4.3v1.8h-4.3v4.3h-1.8v-4.3H6.8v-1.8h4.3V7.8h1.8Z"/></svg>`;
+        };
+
+        const getLinkThumbLabel = (link) => {
+            const section = getLinkSection(link);
+            if (section === "Releases") {
+                return "EP";
+            }
+            if (section === "Shows") {
+                return "LG";
+            }
+            if (section === "Store") {
+                return "ST";
+            }
+            if (section === "Resources") {
+                return "PK";
+            }
+            return (link.title || "L").trim().slice(0, 2).toUpperCase();
+        };
+
+        const createSocialLink = (link) => {
+            const anchor = document.createElement("a");
+            anchor.className = "social-link";
+            anchor.href = link.url;
+            anchor.innerHTML = getSocialIconSvg(link);
+            anchor.setAttribute("aria-label", link.title || "Social link");
+            anchor.title = link.title || "Social link";
+            anchor.dataset.linkLabel = link.title || link.url || "Social link";
+            if (link.url.startsWith("http")) {
+                anchor.target = "_blank";
+                anchor.rel = "noopener noreferrer";
+            }
+            attachLinkTracking(anchor, anchor.dataset.linkLabel, "socials");
+            return anchor;
+        };
+
+        const createMainLink = (link) => {
+            const anchor = document.createElement("a");
+            anchor.className = `link-card${link.featured ? " primary" : ""}`;
+            anchor.href = link.url;
+            anchor.dataset.linkLabel = link.title || link.url || "Main link";
+            if (link.url.startsWith("http")) {
+                anchor.target = "_blank";
+                anchor.rel = "noopener noreferrer";
+            }
+
+            const thumb = document.createElement("div");
+            thumb.className = "link-thumb";
+
+            if (link.imageUrl) {
+                const image = document.createElement("img");
+                image.src = link.imageUrl;
+                image.alt = link.title || "Link artwork";
+                image.loading = "lazy";
+                image.addEventListener("error", () => {
+                    thumb.innerHTML = "";
+                    thumb.textContent = getLinkThumbLabel(link);
+                }, { once: true });
+                thumb.appendChild(image);
+            } else {
+                thumb.textContent = getLinkThumbLabel(link);
+            }
+
+            const copy = document.createElement("div");
+            copy.className = "link-copy";
+
+            if (link.kicker) {
+                const kicker = document.createElement("span");
+                kicker.className = "kicker";
+                kicker.textContent = link.kicker;
+                copy.appendChild(kicker);
+            }
+
+            const title = document.createElement("span");
+            title.className = "link-title";
+            title.textContent = link.title || "Link";
+            copy.appendChild(title);
+
+            if (link.description) {
+                const meta = document.createElement("div");
+                meta.className = "link-meta";
+                meta.textContent = link.description;
+                copy.appendChild(meta);
+            }
+
+            const arrow = document.createElement("span");
+            arrow.className = "link-arrow";
+            arrow.setAttribute("aria-hidden", "true");
+            arrow.textContent = "+";
+
+            anchor.appendChild(thumb);
+            anchor.appendChild(copy);
+            anchor.appendChild(arrow);
+            attachLinkTracking(anchor, anchor.dataset.linkLabel, getLinkSection(link));
+            return anchor;
+        };
+
+        const renderManagedLinks = (links) => {
+            const visibleLinks = sortManagedLinks(links.filter((link) => link.hidden !== true && link.url));
+            const socialLinks = visibleLinks.filter((link) => link.group === "social");
+            const socialUrls = new Set(socialLinks.map((link) => link.url));
+            const mainLinks = visibleLinks.filter((link) => {
+                if (link.group === "social") {
+                    return false;
+                }
+                if (!link.section && socialUrls.has(link.url)) {
+                    return false;
+                }
+                return true;
+            });
+
+            socialLinksRoot.innerHTML = "";
+            mainLinksRoot.innerHTML = "";
+
+            socialLinksRoot.hidden = socialLinks.length === 0;
+            mainLinksRoot.hidden = false;
+
+            socialLinks.forEach((link) => {
+                socialLinksRoot.appendChild(createSocialLink(link));
+            });
+
+            if (!mainLinks.length) {
+                const empty = document.createElement("div");
+                empty.className = "link-empty-note";
+                empty.textContent = "Links updating soon.";
+                mainLinksRoot.appendChild(empty);
+                return;
+            }
+
+            const sections = new Map();
+
+            mainLinks.forEach((link) => {
+                const sectionName = getLinkSection(link);
+                if (!sections.has(sectionName)) {
+                    sections.set(sectionName, []);
+                }
+                sections.get(sectionName).push(link);
+            });
+
+            [...sections.entries()].forEach(([sectionName, sectionLinks]) => {
+                const section = document.createElement("section");
+                section.className = "links-section";
+
+                const heading = document.createElement("h2");
+                heading.className = "section-heading";
+                heading.textContent = sectionName;
+
+                const list = document.createElement("div");
+                list.className = "section-links";
+
+                sectionLinks.forEach((link) => {
+                    list.appendChild(createMainLink(link));
+                });
+
+                section.appendChild(heading);
+                section.appendChild(list);
+                mainLinksRoot.appendChild(section);
+            });
+        };
+
+        const loadManagedLinks = async () => {
+            try {
+                let snapshot;
+                try {
+                    snapshot = await getDocs(query(collection(db, "links"), orderBy("sortOrder", "asc")));
+                } catch (error) {
+                    console.warn("Falling back to unordered link load.", error);
+                    snapshot = await getDocs(collection(db, "links"));
+                }
+
+                if (snapshot.empty) {
+                    renderManagedLinks(getDefaultLinks());
+                    return;
+                }
+
+                const managedLinks = snapshot.docs.map((linkDoc, index) => normalizeManagedLink(linkDoc.data(), (index + 1) * 10));
+                renderManagedLinks(managedLinks);
+            } catch (error) {
+                console.error("Could not load managed links, using defaults instead.", error);
+                renderManagedLinks(getDefaultLinks());
+            }
+        };
+
+        try {
+            if (!sessionStorage.getItem(pageSessionKey)) {
+                sessionStorage.setItem(pageSessionKey, "1");
+                logEvent("page_view", {
+                    label: document.title,
+                    target: pageName
+                });
+            }
+        } catch (error) {
+            logEvent("page_view", {
+                label: document.title,
+                target: pageName
+            });
+        }
+
+        attachLinkTracking(document.querySelector('.footer a[data-link-label]'), "Privacy policy");
+        loadManagedLinks();
+    </script>
+</body>
+
+</html>
+

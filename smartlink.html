@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Half Awake Eyes | Smart Link</title>
+  <meta name="description" content="Listen to the latest Half Awake Eyes release across all platforms." />
+  <link rel="icon" type="image/x-icon" href="assets/images/favicon.ico" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600&family=Source+Sans+Pro:wght@400;600;700&display=swap"
+    rel="stylesheet"
+  />
+  <style>
+    @font-face {
+      font-family: "Roabla";
+      src: url("assets/fonts/Roabla-DemoVersion-Regular.woff2") format("woff2"),
+        url("assets/fonts/Roabla-DemoVersion-Regular.ttf") format("truetype"),
+        url("assets/fonts/Roabla-DemoVersion-Regular.otf") format("opentype");
+      font-weight: normal;
+      font-style: normal;
+    }
+
+    :root {
+      --bg: #080808;
+      --panel: rgba(12, 12, 12, 0.8);
+      --panel-soft: rgba(255, 255, 255, 0.035);
+      --line: rgba(255, 255, 255, 0.11);
+      --line-strong: rgba(255, 255, 255, 0.18);
+      --text: #f3eee6;
+      --muted: #b9b0a4;
+      --accent: #e1d2be;
+      --accent-strong: #f0e5d7;
+      --accent-soft: #8f948d;
+      --shadow: 0 28px 70px rgba(0, 0, 0, 0.38);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Source Sans Pro", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(201, 124, 92, 0.16), transparent 28%),
+        radial-gradient(circle at top right, rgba(86, 110, 154, 0.15), transparent 24%),
+        linear-gradient(180deg, #111 0%, #0c0c0c 46%, #060606 100%);
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background:
+        linear-gradient(120deg, rgba(255, 255, 255, 0.02), transparent 28%),
+        radial-gradient(circle at 50% 0%, rgba(225, 210, 190, 0.06), transparent 34%);
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .page {
+      position: relative;
+      z-index: 1;
+      width: min(1180px, calc(100% - 1.5rem));
+      margin: 0 auto;
+      padding: 1rem 0 1.5rem;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 0.85rem 0 1.1rem;
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.55rem;
+      color: var(--accent);
+      font-family: "Roabla", "Oswald", sans-serif;
+      font-size: 1.15rem;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+    }
+
+    .brand::before {
+      content: "";
+      width: 0.65rem;
+      height: 0.65rem;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 16px rgba(225, 210, 190, 0.55);
+    }
+
+    .top-links {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 0.65rem;
+    }
+
+    .top-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 40px;
+      padding: 0.55rem 0.9rem;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.03);
+      color: var(--muted);
+      font-size: 0.92rem;
+      font-weight: 700;
+    }
+
+    .top-link:hover,
+    .top-link:focus {
+      border-color: var(--line-strong);
+      background: rgba(255, 255, 255, 0.07);
+      color: var(--text);
+    }
+
+    .campaign-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.08fr) minmax(340px, 0.92fr);
+      gap: 1rem;
+      align-items: stretch;
+    }
+
+    .content-card,
+    .art-card,
+    .empty-card {
+      border: 1px solid var(--line);
+      border-radius: 30px;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+    }
+
+    .content-card {
+      padding: 1.5rem;
+      display: grid;
+      gap: 1rem;
+      align-content: start;
+    }
+
+    .eyebrow-row {
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+      flex-wrap: wrap;
+    }
+
+    .eyebrow,
+    .state-chip,
+    .meta-chip {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 34px;
+      padding: 0.3rem 0.75rem;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      font-size: 0.76rem;
+      font-weight: 700;
+    }
+
+    .eyebrow {
+      color: var(--accent);
+      background: rgba(225, 210, 190, 0.08);
+      border-color: rgba(225, 210, 190, 0.22);
+    }
+
+    .state-chip {
+      color: #cfe8d5;
+      background: rgba(185, 222, 192, 0.1);
+      border-color: rgba(185, 222, 192, 0.25);
+    }
+
+    h1 {
+      margin: 0;
+      font-family: "Roabla", "Oswald", sans-serif;
+      font-size: clamp(2.8rem, 7vw, 5.2rem);
+      font-weight: 400;
+      line-height: 0.92;
+      letter-spacing: 0.02em;
+      color: var(--accent);
+    }
+
+    .subtitle {
+      margin: 0;
+      font-size: 1.1rem;
+      color: #ece4d8;
+      line-height: 1.45;
+      max-width: 38ch;
+    }
+
+    .description {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.65;
+      max-width: 56ch;
+      font-size: 1rem;
+    }
+
+    .meta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.65rem;
+    }
+
+    .meta-chip {
+      color: var(--muted);
+      background: rgba(255, 255, 255, 0.03);
+      letter-spacing: 0.05em;
+      text-transform: none;
+      font-size: 0.86rem;
+    }
+
+    .cta-stack {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.8rem;
+    }
+
+    .cta-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 54px;
+      padding: 0.85rem 1.25rem;
+      border-radius: 999px;
+      font-size: 1rem;
+      font-weight: 700;
+      transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+    }
+
+    .cta-button:hover,
+    .cta-button:focus {
+      transform: translateY(-1px);
+    }
+
+    .cta-button.primary {
+      background: var(--accent);
+      color: #111;
+      border: 1px solid transparent;
+    }
+
+    .cta-button.primary:hover,
+    .cta-button.primary:focus {
+      background: #ecdcca;
+      color: #111;
+    }
+
+    .cta-button.secondary {
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text);
+      border: 1px solid var(--line);
+    }
+
+    .cta-button.secondary:hover,
+    .cta-button.secondary:focus {
+      border-color: var(--line-strong);
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text);
+    }
+
+    .platform-panel {
+      display: grid;
+      gap: 0.8rem;
+      margin-top: 0.2rem;
+      padding-top: 1rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .platform-title {
+      color: var(--accent-strong);
+      font-family: "Roabla", "Oswald", sans-serif;
+      font-size: 1.05rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .platform-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.75rem;
+    }
+
+    .platform-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 58px;
+      padding: 0.8rem 1rem;
+      border-radius: 20px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text);
+      font-size: 0.96rem;
+      font-weight: 700;
+      text-align: center;
+      transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+    }
+
+    .platform-link:hover,
+    .platform-link:focus {
+      transform: translateY(-1px);
+      border-color: var(--line-strong);
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text);
+    }
+
+    .art-card {
+      position: relative;
+      overflow: hidden;
+      min-height: 560px;
+      display: grid;
+      align-content: end;
+      padding: 1.25rem;
+      background:
+        radial-gradient(circle at 22% 18%, rgba(201, 124, 92, 0.22), transparent 30%),
+        radial-gradient(circle at 82% 14%, rgba(86, 110, 154, 0.2), transparent 28%),
+        linear-gradient(180deg, rgba(12, 12, 12, 0.46) 0%, rgba(8, 8, 8, 0.82) 100%);
+    }
+
+    .art-card img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: 0.94;
+    }
+
+    .art-card::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(180deg, rgba(5, 5, 5, 0.05) 0%, rgba(5, 5, 5, 0.82) 100%),
+        linear-gradient(115deg, rgba(0, 0, 0, 0.18) 0%, transparent 36%, rgba(0, 0, 0, 0.32) 100%);
+      pointer-events: none;
+    }
+
+    .artwork-fallback,
+    .art-caption {
+      position: relative;
+      z-index: 1;
+    }
+
+    .artwork-fallback {
+      display: grid;
+      gap: 0.4rem;
+      align-content: center;
+      justify-items: start;
+      height: 100%;
+      color: var(--accent);
+    }
+
+    .fallback-brand {
+      font-family: "Roabla", "Oswald", sans-serif;
+      font-size: clamp(2.6rem, 6vw, 4.8rem);
+      line-height: 0.92;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      max-width: 6ch;
+    }
+
+    .fallback-copy {
+      color: #e7ddd0;
+      font-size: 1rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .art-caption {
+      display: grid;
+      gap: 0.2rem;
+      padding: 1rem;
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(10, 10, 10, 0.52);
+      backdrop-filter: blur(12px);
+    }
+
+    .art-caption-title {
+      color: var(--accent-strong);
+      font-size: 1rem;
+      font-weight: 700;
+    }
+
+    .art-caption-note {
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .empty-wrap {
+      display: none;
+      margin-top: 1rem;
+    }
+
+    .empty-wrap.show {
+      display: block;
+    }
+
+    .empty-card {
+      padding: 1.4rem;
+      display: grid;
+      gap: 0.95rem;
+    }
+
+    .empty-card h2 {
+      margin: 0;
+      font-family: "Roabla", "Oswald", sans-serif;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--accent);
+      font-size: 1.8rem;
+      font-weight: 400;
+    }
+
+    .empty-card p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.65;
+      max-width: 54ch;
+    }
+
+    .empty-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    .footer {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 0.8rem;
+      margin-top: 1rem;
+      padding: 0.25rem 0 0.5rem;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .footer a {
+      color: var(--accent);
+    }
+
+    .footer a:hover,
+    .footer a:focus {
+      color: #efe3d3;
+    }
+
+    [hidden] {
+      display: none !important;
+    }
+
+    @media (max-width: 900px) {
+      .campaign-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .art-card {
+        min-height: 420px;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .page {
+        width: min(100% - 1rem, 1180px);
+        padding-top: 0.5rem;
+      }
+
+      .topbar {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .top-links {
+        width: 100%;
+        justify-content: flex-start;
+      }
+
+      .content-card,
+      .art-card,
+      .empty-card {
+        padding: 1rem;
+        border-radius: 22px;
+      }
+
+      .platform-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .cta-stack {
+        flex-direction: column;
+      }
+
+      .cta-button {
+        width: 100%;
+      }
+
+      .art-card {
+        min-height: 360px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="topbar">
+      <a class="brand" href="index.html">Half Awake Eyes</a>
+      <div class="top-links">
+        <a class="top-link" href="links.html">All Links</a>
+        <a class="top-link" href="privacy.html">Privacy</a>
+      </div>
+    </header>
+
+    <main id="campaign-layout" class="campaign-layout">
+      <section class="content-card">
+        <div class="eyebrow-row">
+          <span class="eyebrow" id="campaign-badge">Loading</span>
+          <span class="state-chip" id="campaign-state">Preparing campaign</span>
+        </div>
+
+        <h1 id="campaign-title">Loading smart link...</h1>
+        <p class="subtitle" id="campaign-subtitle">Fetching the current campaign settings from Firestore.</p>
+        <p class="description" id="campaign-description">Give it a moment while the page pulls the latest release details.</p>
+
+        <div class="meta-row">
+          <span class="meta-chip" id="campaign-date" hidden></span>
+          <span class="meta-chip" id="campaign-destination-count">0 destinations configured</span>
+        </div>
+
+        <div class="cta-stack">
+          <a id="primary-cta" class="cta-button primary" href="#" hidden></a>
+          <a id="secondary-cta" class="cta-button secondary" href="#" hidden></a>
+        </div>
+
+        <section id="platform-panel" class="platform-panel">
+          <div class="platform-title">Choose A Platform</div>
+          <div class="platform-grid" id="platform-grid"></div>
+        </section>
+      </section>
+
+      <aside class="art-card">
+        <img id="campaign-artwork" alt="" hidden />
+        <div id="artwork-fallback" class="artwork-fallback">
+          <div class="fallback-brand">Half Awake Eyes</div>
+          <div class="fallback-copy">Release Page</div>
+        </div>
+
+        <div class="art-caption">
+          <div class="art-caption-title" id="art-caption-title">Smart Link</div>
+          <div class="art-caption-note" id="art-caption-note">A single page for the current release, built from your own admin panel.</div>
+        </div>
+      </aside>
+    </main>
+
+    <section id="empty-wrap" class="empty-wrap">
+      <div class="empty-card">
+        <h2 id="empty-title">No live campaign yet</h2>
+        <p id="empty-copy">This release page is not live right now. Check back soon, or use the main site links below.</p>
+        <div class="empty-actions">
+          <a class="top-link" href="index.html">Back to Home</a>
+          <a class="top-link" href="links.html">Open Links Page</a>
+        </div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <div>Official release page for Half Awake Eyes.</div>
+      <div><a href="privacy.html">Privacy Policy</a></div>
+    </footer>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { doc, getDoc, getFirestore, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAv7G28uXxlQNG_HMLbBkuz4xseXzOzm4Y",
+      authDomain: "half-awake-eyes.firebaseapp.com",
+      projectId: "half-awake-eyes"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const isLocal =
+      window.location.protocol === "file:" ||
+      window.location.hostname === "localhost" ||
+      window.location.hostname === "127.0.0.1" ||
+      window.location.hostname === "";
+
+    const params = new URLSearchParams(window.location.search);
+    const userId = params.get("id") || "unknown";
+    const source = params.get("source") || params.get("utm_source") || "";
+    const medium = params.get("utm_medium") || "";
+    const queryCampaign = params.get("campaign") || params.get("utm_campaign") || "";
+    const pagePath = window.location.pathname || "/smartlink.html";
+    const pageName = pagePath.split("/").pop() || "smartlink";
+    const pageSessionKey = `hae-page-view:${pagePath}`;
+
+    const elements = {
+      campaignLayout: document.getElementById("campaign-layout"),
+      campaignBadge: document.getElementById("campaign-badge"),
+      campaignState: document.getElementById("campaign-state"),
+      campaignTitle: document.getElementById("campaign-title"),
+      campaignSubtitle: document.getElementById("campaign-subtitle"),
+      campaignDescription: document.getElementById("campaign-description"),
+      campaignDate: document.getElementById("campaign-date"),
+      campaignDestinationCount: document.getElementById("campaign-destination-count"),
+      primaryCta: document.getElementById("primary-cta"),
+      secondaryCta: document.getElementById("secondary-cta"),
+      platformPanel: document.getElementById("platform-panel"),
+      platformGrid: document.getElementById("platform-grid"),
+      campaignArtwork: document.getElementById("campaign-artwork"),
+      artworkFallback: document.getElementById("artwork-fallback"),
+      artCaptionTitle: document.getElementById("art-caption-title"),
+      artCaptionNote: document.getElementById("art-caption-note"),
+      emptyWrap: document.getElementById("empty-wrap"),
+      emptyTitle: document.getElementById("empty-title"),
+      emptyCopy: document.getElementById("empty-copy")
+    };
+
+    let activeCampaign = null;
+    let activeMetaPixelId = "";
+    let metaPageViewTracked = false;
+
+    function getSessionId() {
+      try {
+        const existing = sessionStorage.getItem("hae-session-id");
+        if (existing) {
+          return existing;
+        }
+        const created = `s-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+        sessionStorage.setItem("hae-session-id", created);
+        return created;
+      } catch (error) {
+        return `s-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      }
+    }
+
+    const sessionId = getSessionId();
+
+    function normalizeCampaignEntry(campaign = {}) {
+      const normalizedMetaPixelId = String(campaign?.metaPixelId || "").replace(/\s+/g, "").trim();
+      return {
+        badge: String(campaign?.badge || "").trim(),
+        title: String(campaign?.title || "").trim(),
+        subtitle: String(campaign?.subtitle || "").trim(),
+        description: String(campaign?.description || "").trim(),
+        releaseDate: String(campaign?.releaseDate || "").trim(),
+        artworkUrl: String(campaign?.artworkUrl || "").trim(),
+        metaPixelId: normalizedMetaPixelId,
+        primaryLabel: String(campaign?.primaryLabel || "").trim(),
+        primaryUrl: String(campaign?.primaryUrl || "").trim(),
+        secondaryLabel: String(campaign?.secondaryLabel || "").trim(),
+        secondaryUrl: String(campaign?.secondaryUrl || "").trim(),
+        spotifyUrl: String(campaign?.spotifyUrl || "").trim(),
+        appleMusicUrl: String(campaign?.appleMusicUrl || "").trim(),
+        youtubeUrl: String(campaign?.youtubeUrl || "").trim(),
+        bandcampUrl: String(campaign?.bandcampUrl || "").trim(),
+        live: campaign?.live === true || String(campaign?.live || "").toLowerCase() === "true"
+      };
+    }
+
+    function formatReleaseDate(value) {
+      if (!value) {
+        return "";
+      }
+
+      const parsed = new Date(`${value}T00:00:00`);
+      if (Number.isNaN(parsed.getTime())) {
+        return value;
+      }
+
+      return parsed.toLocaleDateString("en-GB", {
+        day: "numeric",
+        month: "short",
+        year: "numeric"
+      });
+    }
+
+    function getDestinations(campaign) {
+      return [
+        { label: campaign.primaryLabel || "Listen now", url: campaign.primaryUrl, kind: "cta" },
+        { label: campaign.secondaryLabel || "Learn more", url: campaign.secondaryUrl, kind: "cta" },
+        { label: "Spotify", url: campaign.spotifyUrl, kind: "platform" },
+        { label: "Apple Music", url: campaign.appleMusicUrl, kind: "platform" },
+        { label: "YouTube", url: campaign.youtubeUrl, kind: "platform" },
+        { label: "Bandcamp", url: campaign.bandcampUrl, kind: "platform" }
+      ].filter((entry) => entry.url);
+    }
+
+    function initializeMetaPixel(pixelId) {
+      if (!pixelId || activeMetaPixelId === pixelId) {
+        return;
+      }
+
+      if (!window.fbq) {
+        (function(f, b, e, v, n, t, s) {
+          if (f.fbq) {
+            return;
+          }
+          n = f.fbq = function() {
+            n.callMethod ? n.callMethod.apply(n, arguments) : n.queue.push(arguments);
+          };
+          if (!f._fbq) {
+            f._fbq = n;
+          }
+          n.push = n;
+          n.loaded = true;
+          n.version = "2.0";
+          n.queue = [];
+          t = b.createElement(e);
+          t.async = true;
+          t.src = v;
+          s = b.getElementsByTagName(e)[0];
+          s.parentNode.insertBefore(t, s);
+        })(window, document, "script", "https://connect.facebook.net/en_US/fbevents.js");
+      }
+
+      window.fbq("init", pixelId);
+      activeMetaPixelId = pixelId;
+      metaPageViewTracked = false;
+    }
+
+    function trackMetaPageView() {
+      if (!activeMetaPixelId || metaPageViewTracked || typeof window.fbq !== "function") {
+        return;
+      }
+
+      window.fbq("track", "PageView");
+      metaPageViewTracked = true;
+    }
+
+    function trackMetaClick(eventName, details = {}) {
+      if (!activeMetaPixelId || typeof window.fbq !== "function") {
+        return;
+      }
+
+      window.fbq("trackCustom", eventName, {
+        campaign_name: activeCampaign?.title || "",
+        destination_label: details.label || "",
+        destination_url: details.url || "",
+        destination_type: details.type || "",
+        page_name: pageName
+      });
+    }
+
+    function buildEventPayload(action, details = {}) {
+      return {
+        userId,
+        sessionId,
+        action,
+        page: pagePath,
+        pageName,
+        target: details.target || "",
+        label: details.label || "",
+        href: details.href || "",
+        elementType: details.elementType || "",
+        actionSubtype: details.actionSubtype || "",
+        section: "smartlink",
+        outbound: details.outbound ?? false,
+        campaign: queryCampaign || activeCampaign?.title || "",
+        source,
+        medium,
+        referrer: document.referrer || "",
+        viewport: `${window.innerWidth}x${window.innerHeight}`,
+        timestamp: new Date()
+      };
+    }
+
+    async function logEvent(action, details = {}) {
+      if (isLocal) {
+        return;
+      }
+
+      try {
+        const docId = `${userId}-${sessionId}-${Date.now()}-${action}`;
+        await setDoc(doc(db, "site-actions", docId), buildEventPayload(action, details));
+      } catch (error) {
+        console.error("Logging error:", error);
+      }
+    }
+
+    function setTrackedLink(element, label, url, variant = "link") {
+      if (!url) {
+        element.hidden = true;
+        element.removeAttribute("href");
+        element.removeAttribute("target");
+        element.removeAttribute("rel");
+        element.textContent = "";
+        element.onclick = null;
+        return;
+      }
+
+      element.hidden = false;
+      element.href = url;
+      element.target = "_blank";
+      element.rel = "noopener noreferrer";
+      element.textContent = label;
+      element.onclick = () => {
+        logEvent("click", {
+          label,
+          target: label,
+          href: url,
+          elementType: "link",
+          actionSubtype: variant,
+          section: "smartlink",
+          outbound: true
+        });
+        trackMetaClick(variant === "primary_cta" ? "CampaignPrimaryClick" : "CampaignSecondaryClick", {
+          label,
+          url,
+          type: variant
+        });
+      };
+    }
+
+    function applyArtwork(url) {
+      if (!url) {
+        elements.campaignArtwork.hidden = true;
+        elements.campaignArtwork.removeAttribute("src");
+        elements.artworkFallback.hidden = false;
+        return;
+      }
+
+      elements.campaignArtwork.hidden = false;
+      elements.campaignArtwork.src = url;
+      elements.artworkFallback.hidden = true;
+    }
+
+    function showFallback(title, copy) {
+      document.title = "Half Awake Eyes | Smart Link";
+      elements.campaignLayout.hidden = true;
+      elements.emptyWrap.classList.add("show");
+      elements.emptyTitle.textContent = title;
+      elements.emptyCopy.textContent = copy;
+    }
+
+    function renderCampaign(campaign) {
+      activeCampaign = campaign;
+      if (campaign.metaPixelId) {
+        initializeMetaPixel(campaign.metaPixelId);
+        trackMetaPageView();
+      }
+
+      const destinations = getDestinations(campaign);
+      const platformLinks = destinations.filter((entry) => entry.kind === "platform");
+      const releaseDate = formatReleaseDate(campaign.releaseDate);
+
+      document.title = `${campaign.title} | Half Awake Eyes`;
+      elements.campaignLayout.hidden = false;
+      elements.emptyWrap.classList.remove("show");
+      elements.campaignBadge.textContent = campaign.badge || "Smart Link";
+      elements.campaignState.textContent = campaign.live ? "Live now" : "Draft";
+      elements.campaignTitle.textContent = campaign.title;
+      elements.campaignSubtitle.textContent = campaign.subtitle || "Official release page";
+      elements.campaignDescription.textContent = campaign.description || "Choose a destination below to hear the latest Half Awake Eyes release.";
+      elements.campaignDestinationCount.textContent = `${destinations.length} destination${destinations.length === 1 ? "" : "s"} available`;
+
+      if (releaseDate) {
+        elements.campaignDate.hidden = false;
+        elements.campaignDate.textContent = `Release date: ${releaseDate}`;
+      } else {
+        elements.campaignDate.hidden = true;
+        elements.campaignDate.textContent = "";
+      }
+
+      setTrackedLink(elements.primaryCta, campaign.primaryLabel || "Listen now", campaign.primaryUrl, "primary_cta");
+      setTrackedLink(elements.secondaryCta, campaign.secondaryLabel || "Learn more", campaign.secondaryUrl, "secondary_cta");
+
+      elements.platformGrid.innerHTML = "";
+      if (platformLinks.length) {
+        platformLinks.forEach((entry) => {
+          const link = document.createElement("a");
+          link.className = "platform-link";
+          link.href = entry.url;
+          link.target = "_blank";
+          link.rel = "noopener noreferrer";
+          link.textContent = entry.label;
+          link.addEventListener("click", () => {
+            logEvent("click", {
+              label: entry.label,
+              target: entry.label,
+              href: entry.url,
+              elementType: "link",
+              actionSubtype: "platform_link",
+              section: "smartlink",
+              outbound: true
+            });
+            trackMetaClick("CampaignPlatformClick", {
+              label: entry.label,
+              url: entry.url,
+              type: "platform_link"
+            });
+          });
+          elements.platformGrid.appendChild(link);
+        });
+        elements.platformPanel.hidden = false;
+      } else {
+        elements.platformPanel.hidden = true;
+      }
+
+      applyArtwork(campaign.artworkUrl);
+      elements.campaignArtwork.alt = campaign.title;
+      elements.artCaptionTitle.textContent = campaign.title;
+      elements.artCaptionNote.textContent = campaign.subtitle || "Official Half Awake Eyes release page";
+    }
+
+    async function logPageViewOnce() {
+      try {
+        if (!sessionStorage.getItem(pageSessionKey)) {
+          sessionStorage.setItem(pageSessionKey, "1");
+          await logEvent("page_view", {
+            label: document.title,
+            target: activeCampaign?.title || pageName,
+            elementType: "page",
+            actionSubtype: "campaign_page"
+          });
+        }
+      } catch (error) {
+        await logEvent("page_view", {
+          label: document.title,
+          target: activeCampaign?.title || pageName,
+          elementType: "page",
+          actionSubtype: "campaign_page"
+        });
+      }
+    }
+
+    elements.campaignArtwork.addEventListener("error", () => {
+      elements.campaignArtwork.hidden = true;
+      elements.artworkFallback.hidden = false;
+    });
+
+    try {
+      const campaignSnapshot = await getDoc(doc(db, "campaigns", "active"));
+      if (!campaignSnapshot.exists()) {
+        showFallback("No live campaign yet", "This release page is not live right now. Check back soon, or use the main site links below.");
+      } else {
+        const campaign = normalizeCampaignEntry(campaignSnapshot.data());
+        if (!campaign.title) {
+          showFallback("Campaign incomplete", "A campaign exists, but it still needs a title before the page can go live.");
+        } else if (!campaign.live) {
+          showFallback("Campaign currently in draft", "The smart-link page has been configured in the admin panel, but it is not marked live yet.");
+        } else {
+          renderCampaign(campaign);
+          await logPageViewOnce();
+        }
+      }
+    } catch (error) {
+      console.error("Error loading campaign:", error);
+      showFallback("Campaign unavailable", "The release page could not load from Firestore right now. Please try again shortly.");
+    }
+  </script>
+</body>
+</html>

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Half Awake Eyes | Analytics</title>
+  <title>Half Awake Eyes | Admin Panel</title>
   <link rel="icon" type="image/x-icon" href="assets/images/favicon.ico" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -861,7 +861,27 @@
       gap: 0.85rem;
     }
 
+    .link-form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.85rem;
+    }
+
+    .campaign-form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.85rem;
+    }
+
     .gig-form-grid .full-span {
+      grid-column: 1 / -1;
+    }
+
+    .link-form-grid .full-span {
+      grid-column: 1 / -1;
+    }
+
+    .campaign-form-grid .full-span {
       grid-column: 1 / -1;
     }
 
@@ -965,6 +985,244 @@
       font-size: 0.92rem;
     }
 
+    .manager-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.85rem;
+      margin-bottom: 0.85rem;
+      flex-wrap: wrap;
+    }
+
+    .manager-toolbar .helper-copy {
+      margin: 0;
+    }
+
+    .link-admin-list {
+      display: grid;
+      gap: 0.75rem;
+    }
+
+    .campaign-preview {
+      display: grid;
+      gap: 0.8rem;
+    }
+
+    .campaign-preview-card {
+      display: grid;
+      gap: 0.75rem;
+      padding: 1rem;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background:
+        linear-gradient(135deg, rgba(225, 210, 190, 0.08), rgba(255, 255, 255, 0.03)),
+        rgba(255, 255, 255, 0.02);
+    }
+
+    .campaign-preview-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .campaign-preview-kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      width: fit-content;
+      padding: 0.35rem 0.7rem;
+      border-radius: 999px;
+      border: 1px solid rgba(225, 210, 190, 0.2);
+      background: rgba(225, 210, 190, 0.08);
+      color: var(--accent-strong);
+      font-size: 0.76rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .campaign-preview-kicker::before {
+      content: "";
+      width: 0.45rem;
+      height: 0.45rem;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 14px rgba(225, 210, 190, 0.45);
+    }
+
+    .campaign-preview-status {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 30px;
+      padding: 0.25rem 0.65rem;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .campaign-preview-status.is-live {
+      border-color: rgba(185, 222, 192, 0.3);
+      background: rgba(185, 222, 192, 0.1);
+      color: #cfe8d5;
+    }
+
+    .campaign-preview-status.is-draft {
+      border-color: rgba(255, 196, 128, 0.24);
+      background: rgba(255, 196, 128, 0.08);
+      color: #f0d3ac;
+    }
+
+    .campaign-preview-title {
+      margin: 0;
+      color: var(--accent-strong);
+      font-size: 1.35rem;
+      line-height: 1;
+    }
+
+    .campaign-preview-subtitle {
+      color: var(--text);
+      font-size: 1rem;
+      font-weight: 600;
+    }
+
+    .campaign-preview-description {
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    .campaign-preview-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.55rem;
+    }
+
+    .campaign-preview-chip {
+      display: inline-flex;
+      align-items: center;
+      min-height: 32px;
+      padding: 0.3rem 0.7rem;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.03);
+      color: var(--muted);
+      font-size: 0.84rem;
+      font-weight: 600;
+    }
+
+    .campaign-preview-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+    }
+
+    .campaign-preview-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 38px;
+      padding: 0.5rem 0.85rem;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text);
+      font-size: 0.88rem;
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    .campaign-preview-link:hover,
+    .campaign-preview-link:focus {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: var(--line-strong);
+      color: var(--text);
+    }
+
+    .campaign-preview-empty {
+      padding: 1rem;
+      border: 1px dashed rgba(255, 255, 255, 0.12);
+      border-radius: 18px;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    .link-admin-item {
+      display: grid;
+      gap: 0.45rem;
+      padding: 0.9rem 0.95rem;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.025);
+    }
+
+    .link-admin-item.is-hidden {
+      opacity: 0.82;
+      border-color: rgba(255, 196, 128, 0.22);
+      background: rgba(255, 196, 128, 0.03);
+    }
+
+    .link-admin-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .link-admin-title {
+      color: var(--accent-strong);
+      font-size: 1rem;
+      font-weight: 700;
+    }
+
+    .link-admin-url {
+      color: var(--muted);
+      font-size: 0.88rem;
+      word-break: break-all;
+    }
+
+    .link-admin-meta {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      flex-wrap: wrap;
+    }
+
+    .link-admin-description {
+      color: var(--muted);
+      font-size: 0.92rem;
+      line-height: 1.45;
+    }
+
+    .link-admin-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.55rem;
+      margin-top: 0.2rem;
+      flex-wrap: wrap;
+    }
+
+    .link-edit-form {
+      display: grid;
+      gap: 0.9rem;
+      margin-top: 0.8rem;
+    }
+
+    .link-edit-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.85rem;
+    }
+
+    .link-edit-grid .full-span {
+      grid-column: 1 / -1;
+    }
+
     .gig-edit-form {
       display: grid;
       gap: 0.9rem;
@@ -981,7 +1239,8 @@
       grid-column: 1 / -1;
     }
 
-    .gig-edit-toggle {
+    .gig-edit-toggle,
+    .link-edit-toggle {
       display: flex;
       align-items: center;
       gap: 0.7rem;
@@ -993,7 +1252,8 @@
       font-size: 0.95rem;
     }
 
-    .gig-edit-toggle input {
+    .gig-edit-toggle input,
+    .link-edit-toggle input {
       width: 18px;
       height: 18px;
       accent-color: var(--accent);
@@ -1141,7 +1401,10 @@
 
       .manager-panel,
       .gig-form-grid,
-      .gig-edit-grid {
+      .gig-edit-grid,
+      .link-form-grid,
+      .campaign-form-grid,
+      .link-edit-grid {
         grid-template-columns: 1fr;
       }
     }
@@ -1195,6 +1458,14 @@
 
       .tabs-meta {
         align-items: stretch;
+      }
+
+      .manager-toolbar {
+        align-items: stretch;
+      }
+
+      .manager-toolbar .ghost-button {
+        width: 100%;
       }
 
       .header-action-button {
@@ -1349,26 +1620,27 @@
     <header class="hero">
       <div>
         <span class="eyebrow">Private Dashboard</span>
-        <h1>Analytics</h1>
-        <p>Track event activity across the site with a cleaner dashboard, faster scanning, and more readable event details.</p>
+        <h1>Admin Panel</h1>
+        <p>Track site activity and manage the public gigs and links pages from one place.</p>
       </div>
       <div class="hero-meta">
+        <div id="auth-status">Signed out.</div>
         <div id="hero-collection">Collection: site-actions</div>
         <div id="hero-updated">Waiting for login</div>
       </div>
     </header>
 
     <section id="login" class="surface login-card">
-      <h2>Enter Credentials</h2>
-      <p>Unlock the internal analytics dashboard to review site activity and ad tracking events.</p>
+      <h2>Sign In</h2>
+      <p>Sign in with the Firebase Auth admin account to review site activity and ad tracking events.</p>
       <form id="login-form">
         <div class="mb-3">
-          <input type="text" id="username" class="form-control" placeholder="Username" required />
+          <input type="email" id="email" class="form-control" placeholder="Admin email" autocomplete="email" required />
         </div>
         <div class="mb-3">
-          <input type="password" id="password" class="form-control" placeholder="Password" required />
+          <input type="password" id="password" class="form-control" placeholder="Password" autocomplete="current-password" required />
         </div>
-        <button type="submit" class="btn btn-accent w-100">Unlock Dashboard</button>
+        <button type="submit" id="login-submit" class="btn btn-accent w-100">Sign In</button>
       </form>
       <div id="login-error" class="status-message" aria-live="polite"></div>
     </section>
@@ -1385,10 +1657,17 @@
           <li class="nav-item">
             <a class="nav-link tab-label" href="#" data-page="gigs">Gigs</a>
           </li>
+          <li class="nav-item">
+            <a class="nav-link tab-label" href="#" data-page="links">Links</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link tab-label" href="#" data-page="campaigns">Campaigns</a>
+          </li>
         </ul>
         <div class="tabs-meta">
           <div class="collection-note" id="collection-note">Viewing recent events from site-actions.</div>
           <button type="button" id="refresh-data" class="btn ghost-button header-action-button">Refresh</button>
+          <button type="button" id="sign-out" class="btn ghost-button header-action-button">Sign Out</button>
         </div>
       </div>
 
@@ -1514,6 +1793,177 @@
           </div>
         </div>
       </div>
+
+      <div id="links-page" class="dashboard-page">
+        <div class="summary-panel">
+          <div class="section-title">
+            <h3>Links Manager</h3>
+            <span>Manage the `links` collection</span>
+          </div>
+          <div class="helper-copy">Control the public link-in-bio page, including socials, sections, featured links, ordering, and hidden entries.</div>
+        </div>
+
+        <div class="manager-panel">
+          <div class="manager-card">
+            <div class="section-title">
+              <h3>Add Link</h3>
+              <span>Write to Firestore</span>
+            </div>
+            <p class="manager-subcopy">Create either a top social icon or a main section card for the public `links.html` page.</p>
+            <form id="link-form">
+              <div class="link-form-grid">
+                <div>
+                  <select id="link-group" class="form-select" aria-label="Link group">
+                    <option value="social">Social Row</option>
+                    <option value="main" selected>Main Link Stack</option>
+                  </select>
+                </div>
+                <div>
+                  <input type="number" id="link-sort-order" class="form-control" placeholder="Sort order (optional)" aria-label="Sort order" min="0" step="1" />
+                </div>
+                <div class="full-span">
+                  <input type="text" id="link-title" class="form-control" placeholder="Link title" aria-label="Link title" required />
+                </div>
+                <div class="full-span">
+                  <input type="text" id="link-url" class="form-control" placeholder="https://example.com or mailto:..." aria-label="Link URL" required />
+                </div>
+                <div class="full-span">
+                  <input type="text" id="link-image-url" class="form-control" placeholder="Image URL or asset path (optional)" aria-label="Link image URL" />
+                </div>
+                <div>
+                  <input type="text" id="link-section" class="form-control" placeholder="Section (for main links)" aria-label="Link section" />
+                </div>
+                <div>
+                  <input type="text" id="link-kicker" class="form-control" placeholder="Kicker (optional)" aria-label="Link kicker" />
+                </div>
+                <div>
+                  <label class="link-edit-toggle" for="link-featured">
+                    <input type="checkbox" id="link-featured" />
+                    <span>Mark as featured.</span>
+                  </label>
+                </div>
+                <div class="full-span">
+                  <textarea id="link-description" class="form-control" rows="3" placeholder="Description or handle (optional)" aria-label="Link description"></textarea>
+                </div>
+                <div class="full-span">
+                  <button type="submit" id="save-link" class="btn btn-accent w-100">Save Link</button>
+                </div>
+              </div>
+            </form>
+            <div id="link-status" class="gig-manager-status" aria-live="polite"></div>
+          </div>
+
+          <div class="manager-card">
+            <div class="section-title">
+              <h3>Current Links</h3>
+              <span id="link-count">No links loaded</span>
+            </div>
+            <div class="manager-toolbar">
+              <div class="helper-copy">Edit, hide, reorder, or seed the current public defaults into Firestore.</div>
+              <button type="button" id="seed-links" class="btn ghost-button">Import Current Defaults</button>
+            </div>
+            <div id="link-list" class="link-admin-list">
+              <div class="gig-admin-empty">No links loaded yet.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="campaigns-page" class="dashboard-page">
+        <div class="summary-panel">
+          <div class="section-title">
+            <h3>Campaign Manager</h3>
+            <span>Manage the `campaigns/active` document</span>
+          </div>
+          <div class="helper-copy">Build a dedicated release or smart-link page without changing the evergreen links page.</div>
+        </div>
+
+        <div class="manager-panel">
+          <div class="manager-card">
+            <div class="section-title">
+              <h3>Active Campaign Settings</h3>
+              <span>Write to Firestore</span>
+            </div>
+            <p class="manager-subcopy">Save one live release page for `smartlink.html`, including hero copy, artwork, and platform destinations.</p>
+            <form id="campaign-form">
+              <div class="campaign-form-grid">
+                <div>
+                  <input type="text" id="campaign-badge" class="form-control" placeholder="Badge or kicker" aria-label="Campaign badge" />
+                </div>
+                <div>
+                  <input type="date" id="campaign-release-date" class="form-control" aria-label="Campaign release date" />
+                </div>
+                <div class="full-span">
+                  <input type="text" id="campaign-title" class="form-control" placeholder="Campaign title" aria-label="Campaign title" required />
+                </div>
+                <div class="full-span">
+                  <input type="text" id="campaign-subtitle" class="form-control" placeholder="Subtitle or release line" aria-label="Campaign subtitle" />
+                </div>
+                <div class="full-span">
+                  <textarea id="campaign-description" class="form-control" rows="4" placeholder="Describe the release, campaign, or call to action" aria-label="Campaign description"></textarea>
+                </div>
+                <div class="full-span">
+                  <input type="url" id="campaign-artwork-url" class="form-control" placeholder="Artwork image URL" aria-label="Campaign artwork URL" />
+                </div>
+                <div class="full-span">
+                  <input type="text" id="campaign-meta-pixel-id" class="form-control" placeholder="Meta Pixel ID (optional)" aria-label="Meta Pixel ID" inputmode="numeric" />
+                </div>
+                <div>
+                  <input type="text" id="campaign-primary-label" class="form-control" placeholder="Primary button label" aria-label="Primary button label" />
+                </div>
+                <div>
+                  <input type="url" id="campaign-primary-url" class="form-control" placeholder="Primary button URL" aria-label="Primary button URL" />
+                </div>
+                <div>
+                  <input type="text" id="campaign-secondary-label" class="form-control" placeholder="Secondary button label" aria-label="Secondary button label" />
+                </div>
+                <div>
+                  <input type="url" id="campaign-secondary-url" class="form-control" placeholder="Secondary button URL" aria-label="Secondary button URL" />
+                </div>
+                <div>
+                  <input type="url" id="campaign-spotify-url" class="form-control" placeholder="Spotify URL" aria-label="Spotify URL" />
+                </div>
+                <div>
+                  <input type="url" id="campaign-apple-url" class="form-control" placeholder="Apple Music URL" aria-label="Apple Music URL" />
+                </div>
+                <div>
+                  <input type="url" id="campaign-youtube-url" class="form-control" placeholder="YouTube URL" aria-label="YouTube URL" />
+                </div>
+                <div>
+                  <input type="url" id="campaign-bandcamp-url" class="form-control" placeholder="Bandcamp URL" aria-label="Bandcamp URL" />
+                </div>
+                <div class="full-span">
+                  <label class="link-edit-toggle" for="campaign-live">
+                    <input type="checkbox" id="campaign-live" />
+                    <span>Make this the live public smart-link page.</span>
+                  </label>
+                </div>
+                <div class="full-span">
+                  <button type="button" id="campaign-delete" class="btn danger-button w-100">Delete Campaign</button>
+                </div>
+                <div class="full-span">
+                  <button type="submit" id="save-campaign" class="btn btn-accent w-100">Save Campaign</button>
+                </div>
+              </div>
+            </form>
+            <div id="campaign-status" class="gig-manager-status" aria-live="polite"></div>
+          </div>
+
+          <div class="manager-card">
+            <div class="section-title">
+              <h3>Public Page Preview</h3>
+              <span id="campaign-count">Not loaded</span>
+            </div>
+            <div class="manager-toolbar">
+              <div class="helper-copy">Open the public page to confirm layout, copy, and destination URLs.</div>
+              <a id="campaign-open-link" class="btn ghost-button" href="smartlink.html" target="_blank" rel="noopener noreferrer">Open smartlink.html</a>
+            </div>
+            <div id="campaign-preview" class="campaign-preview">
+              <div class="campaign-preview-empty">No campaign loaded yet. Save a title and at least one destination URL to publish a first release page.</div>
+            </div>
+          </div>
+        </div>
+      </div>
     </section>
   </div>
 
@@ -1596,9 +2046,70 @@
     </div>
   </dialog>
 
+  <dialog id="link-edit-dialog" class="details-dialog">
+    <div class="details-dialog-card">
+      <span class="eyebrow">Edit Link</span>
+      <h2 id="link-edit-title">Update link entry</h2>
+      <p class="details-dialog-subtitle">Change the public link, move it between social and main groups, hide it, or remove it entirely.</p>
+
+      <form id="link-edit-form" class="link-edit-form">
+        <div class="link-edit-grid">
+          <div>
+            <select id="link-edit-group" class="form-select" aria-label="Edit link group">
+              <option value="social">Social Row</option>
+              <option value="main">Main Link Stack</option>
+            </select>
+          </div>
+          <div>
+            <input type="number" id="link-edit-sort-order" class="form-control" placeholder="Sort order" aria-label="Edit link sort order" min="0" step="1" />
+          </div>
+          <div class="full-span">
+            <input type="text" id="link-edit-title-input" class="form-control" placeholder="Link title" aria-label="Edit link title" required />
+          </div>
+          <div class="full-span">
+            <input type="text" id="link-edit-url" class="form-control" placeholder="https://example.com or mailto:..." aria-label="Edit link URL" required />
+          </div>
+          <div class="full-span">
+            <input type="text" id="link-edit-image-url" class="form-control" placeholder="Image URL or asset path (optional)" aria-label="Edit link image URL" />
+          </div>
+          <div>
+            <input type="text" id="link-edit-section" class="form-control" placeholder="Section (for main links)" aria-label="Edit link section" />
+          </div>
+          <div>
+            <input type="text" id="link-edit-kicker" class="form-control" placeholder="Kicker (optional)" aria-label="Edit link kicker" />
+          </div>
+          <div class="full-span">
+            <textarea id="link-edit-description" class="form-control" rows="3" placeholder="Description or handle (optional)" aria-label="Edit link description"></textarea>
+          </div>
+          <div>
+            <label class="link-edit-toggle" for="link-edit-featured">
+              <input type="checkbox" id="link-edit-featured" />
+              <span>Feature this link on the public page.</span>
+            </label>
+          </div>
+          <div>
+            <label class="link-edit-toggle" for="link-edit-hidden">
+              <input type="checkbox" id="link-edit-hidden" />
+              <span>Hide this link from the public page.</span>
+            </label>
+          </div>
+        </div>
+      </form>
+
+      <div id="link-edit-error" class="status-message" aria-live="polite"></div>
+
+      <div class="details-dialog-actions">
+        <button type="button" id="link-delete" class="btn danger-button">Delete Link</button>
+        <button type="button" id="close-link-edit" class="btn ghost-button">Close</button>
+        <button type="submit" form="link-edit-form" id="save-link-edit" class="btn btn-accent">Save Changes</button>
+      </div>
+    </div>
+  </dialog>
+
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { addDoc, collection, deleteDoc, doc, getDocs, getFirestore, orderBy, query, updateDoc, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, getFirestore, orderBy, query, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyAv7G28uXxlQNG_HMLbBkuz4xseXzOzm4Y",
@@ -1607,6 +2118,7 @@
     };
 
     const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
     const db = getFirestore(app);
 
     const state = {
@@ -1614,6 +2126,8 @@
       filteredLogs: [],
       sessionGroups: [],
       gigs: [],
+      links: [],
+      campaign: null,
       activePage: "analytics",
       currentCollection: "site-actions",
       dynamicFields: [],
@@ -1625,13 +2139,23 @@
       dateTo: "",
       isRefreshing: false,
       isLoadingGigs: false,
+      isLoadingLinks: false,
+      isLoadingCampaign: false,
       isSavingGig: false,
+      isSavingLink: false,
+      isSavingCampaign: false,
+      isSeedingLinks: false,
       isUpdatingGig: false,
+      isUpdatingLink: false,
       activeDetailsId: null,
       activeGigId: null,
+      activeLinkId: null,
+      authUser: null,
       expandedSessions: new Set(),
       deletingIds: new Set(),
       deletingGigIds: new Set(),
+      deletingLinkIds: new Set(),
+      isDeletingCampaign: false,
       deletingSessions: new Set(),
       pendingDeleteTarget: null,
       refreshAfterDeleteClose: false
@@ -1640,9 +2164,15 @@
     const elements = {
       dashboard: document.getElementById("dashboard"),
       login: document.getElementById("login"),
+      loginForm: document.getElementById("login-form"),
+      emailInput: document.getElementById("email"),
+      passwordInput: document.getElementById("password"),
+      loginSubmit: document.getElementById("login-submit"),
       loginError: document.getElementById("login-error"),
       analyticsPage: document.getElementById("analytics-page"),
       gigsPage: document.getElementById("gigs-page"),
+      linksPage: document.getElementById("links-page"),
+      campaignsPage: document.getElementById("campaigns-page"),
       pageTabs: Array.from(document.querySelectorAll("[data-page]")),
       summary: document.getElementById("summary"),
       summaryCaption: document.getElementById("summary-caption"),
@@ -1669,6 +2199,44 @@
       gigStatus: document.getElementById("gig-status"),
       gigList: document.getElementById("gig-list"),
       gigCount: document.getElementById("gig-count"),
+      linkForm: document.getElementById("link-form"),
+      linkGroup: document.getElementById("link-group"),
+      linkSortOrder: document.getElementById("link-sort-order"),
+      linkTitle: document.getElementById("link-title"),
+      linkUrl: document.getElementById("link-url"),
+      linkImageUrl: document.getElementById("link-image-url"),
+      linkSection: document.getElementById("link-section"),
+      linkKicker: document.getElementById("link-kicker"),
+      linkDescription: document.getElementById("link-description"),
+      linkFeatured: document.getElementById("link-featured"),
+      saveLink: document.getElementById("save-link"),
+      seedLinks: document.getElementById("seed-links"),
+      linkStatus: document.getElementById("link-status"),
+      linkList: document.getElementById("link-list"),
+      linkCount: document.getElementById("link-count"),
+      campaignForm: document.getElementById("campaign-form"),
+      campaignBadge: document.getElementById("campaign-badge"),
+      campaignTitle: document.getElementById("campaign-title"),
+      campaignSubtitle: document.getElementById("campaign-subtitle"),
+      campaignDescription: document.getElementById("campaign-description"),
+      campaignReleaseDate: document.getElementById("campaign-release-date"),
+      campaignArtworkUrl: document.getElementById("campaign-artwork-url"),
+      campaignMetaPixelId: document.getElementById("campaign-meta-pixel-id"),
+      campaignPrimaryLabel: document.getElementById("campaign-primary-label"),
+      campaignPrimaryUrl: document.getElementById("campaign-primary-url"),
+      campaignSecondaryLabel: document.getElementById("campaign-secondary-label"),
+      campaignSecondaryUrl: document.getElementById("campaign-secondary-url"),
+      campaignSpotifyUrl: document.getElementById("campaign-spotify-url"),
+      campaignAppleUrl: document.getElementById("campaign-apple-url"),
+      campaignYoutubeUrl: document.getElementById("campaign-youtube-url"),
+      campaignBandcampUrl: document.getElementById("campaign-bandcamp-url"),
+      campaignLive: document.getElementById("campaign-live"),
+      campaignDelete: document.getElementById("campaign-delete"),
+      saveCampaign: document.getElementById("save-campaign"),
+      campaignStatus: document.getElementById("campaign-status"),
+      campaignCount: document.getElementById("campaign-count"),
+      campaignPreview: document.getElementById("campaign-preview"),
+      campaignOpenLink: document.getElementById("campaign-open-link"),
       gigEditDialog: document.getElementById("gig-edit-dialog"),
       gigEditTitle: document.getElementById("gig-edit-title"),
       gigEditForm: document.getElementById("gig-edit-form"),
@@ -1681,7 +2249,26 @@
       gigDelete: document.getElementById("gig-delete"),
       closeGigEdit: document.getElementById("close-gig-edit"),
       saveGigEdit: document.getElementById("save-gig-edit"),
+      linkEditDialog: document.getElementById("link-edit-dialog"),
+      linkEditTitle: document.getElementById("link-edit-title"),
+      linkEditForm: document.getElementById("link-edit-form"),
+      linkEditGroup: document.getElementById("link-edit-group"),
+      linkEditSortOrder: document.getElementById("link-edit-sort-order"),
+      linkEditTitleInput: document.getElementById("link-edit-title-input"),
+      linkEditUrl: document.getElementById("link-edit-url"),
+      linkEditImageUrl: document.getElementById("link-edit-image-url"),
+      linkEditSection: document.getElementById("link-edit-section"),
+      linkEditKicker: document.getElementById("link-edit-kicker"),
+      linkEditDescription: document.getElementById("link-edit-description"),
+      linkEditFeatured: document.getElementById("link-edit-featured"),
+      linkEditHidden: document.getElementById("link-edit-hidden"),
+      linkEditError: document.getElementById("link-edit-error"),
+      linkDelete: document.getElementById("link-delete"),
+      closeLinkEdit: document.getElementById("close-link-edit"),
+      saveLinkEdit: document.getElementById("save-link-edit"),
       collectionNote: document.getElementById("collection-note"),
+      authStatus: document.getElementById("auth-status"),
+      signOutButton: document.getElementById("sign-out"),
       heroCollection: document.getElementById("hero-collection"),
       heroUpdated: document.getElementById("hero-updated"),
       filterCaption: document.getElementById("filter-caption"),
@@ -1766,6 +2353,153 @@
         month: "short",
         year: "numeric"
       });
+    }
+
+    function getDefaultLinks() {
+      return [
+        {
+          group: "social",
+          title: "Spotify",
+          url: "https://open.spotify.com/album/1McajSMOYTvWAYRFi19CG2?si=QpD9D5NfTAClj6vfGi3mow",
+          kicker: "",
+          description: "",
+          featured: false,
+          hidden: false,
+          sortOrder: 10
+        },
+        {
+          group: "social",
+          title: "Instagram",
+          url: "https://instagram.com/halfawakeeyes",
+          kicker: "",
+          description: "",
+          featured: false,
+          hidden: false,
+          sortOrder: 20
+        },
+        {
+          group: "social",
+          title: "Facebook",
+          url: "https://www.facebook.com/halfawakeeyes",
+          kicker: "",
+          description: "",
+          featured: false,
+          hidden: false,
+          sortOrder: 30
+        },
+        {
+          group: "social",
+          title: "Email",
+          url: "mailto:halfawakeeyes@gmail.com",
+          kicker: "",
+          description: "",
+          featured: false,
+          hidden: false,
+          sortOrder: 40
+        },
+        {
+          group: "main",
+          title: "Stream the Debut EP",
+          url: "https://open.spotify.com/album/1McajSMOYTvWAYRFi19CG2?si=QpD9D5NfTAClj6vfGi3mow",
+          imageUrl: "assets/images/logo.jpg",
+          section: "Releases",
+          kicker: "Listen",
+          description: "Open the current release on Spotify.",
+          featured: true,
+          hidden: false,
+          sortOrder: 100
+        },
+        {
+          group: "main",
+          title: "Press Kit",
+          url: "https://drive.google.com/drive/folders/1dFLq35JkF_NyhJypMFzKlsc7iXehKnWJ?usp=sharing",
+          imageUrl: "assets/images/HalfAwakeEyes-annicmrn-07798.jpg",
+          section: "Resources",
+          kicker: "Press",
+          description: "Promo photos for posters, listings, and announcements.",
+          featured: false,
+          hidden: false,
+          sortOrder: 110
+        },
+        {
+          group: "main",
+          title: "Technical Requirements",
+          url: "https://drive.google.com/file/d/17e3-Qarq7WukVpIeMCu_jQhFZtXjb_Uu/view?usp=drive_link",
+          imageUrl: "assets/images/logo.jpg",
+          section: "Resources",
+          kicker: "Shows",
+          description: "Stage plot and input list for promoters and venues.",
+          featured: false,
+          hidden: false,
+          sortOrder: 120
+        }
+      ];
+    }
+
+    function normalizeLinkEntry(link, id, fallbackSortOrder = 0) {
+      const numericSortOrder = Number.parseInt(link?.sortOrder, 10);
+      return {
+        id,
+        title: String(link?.title || "").trim(),
+        url: String(link?.url || "").trim(),
+        imageUrl: String(link?.imageUrl || "").trim(),
+        section: String(link?.section || "").trim(),
+        kicker: String(link?.kicker || "").trim(),
+        description: String(link?.description || "").trim(),
+        group: String(link?.group || "").trim().toLowerCase() === "social" ? "social" : "main",
+        featured: link?.featured === true,
+        hidden: link?.hidden === true || String(link?.hidden || "").toLowerCase() === "true",
+        sortOrder: Number.isFinite(numericSortOrder) ? numericSortOrder : fallbackSortOrder
+      };
+    }
+
+    function getLinkSection(link) {
+      const explicitSection = String(link?.section || "").trim();
+      if (explicitSection) {
+        return explicitSection;
+      }
+
+      const source = `${link?.title || ""} ${link?.kicker || ""} ${link?.description || ""} ${link?.url || ""}`.toLowerCase();
+      if (/release|ep|album|listen|spotify|apple|youtube|visuali[sz]er|single|track/.test(source)) {
+        return "Releases";
+      }
+      if (/show|gig|ticket|tour|songkick|bandsintown/.test(source)) {
+        return "Shows";
+      }
+      if (/store|shop|merch|bandcamp/.test(source)) {
+        return "Store";
+      }
+      if (/press|photo|tech|requirement|stage plot|input list|resource/.test(source)) {
+        return "Resources";
+      }
+      if (/email|book|contact/.test(source)) {
+        return "Contact";
+      }
+
+      return "";
+    }
+
+    function normalizeCampaignEntry(campaign = {}) {
+      const normalizedMetaPixelId = String(campaign?.metaPixelId || "").replace(/\s+/g, "").trim();
+      return {
+        badge: String(campaign?.badge || "").trim(),
+        title: String(campaign?.title || "").trim(),
+        subtitle: String(campaign?.subtitle || "").trim(),
+        description: String(campaign?.description || "").trim(),
+        releaseDate: String(campaign?.releaseDate || "").trim(),
+        artworkUrl: String(campaign?.artworkUrl || "").trim(),
+        metaPixelId: normalizedMetaPixelId,
+        primaryLabel: String(campaign?.primaryLabel || "").trim(),
+        primaryUrl: String(campaign?.primaryUrl || "").trim(),
+        secondaryLabel: String(campaign?.secondaryLabel || "").trim(),
+        secondaryUrl: String(campaign?.secondaryUrl || "").trim(),
+        spotifyUrl: String(campaign?.spotifyUrl || "").trim(),
+        appleMusicUrl: String(campaign?.appleMusicUrl || "").trim(),
+        youtubeUrl: String(campaign?.youtubeUrl || "").trim(),
+        bandcampUrl: String(campaign?.bandcampUrl || "").trim(),
+        live: campaign?.live === true || String(campaign?.live || "").toLowerCase() === "true",
+        updatedAt: campaign?.updatedAt || null
+      };
     }
 
     function getDateForFilter(value) {
@@ -1950,12 +2684,54 @@
     }
 
     function getActiveCollectionLabel() {
-      return state.activePage === "gigs" ? "gigs" : state.currentCollection;
+      if (state.activePage === "gigs") {
+        return "gigs";
+      }
+      if (state.activePage === "links") {
+        return "links";
+      }
+      if (state.activePage === "campaigns") {
+        return "campaigns";
+      }
+      return state.currentCollection;
     }
 
     function updateHeroMeta(updatedAt = "Not loaded") {
       elements.heroCollection.textContent = `Collection: ${getActiveCollectionLabel()}`;
       elements.heroUpdated.textContent = `Updated: ${updatedAt}`;
+    }
+
+    function getLoginErrorMessage(error) {
+      switch (error?.code) {
+        case "auth/invalid-email":
+          return "Enter a valid email address.";
+        case "auth/invalid-credential":
+        case "auth/user-not-found":
+        case "auth/wrong-password":
+          return "Incorrect email or password.";
+        case "auth/too-many-requests":
+          return "Too many attempts. Wait a moment and try again.";
+        case "auth/network-request-failed":
+          return "Sign-in failed because the network request could not complete.";
+        default:
+          return "Could not sign in. Check the browser console for details.";
+      }
+    }
+
+    function syncLoginButton(isBusy = false) {
+      elements.loginSubmit.disabled = isBusy;
+      elements.loginSubmit.textContent = isBusy ? "Signing In..." : "Sign In";
+    }
+
+    function syncSignOutButton(isBusy = false) {
+      elements.signOutButton.disabled = isBusy || !state.authUser;
+      elements.signOutButton.textContent = isBusy ? "Signing Out..." : "Sign Out";
+    }
+
+    function setAuthStatus(user = null) {
+      elements.authStatus.textContent = user?.email
+        ? `Signed in: ${user.email}`
+        : "Signed out.";
     }
 
     function setGigStatus(message = "", type = "") {
@@ -1974,6 +2750,85 @@
       return gig?.hidden === true;
     }
 
+    function setLinkStatus(message = "", type = "") {
+      elements.linkStatus.textContent = message;
+      elements.linkStatus.classList.remove("is-success", "is-error");
+      if (type) {
+        elements.linkStatus.classList.add(type);
+      }
+    }
+
+    function getLinkById(id) {
+      return state.links.find((link) => link.id === id) || null;
+    }
+
+    function isLinkHidden(link) {
+      return link?.hidden === true;
+    }
+
+    function getNextLinkSortOrder() {
+      const highestSortOrder = state.links.reduce((maxSortOrder, link) => {
+        const numericSortOrder = Number.parseInt(link.sortOrder, 10);
+        return Number.isFinite(numericSortOrder) ? Math.max(maxSortOrder, numericSortOrder) : maxSortOrder;
+      }, 0);
+      return highestSortOrder + 10 || 10;
+    }
+
+    function getCampaignPublicUrl() {
+      try {
+        return new URL("smartlink.html", window.location.href).href;
+      } catch (error) {
+        return "smartlink.html";
+      }
+    }
+
+    function getCampaignDestinations(campaign = state.campaign) {
+      if (!campaign) {
+        return [];
+      }
+
+      return [
+        { label: campaign.primaryLabel || "Primary CTA", url: campaign.primaryUrl, type: "primary" },
+        { label: campaign.secondaryLabel || "Secondary CTA", url: campaign.secondaryUrl, type: "secondary" },
+        { label: "Spotify", url: campaign.spotifyUrl, type: "platform" },
+        { label: "Apple Music", url: campaign.appleMusicUrl, type: "platform" },
+        { label: "YouTube", url: campaign.youtubeUrl, type: "platform" },
+        { label: "Bandcamp", url: campaign.bandcampUrl, type: "platform" }
+      ].filter((entry) => entry.url);
+    }
+
+    function resetLinkFormDefaults({ resetValues = false } = {}) {
+      if (resetValues) {
+        elements.linkForm.reset();
+      }
+      if (!elements.linkSortOrder.value) {
+        elements.linkSortOrder.value = String(getNextLinkSortOrder());
+      }
+      if (!elements.linkGroup.value) {
+        elements.linkGroup.value = "main";
+      }
+    }
+
+    function populateCampaignForm(campaign = null) {
+      const activeCampaign = campaign || normalizeCampaignEntry();
+      elements.campaignBadge.value = activeCampaign.badge || "";
+      elements.campaignTitle.value = activeCampaign.title || "";
+      elements.campaignSubtitle.value = activeCampaign.subtitle || "";
+      elements.campaignDescription.value = activeCampaign.description || "";
+      elements.campaignReleaseDate.value = activeCampaign.releaseDate || "";
+      elements.campaignArtworkUrl.value = activeCampaign.artworkUrl || "";
+      elements.campaignMetaPixelId.value = activeCampaign.metaPixelId || "";
+      elements.campaignPrimaryLabel.value = activeCampaign.primaryLabel || "";
+      elements.campaignPrimaryUrl.value = activeCampaign.primaryUrl || "";
+      elements.campaignSecondaryLabel.value = activeCampaign.secondaryLabel || "";
+      elements.campaignSecondaryUrl.value = activeCampaign.secondaryUrl || "";
+      elements.campaignSpotifyUrl.value = activeCampaign.spotifyUrl || "";
+      elements.campaignAppleUrl.value = activeCampaign.appleMusicUrl || "";
+      elements.campaignYoutubeUrl.value = activeCampaign.youtubeUrl || "";
+      elements.campaignBandcampUrl.value = activeCampaign.bandcampUrl || "";
+      elements.campaignLive.checked = activeCampaign.live === true;
+    }
+
     function syncGigFormState() {
       elements.saveGig.disabled = state.isSavingGig;
       elements.saveGig.textContent = state.isSavingGig ? "Saving..." : "Save Gig";
@@ -1988,6 +2843,37 @@
       elements.closeGigEdit.disabled = state.isUpdatingGig;
     }
 
+    function syncLinkFormState() {
+      elements.saveLink.disabled = state.isSavingLink || state.isSeedingLinks;
+      elements.saveLink.textContent = state.isSavingLink ? "Saving..." : "Save Link";
+      elements.seedLinks.disabled = state.isLoadingLinks || state.isSavingLink || state.isSeedingLinks || state.links.length > 0;
+      elements.seedLinks.textContent = state.isSeedingLinks
+        ? "Importing..."
+        : state.links.length > 0
+          ? "Defaults Imported"
+          : "Import Current Defaults";
+    }
+
+    function syncLinkEditState() {
+      const hasActiveLink = Boolean(state.activeLinkId);
+      elements.saveLinkEdit.disabled = state.isUpdatingLink || !hasActiveLink;
+      elements.saveLinkEdit.textContent = state.isUpdatingLink ? "Saving..." : "Save Changes";
+      elements.linkDelete.disabled = state.isUpdatingLink || !hasActiveLink || state.deletingLinkIds.has(state.activeLinkId);
+      elements.linkDelete.textContent = state.deletingLinkIds.has(state.activeLinkId) ? "Deleting..." : "Delete Link";
+      elements.closeLinkEdit.disabled = state.isUpdatingLink;
+    }
+
+    function syncCampaignFormState() {
+      elements.saveCampaign.disabled = state.isSavingCampaign || state.isLoadingCampaign || state.isDeletingCampaign;
+      elements.saveCampaign.textContent = state.isSavingCampaign
+        ? "Saving..."
+        : state.isLoadingCampaign
+          ? "Loading..."
+          : "Save Campaign";
+      elements.campaignDelete.disabled = state.isSavingCampaign || state.isLoadingCampaign || state.isDeletingCampaign || !state.campaign?.title;
+      elements.campaignDelete.textContent = state.isDeletingCampaign ? "Deleting..." : "Delete Campaign";
+    }
+
     function resetGigEditDialog() {
       state.activeGigId = null;
       state.isUpdatingGig = false;
@@ -1998,9 +2884,35 @@
       syncGigEditState();
     }
 
+    function resetLinkEditDialog() {
+      state.activeLinkId = null;
+      state.isUpdatingLink = false;
+      elements.linkEditTitle.textContent = "Update link entry";
+      elements.linkEditForm.reset();
+      elements.linkEditGroup.value = "main";
+      elements.linkEditHidden.checked = false;
+      elements.linkEditFeatured.checked = false;
+      elements.linkEditError.textContent = "";
+      syncLinkEditState();
+    }
+
+    function setCampaignStatus(message = "", type = "") {
+      elements.campaignStatus.textContent = message;
+      elements.campaignStatus.classList.remove("is-success", "is-error");
+      if (type) {
+        elements.campaignStatus.classList.add(type);
+      }
+    }
+
     function closeGigEditDialog() {
       if (elements.gigEditDialog.open) {
         elements.gigEditDialog.close();
+      }
+    }
+
+    function closeLinkEditDialog() {
+      if (elements.linkEditDialog.open) {
+        elements.linkEditDialog.close();
       }
     }
 
@@ -2023,6 +2935,33 @@
 
       if (!elements.gigEditDialog.open) {
         elements.gigEditDialog.showModal();
+      }
+    }
+
+    function openLinkEditDialog(id) {
+      const link = getLinkById(id);
+      if (!link) {
+        return;
+      }
+
+      state.activeLinkId = id;
+      state.isUpdatingLink = false;
+      elements.linkEditTitle.textContent = link.title || "Link";
+      elements.linkEditGroup.value = link.group || "main";
+      elements.linkEditSortOrder.value = Number.isFinite(Number.parseInt(link.sortOrder, 10)) ? String(link.sortOrder) : "";
+      elements.linkEditTitleInput.value = link.title || "";
+      elements.linkEditUrl.value = link.url || "";
+      elements.linkEditImageUrl.value = link.imageUrl || "";
+      elements.linkEditSection.value = link.section || "";
+      elements.linkEditKicker.value = link.kicker || "";
+      elements.linkEditDescription.value = link.description || "";
+      elements.linkEditFeatured.checked = link.featured === true;
+      elements.linkEditHidden.checked = isLinkHidden(link);
+      elements.linkEditError.textContent = "";
+      syncLinkEditState();
+
+      if (!elements.linkEditDialog.open) {
+        elements.linkEditDialog.showModal();
       }
     }
 
@@ -2098,6 +3037,106 @@
       }
     }
 
+    function renderLinks() {
+      const hiddenCount = state.links.filter((link) => isLinkHidden(link)).length;
+      elements.linkCount.textContent = state.links.length
+        ? `${state.links.length} link${state.links.length === 1 ? "" : "s"} loaded${hiddenCount ? ` | ${hiddenCount} hidden` : ""}`
+        : "No links loaded";
+
+      if (!state.links.length) {
+        elements.linkList.innerHTML = `<div class="gig-admin-empty">No links loaded yet. Use Add Link or import the current defaults.</div>`;
+        syncLinkFormState();
+        if (state.activePage === "links") {
+          syncActivePageUI();
+        }
+        return;
+      }
+
+      elements.linkList.innerHTML = "";
+      state.links.forEach((link) => {
+        const item = document.createElement("div");
+        item.className = `link-admin-item${isLinkHidden(link) ? " is-hidden" : ""}`;
+
+        const top = document.createElement("div");
+        top.className = "link-admin-top";
+
+        const title = document.createElement("div");
+        title.className = "link-admin-title";
+        title.textContent = link.title || "Untitled link";
+
+        const badges = document.createElement("div");
+        badges.className = "link-admin-meta";
+
+        const groupBadge = document.createElement("span");
+        groupBadge.className = "gig-admin-badge";
+        groupBadge.textContent = link.group === "social" ? "Social" : "Main";
+        badges.appendChild(groupBadge);
+
+        const sectionName = getLinkSection(link);
+        if (sectionName && link.group !== "social") {
+          const sectionBadge = document.createElement("span");
+          sectionBadge.className = "gig-admin-badge";
+          sectionBadge.textContent = sectionName;
+          badges.appendChild(sectionBadge);
+        }
+
+        if (link.featured) {
+          const featuredBadge = document.createElement("span");
+          featuredBadge.className = "gig-admin-badge";
+          featuredBadge.textContent = "Featured";
+          badges.appendChild(featuredBadge);
+        }
+
+        if (isLinkHidden(link)) {
+          const hiddenBadge = document.createElement("span");
+          hiddenBadge.className = "gig-admin-badge hidden";
+          hiddenBadge.textContent = "Hidden";
+          badges.appendChild(hiddenBadge);
+        }
+
+        top.appendChild(title);
+        top.appendChild(badges);
+
+        const url = document.createElement("div");
+        url.className = "link-admin-url";
+        url.textContent = link.url || "-";
+
+        const description = document.createElement("div");
+        description.className = "link-admin-description";
+        description.textContent = [
+          getLinkSection(link) || "",
+          link.imageUrl ? "Custom image" : "",
+          link.kicker || "",
+          link.description || "",
+          `Order ${link.sortOrder}`
+        ].filter(Boolean).join(" | ");
+
+        const actions = document.createElement("div");
+        actions.className = "link-admin-actions";
+
+        const editButton = document.createElement("button");
+        editButton.type = "button";
+        editButton.className = "row-action";
+        editButton.textContent = "Edit";
+        editButton.addEventListener("click", () => {
+          openLinkEditDialog(link.id);
+        });
+
+        actions.appendChild(editButton);
+
+        item.appendChild(top);
+        item.appendChild(url);
+        item.appendChild(description);
+        item.appendChild(actions);
+        elements.linkList.appendChild(item);
+      });
+
+      syncLinkFormState();
+      if (state.activePage === "links") {
+        syncActivePageUI();
+      }
+    }
+
     async function loadGigs() {
       state.isLoadingGigs = true;
       syncRefreshButton();
@@ -2142,6 +3181,58 @@
       }
     }
 
+    async function loadLinks() {
+      state.isLoadingLinks = true;
+      syncRefreshButton();
+      syncLinkFormState();
+      elements.linkCount.textContent = "Loading links...";
+      elements.linkList.innerHTML = `<div class="gig-admin-empty">Loading links...</div>`;
+      if (state.activePage === "links") {
+        elements.collectionNote.textContent = "Loading links from Firestore...";
+        updateHeroMeta("Loading...");
+      }
+
+      try {
+        let snapshot;
+        try {
+          snapshot = await getDocs(query(collection(db, "links"), orderBy("sortOrder", "asc")));
+        } catch (error) {
+          console.warn("Falling back to unordered link load.", error);
+          snapshot = await getDocs(collection(db, "links"));
+        }
+
+        state.links = snapshot.docs
+          .map((linkDoc, index) => normalizeLinkEntry(linkDoc.data(), linkDoc.id, (index + 1) * 10))
+          .sort((a, b) => {
+            if (a.sortOrder !== b.sortOrder) {
+              return a.sortOrder - b.sortOrder;
+            }
+            return a.title.localeCompare(b.title);
+          });
+        renderLinks();
+        resetLinkFormDefaults();
+        if (state.activePage === "links") {
+          updateHeroMeta(new Date().toLocaleString());
+        }
+      } catch (error) {
+        console.error("Error loading links:", error);
+        state.links = [];
+        elements.linkCount.textContent = "Load failed";
+        elements.linkList.innerHTML = `<div class="gig-admin-empty">Could not load links. Check the browser console for details.</div>`;
+        if (state.activePage === "links") {
+          updateHeroMeta("Load failed");
+          syncActivePageUI();
+        }
+      } finally {
+        state.isLoadingLinks = false;
+        syncRefreshButton();
+        syncLinkFormState();
+        if (state.activePage === "links") {
+          syncActivePageUI();
+        }
+      }
+    }
+
     async function saveGig(event) {
       event.preventDefault();
       if (state.isSavingGig) {
@@ -2178,6 +3269,72 @@
       }
     }
 
+    async function saveLink(event) {
+      event.preventDefault();
+      if (state.isSavingLink || state.isSeedingLinks) {
+        return;
+      }
+
+      const rawSortOrder = elements.linkSortOrder.value.trim();
+      const parsedSortOrder = Number.parseInt(rawSortOrder, 10);
+      const payload = {
+        group: elements.linkGroup.value === "social" ? "social" : "main",
+        sortOrder: Number.isFinite(parsedSortOrder) ? parsedSortOrder : getNextLinkSortOrder(),
+        title: elements.linkTitle.value.trim(),
+        url: elements.linkUrl.value.trim(),
+        imageUrl: elements.linkImageUrl.value.trim(),
+        section: elements.linkSection.value.trim(),
+        kicker: elements.linkKicker.value.trim(),
+        description: elements.linkDescription.value.trim(),
+        featured: elements.linkFeatured.checked,
+        hidden: false
+      };
+
+      if (!payload.title || !payload.url) {
+        setLinkStatus("Title and URL are required.", "is-error");
+        return;
+      }
+
+      state.isSavingLink = true;
+      syncLinkFormState();
+      setLinkStatus("");
+
+      try {
+        await addDoc(collection(db, "links"), payload);
+        setLinkStatus("Link saved to Firestore.", "is-success");
+        resetLinkFormDefaults({ resetValues: true });
+        await loadLinks();
+      } catch (error) {
+        console.error("Error saving link:", error);
+        setLinkStatus("Could not save link. Check the browser console for details.", "is-error");
+      } finally {
+        state.isSavingLink = false;
+        syncLinkFormState();
+      }
+    }
+
+    async function seedDefaultLinks() {
+      if (state.isSeedingLinks || state.isSavingLink || state.links.length) {
+        return;
+      }
+
+      state.isSeedingLinks = true;
+      syncLinkFormState();
+      setLinkStatus("");
+
+      try {
+        await Promise.all(getDefaultLinks().map((entry) => addDoc(collection(db, "links"), entry)));
+        setLinkStatus("Imported the current default links into Firestore.", "is-success");
+        await loadLinks();
+      } catch (error) {
+        console.error("Error seeding links:", error);
+        setLinkStatus("Could not import default links. Check the browser console for details.", "is-error");
+      } finally {
+        state.isSeedingLinks = false;
+        syncLinkFormState();
+      }
+    }
+
     async function saveGigEdit(event) {
       event.preventDefault();
       if (state.isUpdatingGig || !state.activeGigId) {
@@ -2211,6 +3368,289 @@
       } finally {
         state.isUpdatingGig = false;
         syncGigEditState();
+      }
+    }
+
+    async function saveLinkEdit(event) {
+      event.preventDefault();
+      if (state.isUpdatingLink || !state.activeLinkId) {
+        return;
+      }
+
+      const rawSortOrder = elements.linkEditSortOrder.value.trim();
+      const parsedSortOrder = Number.parseInt(rawSortOrder, 10);
+      const payload = {
+        group: elements.linkEditGroup.value === "social" ? "social" : "main",
+        sortOrder: Number.isFinite(parsedSortOrder) ? parsedSortOrder : getNextLinkSortOrder(),
+        title: elements.linkEditTitleInput.value.trim(),
+        url: elements.linkEditUrl.value.trim(),
+        imageUrl: elements.linkEditImageUrl.value.trim(),
+        section: elements.linkEditSection.value.trim(),
+        kicker: elements.linkEditKicker.value.trim(),
+        description: elements.linkEditDescription.value.trim(),
+        featured: elements.linkEditFeatured.checked,
+        hidden: elements.linkEditHidden.checked
+      };
+
+      if (!payload.title || !payload.url) {
+        elements.linkEditError.textContent = "Title and URL are required.";
+        return;
+      }
+
+      state.isUpdatingLink = true;
+      elements.linkEditError.textContent = "";
+      syncLinkEditState();
+
+      try {
+        await updateDoc(doc(db, "links", state.activeLinkId), payload);
+        await loadLinks();
+        closeLinkEditDialog();
+      } catch (error) {
+        console.error("Error updating link:", error);
+        elements.linkEditError.textContent = "Could not update link. Check the browser console for details.";
+      } finally {
+        state.isUpdatingLink = false;
+        syncLinkEditState();
+      }
+    }
+
+    function renderCampaign() {
+      if (!state.campaign || !state.campaign.title) {
+        elements.campaignOpenLink.href = getCampaignPublicUrl();
+        elements.campaignCount.textContent = "No campaign saved";
+        elements.campaignPreview.innerHTML = `<div class="campaign-preview-empty">No campaign loaded yet. Save a title and at least one destination URL to publish a first release page.</div>`;
+        if (state.activePage === "campaigns") {
+          syncActivePageUI();
+        }
+        return;
+      }
+
+      const campaign = state.campaign;
+      const destinations = getCampaignDestinations(campaign);
+      const releaseDate = campaign.releaseDate ? formatGigDate(campaign.releaseDate) : "";
+      elements.campaignOpenLink.href = getCampaignPublicUrl();
+
+      elements.campaignCount.textContent = `${campaign.live ? "Live" : "Draft"} | ${destinations.length} destination${destinations.length === 1 ? "" : "s"}`;
+      elements.campaignPreview.innerHTML = "";
+
+      const card = document.createElement("article");
+      card.className = "campaign-preview-card";
+
+      const top = document.createElement("div");
+      top.className = "campaign-preview-top";
+
+      const topCopy = document.createElement("div");
+
+      const kicker = document.createElement("div");
+      kicker.className = "campaign-preview-kicker";
+      kicker.textContent = campaign.badge || "Smart Link";
+      topCopy.appendChild(kicker);
+
+      const status = document.createElement("span");
+      status.className = `campaign-preview-status ${campaign.live ? "is-live" : "is-draft"}`;
+      status.textContent = campaign.live ? "Live" : "Draft";
+
+      top.appendChild(topCopy);
+      top.appendChild(status);
+      card.appendChild(top);
+
+      const title = document.createElement("h3");
+      title.className = "campaign-preview-title";
+      title.textContent = campaign.title;
+      card.appendChild(title);
+
+      if (campaign.subtitle) {
+        const subtitle = document.createElement("div");
+        subtitle.className = "campaign-preview-subtitle";
+        subtitle.textContent = campaign.subtitle;
+        card.appendChild(subtitle);
+      }
+
+      if (campaign.description) {
+        const description = document.createElement("div");
+        description.className = "campaign-preview-description";
+        description.textContent = campaign.description;
+        card.appendChild(description);
+      }
+
+      const meta = document.createElement("div");
+      meta.className = "campaign-preview-meta";
+
+      if (releaseDate) {
+        const releaseChip = document.createElement("span");
+        releaseChip.className = "campaign-preview-chip";
+        releaseChip.textContent = `Release: ${releaseDate}`;
+        meta.appendChild(releaseChip);
+      }
+
+      if (campaign.artworkUrl) {
+        const artworkChip = document.createElement("span");
+        artworkChip.className = "campaign-preview-chip";
+        artworkChip.textContent = "Artwork ready";
+        meta.appendChild(artworkChip);
+      }
+
+      if (campaign.metaPixelId) {
+        const pixelChip = document.createElement("span");
+        pixelChip.className = "campaign-preview-chip";
+        pixelChip.textContent = "Meta Pixel ready";
+        meta.appendChild(pixelChip);
+      }
+
+      const destinationChip = document.createElement("span");
+      destinationChip.className = "campaign-preview-chip";
+      destinationChip.textContent = `${destinations.length} destination${destinations.length === 1 ? "" : "s"}`;
+      meta.appendChild(destinationChip);
+
+      card.appendChild(meta);
+
+      if (destinations.length) {
+        const links = document.createElement("div");
+        links.className = "campaign-preview-links";
+
+        destinations.forEach((entry) => {
+          const link = document.createElement("a");
+          link.className = "campaign-preview-link";
+          link.href = entry.url;
+          link.target = "_blank";
+          link.rel = "noopener noreferrer";
+          link.textContent = entry.label;
+          links.appendChild(link);
+        });
+
+        card.appendChild(links);
+      } else {
+        const empty = document.createElement("div");
+        empty.className = "campaign-preview-empty";
+        empty.textContent = "No destination URLs set yet. Add at least one button or platform link before making this page live.";
+        card.appendChild(empty);
+      }
+
+      elements.campaignPreview.appendChild(card);
+
+      if (state.activePage === "campaigns") {
+        syncActivePageUI();
+      }
+    }
+
+    async function loadCampaign() {
+      state.isLoadingCampaign = true;
+      syncRefreshButton();
+      syncCampaignFormState();
+      elements.campaignCount.textContent = "Loading campaign...";
+      elements.campaignPreview.innerHTML = `<div class="campaign-preview-empty">Loading campaign settings...</div>`;
+      if (state.activePage === "campaigns") {
+        elements.collectionNote.textContent = "Loading campaign settings from Firestore...";
+        updateHeroMeta("Loading...");
+      }
+
+      try {
+        const campaignSnapshot = await getDoc(doc(db, "campaigns", "active"));
+        state.campaign = campaignSnapshot.exists() ? normalizeCampaignEntry(campaignSnapshot.data()) : null;
+        populateCampaignForm(state.campaign);
+        renderCampaign();
+
+        if (state.activePage === "campaigns") {
+          const updatedLabel = state.campaign?.updatedAt
+            ? (formatTimestamp(state.campaign.updatedAt) || new Date().toLocaleString())
+            : state.campaign
+              ? "Saved"
+              : "No campaign saved";
+          updateHeroMeta(updatedLabel);
+        }
+      } catch (error) {
+        console.error("Error loading campaign:", error);
+        state.campaign = null;
+        populateCampaignForm(null);
+        elements.campaignCount.textContent = "Load failed";
+        elements.campaignPreview.innerHTML = `<div class="campaign-preview-empty">Could not load campaign settings. Check the browser console for details.</div>`;
+        if (state.activePage === "campaigns") {
+          updateHeroMeta("Load failed");
+          syncActivePageUI();
+        }
+      } finally {
+        state.isLoadingCampaign = false;
+        syncRefreshButton();
+        syncCampaignFormState();
+        if (state.activePage === "campaigns") {
+          syncActivePageUI();
+        }
+      }
+    }
+
+    async function saveCampaign(event) {
+      event.preventDefault();
+      if (state.isSavingCampaign || state.isLoadingCampaign) {
+        return;
+      }
+
+      const payload = normalizeCampaignEntry({
+        badge: elements.campaignBadge.value,
+        title: elements.campaignTitle.value,
+        subtitle: elements.campaignSubtitle.value,
+        description: elements.campaignDescription.value,
+        releaseDate: elements.campaignReleaseDate.value,
+        artworkUrl: elements.campaignArtworkUrl.value,
+        metaPixelId: elements.campaignMetaPixelId.value,
+        primaryLabel: elements.campaignPrimaryLabel.value,
+        primaryUrl: elements.campaignPrimaryUrl.value,
+        secondaryLabel: elements.campaignSecondaryLabel.value,
+        secondaryUrl: elements.campaignSecondaryUrl.value,
+        spotifyUrl: elements.campaignSpotifyUrl.value,
+        appleMusicUrl: elements.campaignAppleUrl.value,
+        youtubeUrl: elements.campaignYoutubeUrl.value,
+        bandcampUrl: elements.campaignBandcampUrl.value,
+        live: elements.campaignLive.checked,
+        updatedAt: new Date()
+      });
+
+      if (!payload.title) {
+        setCampaignStatus("A campaign title is required.", "is-error");
+        return;
+      }
+
+      if (payload.metaPixelId && !/^\d+$/.test(payload.metaPixelId)) {
+        setCampaignStatus("Meta Pixel ID should contain numbers only.", "is-error");
+        return;
+      }
+
+      if (payload.primaryUrl && !payload.primaryLabel) {
+        payload.primaryLabel = "Listen now";
+      }
+
+      if (payload.secondaryUrl && !payload.secondaryLabel) {
+        payload.secondaryLabel = "Learn more";
+      }
+
+      if (payload.primaryLabel && !payload.primaryUrl) {
+        setCampaignStatus("Add a URL for the primary button, or clear its label.", "is-error");
+        return;
+      }
+
+      if (payload.secondaryLabel && !payload.secondaryUrl) {
+        setCampaignStatus("Add a URL for the secondary button, or clear its label.", "is-error");
+        return;
+      }
+
+      if (payload.live && !getCampaignDestinations(payload).length) {
+        setCampaignStatus("Add at least one destination URL before making the page live.", "is-error");
+        return;
+      }
+
+      state.isSavingCampaign = true;
+      syncCampaignFormState();
+      setCampaignStatus("");
+
+      try {
+        await setDoc(doc(db, "campaigns", "active"), payload);
+        setCampaignStatus("Campaign saved to Firestore.", "is-success");
+        await loadCampaign();
+      } catch (error) {
+        console.error("Error saving campaign:", error);
+        setCampaignStatus("Could not save campaign. Check the browser console for details.", "is-error");
+      } finally {
+        state.isSavingCampaign = false;
+        syncCampaignFormState();
       }
     }
 
@@ -2674,6 +4114,14 @@
         return state.deletingGigIds.has(target.id);
       }
 
+      if (target.type === "link") {
+        return state.deletingLinkIds.has(target.id);
+      }
+
+      if (target.type === "campaign") {
+        return state.isDeletingCampaign;
+      }
+
       if (target.type === "session") {
         return state.deletingSessions.has(target.sessionKey);
       }
@@ -2738,12 +4186,18 @@
       const isDeleting = isDeleteTargetInProgress(state.pendingDeleteTarget);
       const isSessionDelete = state.pendingDeleteTarget?.type === "session";
       const isGigDelete = state.pendingDeleteTarget?.type === "gig";
+      const isLinkDelete = state.pendingDeleteTarget?.type === "link";
+      const isCampaignDelete = state.pendingDeleteTarget?.type === "campaign";
       elements.confirmDelete.disabled = !state.pendingDeleteTarget || isDeleting;
       elements.cancelDelete.disabled = isDeleting;
       elements.confirmDelete.textContent = isDeleting
         ? "Deleting..."
         : isGigDelete
           ? "Delete Gig"
+        : isLinkDelete
+          ? "Delete Link"
+        : isCampaignDelete
+          ? "Delete Campaign"
         : isSessionDelete
           ? "Delete Session"
           : "Delete Entry";
@@ -2759,6 +4213,22 @@
         return {
           eventLabel: gig?.event || "Live show",
           timestamp: gig ? `${formatGigDate(gig.date)} | ${gig.venue || "Venue"}${gig.city ? `, ${gig.city}` : ""}` : "No gig details available"
+        };
+      }
+
+      if (target.type === "link") {
+        const link = getLinkById(target.id);
+        return {
+          eventLabel: link?.title || "Link",
+          timestamp: link ? `${link.group === "social" ? "Social" : "Main"} | ${link.url || "No URL"}` : "No link details available"
+        };
+      }
+
+      if (target.type === "campaign") {
+        const campaign = state.campaign;
+        return {
+          eventLabel: campaign?.title || "Campaign",
+          timestamp: campaign ? `${campaign.live ? "Live" : "Draft"} | ${campaign.releaseDate ? formatGigDate(campaign.releaseDate) : "No release date"}` : "No campaign details available"
         };
       }
 
@@ -2788,6 +4258,18 @@
         return;
       }
 
+      if (state.pendingDeleteTarget.type === "link") {
+        elements.deleteDialogTitle.textContent = "Remove this link?";
+        elements.deleteDialogDescription.textContent = "This action will permanently delete the selected link from the links collection.";
+        return;
+      }
+
+      if (state.pendingDeleteTarget.type === "campaign") {
+        elements.deleteDialogTitle.textContent = "Remove this campaign?";
+        elements.deleteDialogDescription.textContent = "This action will permanently delete the active campaign document used by the public smart-link page.";
+        return;
+      }
+
       if (state.pendingDeleteTarget.type === "session") {
         elements.deleteDialogTitle.textContent = "Remove this session?";
         elements.deleteDialogDescription.textContent = "This action will permanently delete every event in the selected session from the current collection.";
@@ -2800,14 +4282,19 @@
 
     function syncActivePageUI() {
       const isAnalyticsPage = state.activePage === "analytics";
+      const isGigsPage = state.activePage === "gigs";
+      const isLinksPage = state.activePage === "links";
+      const isCampaignsPage = state.activePage === "campaigns";
       elements.analyticsPage.classList.toggle("active", isAnalyticsPage);
-      elements.gigsPage.classList.toggle("active", !isAnalyticsPage);
+      elements.gigsPage.classList.toggle("active", isGigsPage);
+      elements.linksPage.classList.toggle("active", isLinksPage);
+      elements.campaignsPage.classList.toggle("active", isCampaignsPage);
 
       elements.pageTabs.forEach((link) => {
         const isAnalyticsTab = link.dataset.page === "analytics";
         const isActive = isAnalyticsTab
           ? isAnalyticsPage && link.dataset.collection === state.currentCollection
-          : !isAnalyticsPage && link.dataset.page === state.activePage;
+          : link.dataset.page === state.activePage;
         link.classList.toggle("active", isActive);
       });
 
@@ -2816,10 +4303,21 @@
         elements.collectionNote.textContent = state.viewMode === "sessions"
           ? `Viewing ${getActiveEntries().length} event${getActiveEntries().length === 1 ? "" : "s"} across ${visibleCount} session${visibleCount === 1 ? "" : "s"} from ${state.currentCollection}.`
           : `Viewing ${visibleCount} result${visibleCount === 1 ? "" : "s"} from ${state.currentCollection}.`;
-      } else {
+      } else if (isGigsPage) {
         elements.collectionNote.textContent = state.isLoadingGigs
           ? "Loading gigs from Firestore..."
           : `Managing ${state.gigs.length} gig${state.gigs.length === 1 ? "" : "s"} in the gigs collection.`;
+      } else if (isLinksPage) {
+        elements.collectionNote.textContent = state.isLoadingLinks
+          ? "Loading links from Firestore..."
+          : `Managing ${state.links.length} link${state.links.length === 1 ? "" : "s"} in the links collection.`;
+      } else {
+        const destinationCount = getCampaignDestinations().length;
+        elements.collectionNote.textContent = state.isLoadingCampaign
+          ? "Loading campaign settings from Firestore..."
+          : state.campaign?.title
+            ? `Managing the ${state.campaign.live ? "live" : "draft"} smart-link page with ${destinationCount} destination${destinationCount === 1 ? "" : "s"}.`
+            : "No active campaign saved yet in campaigns/active.";
       }
 
       elements.heroCollection.textContent = `Collection: ${getActiveCollectionLabel()}`;
@@ -2834,6 +4332,18 @@
       if (state.activePage === "gigs") {
         elements.refreshButton.disabled = state.isLoadingGigs;
         elements.refreshButton.textContent = state.isLoadingGigs ? "Refreshing..." : "Refresh Gigs";
+        return;
+      }
+
+      if (state.activePage === "links") {
+        elements.refreshButton.disabled = state.isLoadingLinks;
+        elements.refreshButton.textContent = state.isLoadingLinks ? "Refreshing..." : "Refresh Links";
+        return;
+      }
+
+      if (state.activePage === "campaigns") {
+        elements.refreshButton.disabled = state.isLoadingCampaign;
+        elements.refreshButton.textContent = state.isLoadingCampaign ? "Refreshing..." : "Refresh Campaign";
         return;
       }
 
@@ -2887,6 +4397,46 @@
       }
     }
 
+    function openDeleteLinkDialog(id) {
+      if (!id || state.deletingLinkIds.has(id)) {
+        return;
+      }
+
+      state.pendingDeleteTarget = { type: "link", id };
+      state.refreshAfterDeleteClose = false;
+      elements.deleteDialogError.textContent = "";
+
+      const { eventLabel, timestamp } = getDeleteDialogCopy(state.pendingDeleteTarget);
+      elements.deleteDialogEvent.textContent = eventLabel;
+      elements.deleteDialogTimestamp.textContent = timestamp;
+      syncDeleteDialogCopy();
+      syncDeleteDialogState();
+
+      if (!elements.deleteDialog.open) {
+        elements.deleteDialog.showModal();
+      }
+    }
+
+    function openDeleteCampaignDialog() {
+      if (!state.campaign?.title || state.isDeletingCampaign) {
+        return;
+      }
+
+      state.pendingDeleteTarget = { type: "campaign", id: "active" };
+      state.refreshAfterDeleteClose = false;
+      elements.deleteDialogError.textContent = "";
+
+      const { eventLabel, timestamp } = getDeleteDialogCopy(state.pendingDeleteTarget);
+      elements.deleteDialogEvent.textContent = eventLabel;
+      elements.deleteDialogTimestamp.textContent = timestamp;
+      syncDeleteDialogCopy();
+      syncDeleteDialogState();
+
+      if (!elements.deleteDialog.open) {
+        elements.deleteDialog.showModal();
+      }
+    }
+
     async function confirmDeleteEntry() {
       const target = state.pendingDeleteTarget;
       if (!target || isDeleteTargetInProgress(target)) {
@@ -2895,6 +4445,10 @@
 
       if (target.type === "gig") {
         state.deletingGigIds.add(target.id);
+      } else if (target.type === "link") {
+        state.deletingLinkIds.add(target.id);
+      } else if (target.type === "campaign") {
+        state.isDeletingCampaign = true;
       } else if (target.type === "session") {
         state.deletingSessions.add(target.sessionKey);
       } else {
@@ -2903,6 +4457,11 @@
       elements.deleteDialogError.textContent = "";
       if (state.activePage === "gigs") {
         renderGigs();
+      } else if (state.activePage === "links") {
+        renderLinks();
+      } else if (state.activePage === "campaigns") {
+        syncCampaignFormState();
+        renderCampaign();
       } else {
         renderTable();
       }
@@ -2911,6 +4470,10 @@
       try {
         if (target.type === "gig") {
           await deleteDoc(doc(db, "gigs", target.id));
+        } else if (target.type === "link") {
+          await deleteDoc(doc(db, "links", target.id));
+        } else if (target.type === "campaign") {
+          await deleteDoc(doc(db, "campaigns", target.id));
         } else if (target.type === "session") {
           await Promise.all(target.ids.map((id) => deleteDoc(doc(db, state.currentCollection, id))));
         } else {
@@ -2922,6 +4485,10 @@
         console.error("Failed to delete entry:", error);
         if (target.type === "gig") {
           state.deletingGigIds.delete(target.id);
+        } else if (target.type === "link") {
+          state.deletingLinkIds.delete(target.id);
+        } else if (target.type === "campaign") {
+          state.isDeletingCampaign = false;
         } else if (target.type === "session") {
           state.deletingSessions.delete(target.sessionKey);
         } else {
@@ -2929,12 +4496,21 @@
         }
         if (state.activePage === "gigs") {
           renderGigs();
+        } else if (state.activePage === "links") {
+          renderLinks();
+        } else if (state.activePage === "campaigns") {
+          syncCampaignFormState();
+          renderCampaign();
         } else {
           renderTable();
         }
         syncDeleteDialogState();
         elements.deleteDialogError.textContent = target.type === "gig"
           ? "Could not delete this gig. Check the console for details."
+        : target.type === "link"
+          ? "Could not delete this link. Check the console for details."
+        : target.type === "campaign"
+          ? "Could not delete this campaign. Check the console for details."
           : target.type === "session"
           ? "Could not delete this session. Check the console for details."
           : "Could not delete this entry. Check the console for details.";
@@ -3096,13 +4672,37 @@
       }
     }
 
-    function showDashboard() {
+    function showDashboard(user) {
+      const shouldLoadData = elements.dashboard.style.display !== "block" || state.authUser?.uid !== user.uid;
+      state.authUser = user;
       elements.login.style.display = "none";
       elements.dashboard.style.display = "block";
+      elements.loginError.textContent = "";
+      setAuthStatus(user);
+      syncSignOutButton();
       syncGigFormState();
+      syncLinkFormState();
+      resetLinkFormDefaults();
       syncActivePageUI();
-      loadLogs(state.currentCollection);
-      loadGigs();
+
+      if (shouldLoadData) {
+        loadLogs(state.currentCollection);
+        loadGigs();
+        loadLinks();
+        loadCampaign();
+      }
+    }
+
+    function hideDashboard(message = "") {
+      state.authUser = null;
+      elements.login.style.display = "block";
+      elements.dashboard.style.display = "none";
+      elements.loginError.textContent = message;
+      elements.loginForm.reset();
+      setAuthStatus(null);
+      elements.heroCollection.textContent = "Collection: site-actions";
+      elements.heroUpdated.textContent = "Waiting for sign-in";
+      syncSignOutButton();
     }
 
     function setActivePage(page, collectionName = state.currentCollection) {
@@ -3110,6 +4710,20 @@
         state.activePage = "gigs";
         syncActivePageUI();
         loadGigs();
+        return;
+      }
+
+      if (page === "links") {
+        state.activePage = "links";
+        syncActivePageUI();
+        loadLinks();
+        return;
+      }
+
+      if (page === "campaigns") {
+        state.activePage = "campaigns";
+        syncActivePageUI();
+        loadCampaign();
         return;
       }
 
@@ -3136,19 +4750,32 @@
     }
 
     document.addEventListener("DOMContentLoaded", () => {
-      const form = document.getElementById("login-form");
       syncDeleteDialogState();
       syncDeleteDialogCopy();
       syncActivePageUI();
       syncRefreshButton();
+      syncLoginButton();
+      syncSignOutButton();
       syncViewModeButtons();
       syncGigFormState();
       syncGigEditState();
+      syncLinkFormState();
+      syncLinkEditState();
+      syncCampaignFormState();
+      resetLinkFormDefaults();
+      setAuthStatus(null);
+      elements.heroUpdated.textContent = "Checking authentication...";
+      elements.campaignOpenLink.href = getCampaignPublicUrl();
 
-      const lastLogin = localStorage.getItem("dashboardLogin");
-      if (lastLogin && Date.now() - Number.parseInt(lastLogin, 10) < 24 * 60 * 60 * 1000) {
-        showDashboard();
-      }
+      onAuthStateChanged(auth, (user) => {
+        syncLoginButton(false);
+        if (user) {
+          showDashboard(user);
+          return;
+        }
+
+        hideDashboard();
+      });
 
       elements.detailsDialog.addEventListener("close", () => {
         state.activeDetailsId = null;
@@ -3163,6 +4790,10 @@
         resetGigEditDialog();
       });
 
+      elements.linkEditDialog.addEventListener("close", () => {
+        resetLinkEditDialog();
+      });
+
       elements.detailsDelete.addEventListener("click", () => {
         openDeleteFromDetails();
       });
@@ -3175,6 +4806,10 @@
         closeGigEditDialog();
       });
 
+      elements.closeLinkEdit.addEventListener("click", () => {
+        closeLinkEditDialog();
+      });
+
       elements.gigDelete.addEventListener("click", () => {
         const gigId = state.activeGigId;
         if (!gigId) {
@@ -3183,6 +4818,20 @@
 
         closeGigEditDialog();
         openDeleteGigDialog(gigId);
+      });
+
+      elements.linkDelete.addEventListener("click", () => {
+        const linkId = state.activeLinkId;
+        if (!linkId) {
+          return;
+        }
+
+        closeLinkEditDialog();
+        openDeleteLinkDialog(linkId);
+      });
+
+      elements.campaignDelete.addEventListener("click", () => {
+        openDeleteCampaignDialog();
       });
 
       elements.deleteDialog.addEventListener("cancel", (event) => {
@@ -3197,6 +4846,10 @@
 
         if (pendingTarget?.type === "gig") {
           state.deletingGigIds.delete(pendingTarget.id);
+        } else if (pendingTarget?.type === "link") {
+          state.deletingLinkIds.delete(pendingTarget.id);
+        } else if (pendingTarget?.type === "campaign") {
+          state.isDeletingCampaign = false;
         } else if (pendingTarget?.type === "session") {
           state.deletingSessions.delete(pendingTarget.sessionKey);
         } else if (pendingTarget?.type === "entry") {
@@ -3214,12 +4867,21 @@
         if (shouldReload) {
           if (state.activePage === "gigs") {
             loadGigs();
+          } else if (state.activePage === "links") {
+            loadLinks();
+          } else if (state.activePage === "campaigns") {
+            loadCampaign();
           } else {
             loadLogs(state.currentCollection);
           }
         } else {
           if (state.activePage === "gigs") {
             renderGigs();
+          } else if (state.activePage === "links") {
+            renderLinks();
+          } else if (state.activePage === "campaigns") {
+            syncCampaignFormState();
+            renderCampaign();
           } else {
             renderTable();
           }
@@ -3234,37 +4896,49 @@
         confirmDeleteEntry();
       });
 
-      form.addEventListener("submit", async (event) => {
+      elements.loginForm.addEventListener("submit", async (event) => {
         event.preventDefault();
         elements.loginError.textContent = "";
+        syncLoginButton(true);
 
-        const username = document.getElementById("username").value.trim();
-        const password = document.getElementById("password").value;
+        const email = elements.emailInput.value.trim();
+        const password = elements.passwordInput.value;
 
         try {
-          const usersRef = collection(db, "users");
-          const credentialsQuery = query(
-            usersRef,
-            where("username", "==", username),
-            where("password", "==", password)
-          );
-
-          const snapshot = await getDocs(credentialsQuery);
-
-          if (!snapshot.empty) {
-            localStorage.setItem("dashboardLogin", Date.now().toString());
-            showDashboard();
-          } else {
-            elements.loginError.textContent = "Incorrect username or password.";
-          }
+          await signInWithEmailAndPassword(auth, email, password);
+          elements.loginForm.reset();
         } catch (error) {
           console.error("Login failed:", error);
-          elements.loginError.textContent = "Could not verify credentials. Check the console for details.";
+          elements.loginError.textContent = getLoginErrorMessage(error);
+        } finally {
+          syncLoginButton(false);
+        }
+      });
+
+      elements.signOutButton.addEventListener("click", async () => {
+        if (!state.authUser) {
+          return;
+        }
+
+        syncSignOutButton(true);
+
+        try {
+          await signOut(auth);
+        } catch (error) {
+          console.error("Sign-out failed:", error);
+          syncSignOutButton(false);
+          setAuthStatus(state.authUser);
         }
       });
 
       elements.gigForm.addEventListener("submit", saveGig);
+      elements.linkForm.addEventListener("submit", saveLink);
+      elements.campaignForm.addEventListener("submit", saveCampaign);
       elements.gigEditForm.addEventListener("submit", saveGigEdit);
+      elements.linkEditForm.addEventListener("submit", saveLinkEdit);
+      elements.seedLinks.addEventListener("click", () => {
+        seedDefaultLinks();
+      });
 
       elements.pageTabs.forEach((link) => {
         link.addEventListener("click", (event) => {
@@ -3302,6 +4976,16 @@
       elements.refreshButton.addEventListener("click", () => {
         if (state.activePage === "gigs") {
           loadGigs();
+          return;
+        }
+
+        if (state.activePage === "links") {
+          loadLinks();
+          return;
+        }
+
+        if (state.activePage === "campaigns") {
+          loadCampaign();
           return;
         }
 
