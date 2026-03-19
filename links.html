@@ -254,6 +254,13 @@
             display: block;
         }
 
+        .link-thumb svg {
+            width: 26px;
+            height: 26px;
+            fill: currentColor;
+            display: block;
+        }
+
         .link-copy {
             min-width: 0;
         }
@@ -378,6 +385,11 @@
                 border-radius: 14px;
             }
 
+            .link-thumb svg {
+                width: 22px;
+                height: 22px;
+            }
+
             .link-arrow {
                 width: 16px;
                 height: 16px;
@@ -397,7 +409,7 @@
                     <h1 class="title">Half Awake Eyes</h1>
                     <p class="subtitle">Alternative Metal | Glasgow, Scotland</p>
                 </div>
-                <p class="bio">The main places to listen, follow, and get in touch.</p>
+                <br />
                 <div class="social-row" id="social-links"></div>
             </div>
 
@@ -636,7 +648,7 @@
             });
         };
 
-        const getSocialIconSvg = (link) => {
+        const getSocialIconSvg = (link, { allowFallback = true } = {}) => {
             const source = `${link.title || ""} ${link.url || ""}`.toLowerCase();
             if (source.includes("spotify")) {
                 return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.75a10.25 10.25 0 1 0 0 20.5 10.25 10.25 0 0 0 0-20.5Zm4.43 14.77a.9.9 0 0 1-1.24.3c-2.42-1.48-5.46-1.82-9.05-1.02a.9.9 0 1 1-.39-1.76c4.06-.9 7.57-.49 10.38 1.23a.9.9 0 0 1 .3 1.25Zm1.24-2.76a1.13 1.13 0 0 1-1.55.37c-2.78-1.71-7.01-2.2-10.3-1.18a1.13 1.13 0 0 1-.67-2.16c3.77-1.17 8.46-.61 12.15 1.66.53.33.7 1.02.37 1.56Zm.15-2.87C14.5 8.91 8.97 8.74 5.8 9.7a1.35 1.35 0 1 1-.77-2.59c3.64-1.08 9.69-.87 14.18 1.78a1.35 1.35 0 0 1-1.39 2.3Z"/></svg>`;
@@ -644,8 +656,14 @@
             if (source.includes("instagram")) {
                 return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.25 2h9.5A5.25 5.25 0 0 1 22 7.25v9.5A5.25 5.25 0 0 1 16.75 22h-9.5A5.25 5.25 0 0 1 2 16.75v-9.5A5.25 5.25 0 0 1 7.25 2Zm0 1.8A3.45 3.45 0 0 0 3.8 7.25v9.5a3.45 3.45 0 0 0 3.45 3.45h9.5a3.45 3.45 0 0 0 3.45-3.45v-9.5a3.45 3.45 0 0 0-3.45-3.45h-9.5Zm9.95 1.6a1.05 1.05 0 1 1 0 2.1 1.05 1.05 0 0 1 0-2.1ZM12 7a5 5 0 1 1 0 10 5 5 0 0 1 0-10Zm0 1.8A3.2 3.2 0 1 0 12 15.2 3.2 3.2 0 0 0 12 8.8Z"/></svg>`;
             }
+            if (source.includes("tiktok")) {
+                return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13.85 3.5c.46 1.84 1.56 3.22 3.3 4.14 1.1.58 2.18.82 3.1.86v2.83a8.72 8.72 0 0 1-3.72-.9 7.69 7.69 0 0 1-1.9-1.25v6.26c0 1.46-.45 2.73-1.34 3.8a6.08 6.08 0 0 1-4.93 2.26 6.18 6.18 0 0 1-3.1-.82 5.95 5.95 0 0 1-2.23-2.2 6.06 6.06 0 0 1-.79-3.06c0-1.57.54-2.94 1.62-4.1A6.07 6.07 0 0 1 8.5 9.4c.52 0 1 .05 1.44.16v2.95a3.28 3.28 0 0 0-1.46-.35 3.2 3.2 0 0 0-2.35.97 3.2 3.2 0 0 0-.97 2.36c0 .96.33 1.76.97 2.39.65.64 1.46.95 2.45.95a3.1 3.1 0 0 0 2.2-.88c.69-.67 1.04-1.56 1.04-2.67V3.5h2.03Z"/></svg>`;
+            }
             if (source.includes("facebook")) {
                 return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13.4 21v-7.95h2.67l.4-3.1H13.4V7.97c0-.9.25-1.5 1.54-1.5h1.65V3.7c-.29-.04-1.28-.12-2.44-.12-2.42 0-4.08 1.48-4.08 4.2v2.17H7.33v3.1h2.74V21h3.33Z"/></svg>`;
+            }
+            if (source.includes("x.com") || source.includes("twitter")) {
+                return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5.76 4h3.4l3.67 5.25L17.7 4H20l-6.08 6.94L20.4 20h-3.4l-3.9-5.58L8.23 20H6l6.23-7.1L5.76 4Zm2.15 1.62 9.2 12.76h1.37L9.28 5.62H7.91Z"/></svg>`;
             }
             if (source.includes("youtube")) {
                 return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21.58 7.19a2.98 2.98 0 0 0-2.1-2.11C17.62 4.5 12 4.5 12 4.5s-5.62 0-7.48.58a2.98 2.98 0 0 0-2.1 2.11A31.1 31.1 0 0 0 1.83 12c0 1.65.2 3.28.59 4.81a2.98 2.98 0 0 0 2.1 2.11c1.86.58 7.48.58 7.48.58s5.62 0 7.48-.58a2.98 2.98 0 0 0 2.1-2.11c.39-1.53.59-3.16.59-4.81 0-1.65-.2-3.28-.59-4.81ZM10.2 15.38V8.62L15.84 12 10.2 15.38Z"/></svg>`;
@@ -659,7 +677,9 @@
             if (source.includes("mail") || source.startsWith("mailto:") || source.includes("email")) {
                 return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.75 5.5h16.5a1.75 1.75 0 0 1 1.75 1.75v9.5A1.75 1.75 0 0 1 20.25 18.5H3.75A1.75 1.75 0 0 1 2 16.75v-9.5A1.75 1.75 0 0 1 3.75 5.5Zm0 1.8v.16L12 12.74l8.25-5.28V7.3H3.75Zm16.5 9.4v-7.1L12.48 14.6a.9.9 0 0 1-.96 0L3.8 9.6v7.1h16.45Z"/></svg>`;
             }
-            return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5a9.5 9.5 0 1 0 0 19 9.5 9.5 0 0 0 0-19Zm.9 5.3v4.3h4.3v1.8h-4.3v4.3h-1.8v-4.3H6.8v-1.8h4.3V7.8h1.8Z"/></svg>`;
+            return allowFallback
+                ? `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5a9.5 9.5 0 1 0 0 19 9.5 9.5 0 0 0 0-19Zm.9 5.3v4.3h4.3v1.8h-4.3v4.3h-1.8v-4.3H6.8v-1.8h4.3V7.8h1.8Z"/></svg>`
+                : "";
         };
 
         const getLinkThumbLabel = (link) => {
@@ -715,11 +735,21 @@
                 image.loading = "lazy";
                 image.addEventListener("error", () => {
                     thumb.innerHTML = "";
-                    thumb.textContent = getLinkThumbLabel(link);
+                    const iconSvg = getSocialIconSvg(link, { allowFallback: false });
+                    if (iconSvg) {
+                        thumb.innerHTML = iconSvg;
+                    } else {
+                        thumb.textContent = getLinkThumbLabel(link);
+                    }
                 }, { once: true });
                 thumb.appendChild(image);
             } else {
-                thumb.textContent = getLinkThumbLabel(link);
+                const iconSvg = getSocialIconSvg(link, { allowFallback: false });
+                if (iconSvg) {
+                    thumb.innerHTML = iconSvg;
+                } else {
+                    thumb.textContent = getLinkThumbLabel(link);
+                }
             }
 
             const copy = document.createElement("div");

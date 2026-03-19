@@ -141,6 +141,24 @@
       padding: 2rem;
     }
 
+    .auth-boot-card {
+      display: none;
+      text-align: center;
+    }
+
+    .auth-boot-card p {
+      margin-bottom: 0;
+    }
+
+    body.auth-loading #auth-boot {
+      display: block;
+    }
+
+    body.auth-loading #login,
+    body.auth-loading #dashboard {
+      display: none !important;
+    }
+
     .login-card h2 {
       margin-bottom: 0.65rem;
       color: var(--accent-strong);
@@ -998,9 +1016,59 @@
       margin: 0;
     }
 
+    .link-admin-groups {
+      display: grid;
+      gap: 1rem;
+    }
+
+    .link-admin-group {
+      display: grid;
+      gap: 0.75rem;
+    }
+
+    .link-admin-group-header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .link-admin-group-title {
+      margin: 0;
+      color: var(--accent-strong);
+      font-size: 1rem;
+    }
+
+    .link-admin-group-copy {
+      margin: 0.2rem 0 0;
+      color: var(--muted);
+      font-size: 0.88rem;
+      line-height: 1.45;
+    }
+
+    .link-admin-group-meta {
+      color: var(--muted);
+      font-size: 0.84rem;
+      white-space: nowrap;
+    }
+
     .link-admin-list {
       display: grid;
       gap: 0.75rem;
+    }
+
+    .link-admin-list.has-group-shell {
+      padding: 0.8rem;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.02);
+      transition: border-color 0.16s ease, background 0.16s ease;
+    }
+
+    .link-admin-list.has-group-shell.is-drop-target {
+      border-color: rgba(225, 210, 190, 0.34);
+      background: rgba(225, 210, 190, 0.05);
     }
 
     .campaign-preview {
@@ -1153,17 +1221,74 @@
 
     .link-admin-item {
       display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
       gap: 0.45rem;
+      align-items: start;
       padding: 0.9rem 0.95rem;
       border: 1px solid var(--line);
       border-radius: 16px;
       background: rgba(255, 255, 255, 0.025);
+      transition: border-color 0.16s ease, background 0.16s ease, opacity 0.16s ease;
+      cursor: default;
     }
 
     .link-admin-item.is-hidden {
       opacity: 0.82;
       border-color: rgba(255, 196, 128, 0.22);
       background: rgba(255, 196, 128, 0.03);
+    }
+
+    .link-admin-item.is-dragging {
+      opacity: 0.44;
+      border-style: dashed;
+    }
+
+    .link-admin-item.drop-before {
+      box-shadow: inset 0 2px 0 rgba(225, 210, 190, 0.8);
+    }
+
+    .link-admin-item.drop-after {
+      box-shadow: inset 0 -2px 0 rgba(225, 210, 190, 0.8);
+    }
+
+    .link-admin-handle {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 38px;
+      min-height: 38px;
+      margin-top: 0.05rem;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.03);
+      color: var(--muted);
+      cursor: grab;
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+      flex: 0 0 auto;
+    }
+
+    .link-admin-handle:active {
+      cursor: grabbing;
+    }
+
+    .link-admin-handle svg {
+      width: 16px;
+      height: 16px;
+      fill: currentColor;
+      display: block;
+    }
+
+    body.link-drag-active {
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .link-admin-body {
+      display: grid;
+      gap: 0.45rem;
+      min-width: 0;
     }
 
     .link-admin-top {
@@ -1464,6 +1589,10 @@
         align-items: stretch;
       }
 
+      .link-admin-group-header {
+        align-items: flex-start;
+      }
+
       .manager-toolbar .ghost-button {
         width: 100%;
       }
@@ -1580,6 +1709,31 @@
         border-radius: 18px;
       }
 
+      .link-admin-list.has-group-shell {
+        padding: 0.7rem;
+        border-radius: 16px;
+      }
+
+      .link-admin-item {
+        grid-template-columns: 1fr;
+        gap: 0.65rem;
+        padding: 0.8rem;
+      }
+
+      .link-admin-handle {
+        width: 100%;
+        min-height: 34px;
+        border-radius: 10px;
+      }
+
+      .link-admin-actions {
+        justify-content: stretch;
+      }
+
+      .link-admin-actions .row-action {
+        width: 100%;
+      }
+
       .details-grid {
         grid-template-columns: 1fr;
       }
@@ -1615,7 +1769,7 @@
     }
   </style>
 </head>
-<body>
+<body class="auth-loading">
   <div class="shell">
     <header class="hero">
       <div>
@@ -1629,6 +1783,11 @@
         <div id="hero-updated">Waiting for login</div>
       </div>
     </header>
+
+    <section id="auth-boot" class="surface login-card auth-boot-card">
+      <h2>Loading Admin Panel</h2>
+      <p>Checking your sign-in session...</p>
+    </section>
 
     <section id="login" class="surface login-card">
       <h2>Sign In</h2>
@@ -1859,11 +2018,34 @@
               <span id="link-count">No links loaded</span>
             </div>
             <div class="manager-toolbar">
-              <div class="helper-copy">Edit, hide, reorder, or seed the current public defaults into Firestore.</div>
+              <div class="helper-copy">Edit, hide, drag to reorder, or move links between the `Social` row and the `Main` stack.</div>
               <button type="button" id="seed-links" class="btn ghost-button">Import Current Defaults</button>
             </div>
-            <div id="link-list" class="link-admin-list">
-              <div class="gig-admin-empty">No links loaded yet.</div>
+            <div class="link-admin-groups">
+              <section class="link-admin-group">
+                <div class="link-admin-group-header">
+                  <div>
+                    <h4 class="link-admin-group-title">Social Row</h4>
+                    <p class="link-admin-group-copy">These render as icon buttons at the top of `links.html`.</p>
+                  </div>
+                  <span id="social-link-count" class="link-admin-group-meta">No social links</span>
+                </div>
+                <div id="social-link-list" class="link-admin-list has-group-shell" data-link-group="social">
+                  <div class="gig-admin-empty">No social links loaded yet.</div>
+                </div>
+              </section>
+              <section class="link-admin-group">
+                <div class="link-admin-group-header">
+                  <div>
+                    <h4 class="link-admin-group-title">Main Links</h4>
+                    <p class="link-admin-group-copy">These render as the main grouped cards, using sections like `Releases` or `Resources`.</p>
+                  </div>
+                  <span id="main-link-count" class="link-admin-group-meta">No main links</span>
+                </div>
+                <div id="main-link-list" class="link-admin-list has-group-shell" data-link-group="main">
+                  <div class="gig-admin-empty">No main links loaded yet.</div>
+                </div>
+              </section>
             </div>
           </div>
         </div>
@@ -2147,9 +2329,13 @@
       isSeedingLinks: false,
       isUpdatingGig: false,
       isUpdatingLink: false,
+      isReorderingLinks: false,
+      isDraggingLinks: false,
       activeDetailsId: null,
       activeGigId: null,
       activeLinkId: null,
+      draggingLinkId: null,
+      draggingLinkGroup: "",
       authUser: null,
       expandedSessions: new Set(),
       deletingIds: new Set(),
@@ -2212,8 +2398,11 @@
       saveLink: document.getElementById("save-link"),
       seedLinks: document.getElementById("seed-links"),
       linkStatus: document.getElementById("link-status"),
-      linkList: document.getElementById("link-list"),
       linkCount: document.getElementById("link-count"),
+      socialLinkList: document.getElementById("social-link-list"),
+      mainLinkList: document.getElementById("main-link-list"),
+      socialLinkCount: document.getElementById("social-link-count"),
+      mainLinkCount: document.getElementById("main-link-count"),
       campaignForm: document.getElementById("campaign-form"),
       campaignBadge: document.getElementById("campaign-badge"),
       campaignTitle: document.getElementById("campaign-title"),
@@ -2766,6 +2955,298 @@
       return link?.hidden === true;
     }
 
+    function sortLinksByOrder(links = []) {
+      return [...links].sort((a, b) => {
+        const sortA = Number.isFinite(Number.parseInt(a?.sortOrder, 10)) ? Number.parseInt(a.sortOrder, 10) : 0;
+        const sortB = Number.isFinite(Number.parseInt(b?.sortOrder, 10)) ? Number.parseInt(b.sortOrder, 10) : 0;
+
+        if (sortA !== sortB) {
+          return sortA - sortB;
+        }
+
+        return String(a?.title || "").localeCompare(String(b?.title || ""));
+      });
+    }
+
+    function getLinksByGroup(group) {
+      const normalizedGroup = group === "social" ? "social" : "main";
+      return sortLinksByOrder(
+        state.links.filter((link) => (link.group === "social" ? "social" : "main") === normalizedGroup)
+      );
+    }
+
+    function getLinkGroupLabel(group) {
+      return group === "social" ? "Social Row" : "Main Links";
+    }
+
+    function clearLinkDragHints() {
+      document.querySelectorAll(".link-admin-item.drop-before, .link-admin-item.drop-after").forEach((item) => {
+        item.classList.remove("drop-before", "drop-after");
+      });
+      document.querySelectorAll(".link-admin-list.is-drop-target").forEach((list) => {
+        list.classList.remove("is-drop-target");
+      });
+    }
+
+    function clearLinkDragState() {
+      document.querySelectorAll(".link-admin-item.is-dragging").forEach((item) => {
+        item.classList.remove("is-dragging");
+      });
+      clearLinkDragHints();
+      state.draggingLinkId = null;
+      state.draggingLinkGroup = "";
+      state.isDraggingLinks = false;
+      document.body.classList.remove("link-drag-active");
+    }
+
+    function getLinkDropAfterElement(listElement, clientY) {
+      const items = [...listElement.querySelectorAll(".link-admin-item:not(.is-dragging)")];
+      let closest = { offset: Number.NEGATIVE_INFINITY, element: null };
+
+      items.forEach((item) => {
+        const rect = item.getBoundingClientRect();
+        const offset = clientY - rect.top - (rect.height / 2);
+        if (offset < 0 && offset > closest.offset) {
+          closest = { offset, element: item };
+        }
+      });
+
+      return closest.element;
+    }
+
+    function getLinkDropTargetFromPoint(clientX, clientY) {
+      const hit = document.elementFromPoint(clientX, clientY);
+      const listElement = hit?.closest(".link-admin-list[data-link-group]");
+
+      clearLinkDragHints();
+
+      if (!listElement) {
+        return null;
+      }
+
+      listElement.classList.add("is-drop-target");
+      const afterElement = getLinkDropAfterElement(listElement, clientY);
+
+      if (afterElement) {
+        afterElement.classList.add("drop-before");
+      } else {
+        const items = [...listElement.querySelectorAll(".link-admin-item:not(.is-dragging)")];
+        const lastItem = items.at(-1);
+        if (lastItem) {
+          lastItem.classList.add("drop-after");
+        }
+      }
+
+      return {
+        targetGroup: listElement.dataset.linkGroup === "social" ? "social" : "main",
+        targetId: afterElement?.dataset.linkId || "",
+        placeAfter: false
+      };
+    }
+
+    function startLinkPointerDrag(event, linkId, sourceGroup, item) {
+      if (state.isLoadingLinks || state.isReorderingLinks || state.isSavingLink || state.isUpdatingLink) {
+        return;
+      }
+
+      event.preventDefault();
+      const draggedLinkId = linkId;
+      const draggedSourceGroup = sourceGroup === "social" ? "social" : "main";
+      clearLinkDragState();
+      state.draggingLinkId = draggedLinkId;
+      state.draggingLinkGroup = draggedSourceGroup;
+      state.isDraggingLinks = true;
+      item.classList.add("is-dragging");
+      document.body.classList.add("link-drag-active");
+
+      const handlePointerMove = (moveEvent) => {
+        if (!state.isDraggingLinks) {
+          return;
+        }
+
+        getLinkDropTargetFromPoint(moveEvent.clientX, moveEvent.clientY);
+      };
+
+      const finishPointerDrag = (endEvent) => {
+        if (!state.isDraggingLinks) {
+          clearLinkDragState();
+          return;
+        }
+
+        const dropTarget = getLinkDropTargetFromPoint(endEvent.clientX, endEvent.clientY);
+        clearLinkDragState();
+
+        if (!dropTarget) {
+          return;
+        }
+
+        const droppingOnSelf = dropTarget.targetGroup === draggedSourceGroup
+          && dropTarget.targetId === draggedLinkId;
+
+        if (droppingOnSelf) {
+          return;
+        }
+
+        reorderLinks(draggedLinkId, dropTarget);
+      };
+
+      const cleanupPointerDrag = () => {
+        window.removeEventListener("pointermove", handlePointerMove);
+        window.removeEventListener("pointerup", finishPointerDrag);
+        window.removeEventListener("pointercancel", clearLinkDragState);
+      };
+
+      window.addEventListener("pointermove", handlePointerMove);
+      window.addEventListener("pointerup", (endEvent) => {
+        cleanupPointerDrag();
+        finishPointerDrag(endEvent);
+      }, { once: true });
+      window.addEventListener("pointercancel", () => {
+        cleanupPointerDrag();
+        clearLinkDragState();
+      }, { once: true });
+    }
+
+    function getLinkGroupSortOrder(group, index) {
+      return group === "social"
+        ? (index + 1) * 10
+        : 1000 + ((index + 1) * 10);
+    }
+
+    function buildReorderedLinks(dragId, targetGroup, targetId = "", placeAfter = false) {
+      const groupedLinks = {
+        social: getLinksByGroup("social").filter((link) => link.id !== dragId),
+        main: getLinksByGroup("main").filter((link) => link.id !== dragId)
+      };
+
+      const draggedLink = getLinkById(dragId);
+      if (!draggedLink) {
+        return null;
+      }
+
+      const normalizedTargetGroup = targetGroup === "social" ? "social" : "main";
+      const destinationList = groupedLinks[normalizedTargetGroup];
+      const reorderedLink = { ...draggedLink, group: normalizedTargetGroup };
+
+      if (targetId) {
+        const targetIndex = destinationList.findIndex((link) => link.id === targetId);
+        if (targetIndex === -1) {
+          destinationList.push(reorderedLink);
+        } else {
+          destinationList.splice(targetIndex + (placeAfter ? 1 : 0), 0, reorderedLink);
+        }
+      } else {
+        destinationList.push(reorderedLink);
+      }
+
+      const normalizedLinks = [
+        ...groupedLinks.social.map((link, index) => ({
+          ...link,
+          group: "social",
+          sortOrder: getLinkGroupSortOrder("social", index)
+        })),
+        ...groupedLinks.main.map((link, index) => ({
+          ...link,
+          group: "main",
+          sortOrder: getLinkGroupSortOrder("main", index)
+        }))
+      ];
+
+      const changed = normalizedLinks.filter((link) => {
+        const existing = getLinkById(link.id);
+        return !existing
+          || existing.group !== link.group
+          || Number.parseInt(existing.sortOrder, 10) !== link.sortOrder;
+      });
+
+      return {
+        ordered: sortLinksByOrder(normalizedLinks),
+        changed
+      };
+    }
+
+    async function reorderLinks(dragId, { targetGroup, targetId = "", placeAfter = false } = {}) {
+      if (!dragId || state.isReorderingLinks || state.isLoadingLinks || state.isSavingLink || state.isUpdatingLink) {
+        clearLinkDragState();
+        return;
+      }
+
+      const nextState = buildReorderedLinks(dragId, targetGroup, targetId, placeAfter);
+      if (!nextState || !nextState.changed.length) {
+        clearLinkDragState();
+        return;
+      }
+
+      state.isReorderingLinks = true;
+      state.links = nextState.ordered;
+      setLinkStatus(`Saving ${getLinkGroupLabel(targetGroup)} order...`);
+      renderLinks();
+      syncLinkFormState();
+      syncLinkEditState();
+
+      try {
+        await Promise.all(
+          nextState.changed.map((link) => updateDoc(doc(db, "links", link.id), {
+            group: link.group,
+            sortOrder: link.sortOrder
+          }))
+        );
+
+        setLinkStatus("Link order updated.", "is-success");
+      } catch (error) {
+        console.error("Error reordering links:", error);
+        setLinkStatus("Could not update link order. Check the browser console for details.", "is-error");
+        await loadLinks();
+      } finally {
+        state.isReorderingLinks = false;
+        clearLinkDragState();
+        syncLinkFormState();
+        syncLinkEditState();
+      }
+    }
+
+    function moveLinkRelative(id, direction = 0) {
+      const link = getLinkById(id);
+      if (!link || !direction) {
+        return;
+      }
+
+      const group = link.group === "social" ? "social" : "main";
+      const groupLinks = getLinksByGroup(group);
+      const currentIndex = groupLinks.findIndex((entry) => entry.id === id);
+      const nextIndex = currentIndex + direction;
+
+      if (currentIndex === -1 || nextIndex < 0 || nextIndex >= groupLinks.length) {
+        return;
+      }
+
+      reorderLinks(id, {
+        targetGroup: group,
+        targetId: groupLinks[nextIndex].id,
+        placeAfter: direction > 0
+      });
+    }
+
+    function moveLinkToGroup(id, targetGroup) {
+      const link = getLinkById(id);
+      if (!link) {
+        return;
+      }
+
+      const normalizedTargetGroup = targetGroup === "social" ? "social" : "main";
+      const currentGroup = link.group === "social" ? "social" : "main";
+
+      if (normalizedTargetGroup === currentGroup) {
+        return;
+      }
+
+      reorderLinks(id, {
+        targetGroup: normalizedTargetGroup,
+        targetId: "",
+        placeAfter: true
+      });
+    }
+
     function getNextLinkSortOrder() {
       const highestSortOrder = state.links.reduce((maxSortOrder, link) => {
         const numericSortOrder = Number.parseInt(link.sortOrder, 10);
@@ -2844,9 +3325,9 @@
     }
 
     function syncLinkFormState() {
-      elements.saveLink.disabled = state.isSavingLink || state.isSeedingLinks;
+      elements.saveLink.disabled = state.isSavingLink || state.isSeedingLinks || state.isReorderingLinks;
       elements.saveLink.textContent = state.isSavingLink ? "Saving..." : "Save Link";
-      elements.seedLinks.disabled = state.isLoadingLinks || state.isSavingLink || state.isSeedingLinks || state.links.length > 0;
+      elements.seedLinks.disabled = state.isLoadingLinks || state.isSavingLink || state.isSeedingLinks || state.isReorderingLinks || state.links.length > 0;
       elements.seedLinks.textContent = state.isSeedingLinks
         ? "Importing..."
         : state.links.length > 0
@@ -2856,9 +3337,9 @@
 
     function syncLinkEditState() {
       const hasActiveLink = Boolean(state.activeLinkId);
-      elements.saveLinkEdit.disabled = state.isUpdatingLink || !hasActiveLink;
+      elements.saveLinkEdit.disabled = state.isUpdatingLink || state.isReorderingLinks || !hasActiveLink;
       elements.saveLinkEdit.textContent = state.isUpdatingLink ? "Saving..." : "Save Changes";
-      elements.linkDelete.disabled = state.isUpdatingLink || !hasActiveLink || state.deletingLinkIds.has(state.activeLinkId);
+      elements.linkDelete.disabled = state.isUpdatingLink || state.isReorderingLinks || !hasActiveLink || state.deletingLinkIds.has(state.activeLinkId);
       elements.linkDelete.textContent = state.deletingLinkIds.has(state.activeLinkId) ? "Deleting..." : "Delete Link";
       elements.closeLinkEdit.disabled = state.isUpdatingLink;
     }
@@ -3038,13 +3519,25 @@
     }
 
     function renderLinks() {
+      clearLinkDragHints();
+
+      const orderedLinks = sortLinksByOrder(state.links);
+      const socialLinks = orderedLinks.filter((link) => link.group === "social");
+      const mainLinks = orderedLinks.filter((link) => link.group !== "social");
       const hiddenCount = state.links.filter((link) => isLinkHidden(link)).length;
       elements.linkCount.textContent = state.links.length
         ? `${state.links.length} link${state.links.length === 1 ? "" : "s"} loaded${hiddenCount ? ` | ${hiddenCount} hidden` : ""}`
         : "No links loaded";
+      elements.socialLinkCount.textContent = socialLinks.length
+        ? `${socialLinks.length} item${socialLinks.length === 1 ? "" : "s"}`
+        : "No social links";
+      elements.mainLinkCount.textContent = mainLinks.length
+        ? `${mainLinks.length} item${mainLinks.length === 1 ? "" : "s"}`
+        : "No main links";
 
       if (!state.links.length) {
-        elements.linkList.innerHTML = `<div class="gig-admin-empty">No links loaded yet. Use Add Link or import the current defaults.</div>`;
+        elements.socialLinkList.innerHTML = `<div class="gig-admin-empty">No social links loaded yet.</div>`;
+        elements.mainLinkList.innerHTML = `<div class="gig-admin-empty">No main links loaded yet. Use Add Link or import the current defaults.</div>`;
         syncLinkFormState();
         if (state.activePage === "links") {
           syncActivePageUI();
@@ -3052,10 +3545,23 @@
         return;
       }
 
-      elements.linkList.innerHTML = "";
-      state.links.forEach((link) => {
+      const buildLinkItem = (link, index, linksForGroup) => {
         const item = document.createElement("div");
         item.className = `link-admin-item${isLinkHidden(link) ? " is-hidden" : ""}`;
+        item.dataset.linkId = link.id;
+        item.dataset.linkGroup = link.group === "social" ? "social" : "main";
+
+        const handle = document.createElement("div");
+        handle.className = "link-admin-handle";
+        handle.title = "Drag to reorder";
+        handle.setAttribute("aria-label", "Drag to reorder");
+        handle.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6.5A1.5 1.5 0 1 1 7.5 5 1.5 1.5 0 0 1 9 6.5Zm0 5.5A1.5 1.5 0 1 1 7.5 10.5 1.5 1.5 0 0 1 9 12Zm0 5.5A1.5 1.5 0 1 1 7.5 16 1.5 1.5 0 0 1 9 17.5Zm8-11A1.5 1.5 0 1 1 15.5 5 1.5 1.5 0 0 1 17 6.5Zm0 5.5a1.5 1.5 0 1 1-1.5-1.5A1.5 1.5 0 0 1 17 12Zm0 5.5a1.5 1.5 0 1 1-1.5-1.5A1.5 1.5 0 0 1 17 17.5Z"/></svg>`;
+        handle.addEventListener("pointerdown", (event) => {
+          startLinkPointerDrag(event, link.id, item.dataset.linkGroup, item);
+        });
+
+        const body = document.createElement("div");
+        body.className = "link-admin-body";
 
         const top = document.createElement("div");
         top.className = "link-admin-top";
@@ -3114,6 +3620,33 @@
         const actions = document.createElement("div");
         actions.className = "link-admin-actions";
 
+        const upButton = document.createElement("button");
+        upButton.type = "button";
+        upButton.className = "row-action";
+        upButton.textContent = "Up";
+        upButton.disabled = index === 0 || state.isReorderingLinks;
+        upButton.addEventListener("click", () => {
+          moveLinkRelative(link.id, -1);
+        });
+
+        const downButton = document.createElement("button");
+        downButton.type = "button";
+        downButton.className = "row-action";
+        downButton.textContent = "Down";
+        downButton.disabled = index === linksForGroup.length - 1 || state.isReorderingLinks;
+        downButton.addEventListener("click", () => {
+          moveLinkRelative(link.id, 1);
+        });
+
+        const moveGroupButton = document.createElement("button");
+        moveGroupButton.type = "button";
+        moveGroupButton.className = "row-action";
+        moveGroupButton.textContent = link.group === "social" ? "To Main" : "To Social";
+        moveGroupButton.disabled = state.isReorderingLinks;
+        moveGroupButton.addEventListener("click", () => {
+          moveLinkToGroup(link.id, link.group === "social" ? "main" : "social");
+        });
+
         const editButton = document.createElement("button");
         editButton.type = "button";
         editButton.className = "row-action";
@@ -3122,14 +3655,37 @@
           openLinkEditDialog(link.id);
         });
 
+        actions.appendChild(upButton);
+        actions.appendChild(downButton);
+        actions.appendChild(moveGroupButton);
         actions.appendChild(editButton);
 
-        item.appendChild(top);
-        item.appendChild(url);
-        item.appendChild(description);
-        item.appendChild(actions);
-        elements.linkList.appendChild(item);
-      });
+        body.appendChild(top);
+        body.appendChild(url);
+        body.appendChild(description);
+        body.appendChild(actions);
+
+        item.appendChild(handle);
+        item.appendChild(body);
+        return item;
+      };
+
+      const attachListDropTarget = (listElement, group, emptyMessage) => {
+        listElement.innerHTML = "";
+
+        const linksForGroup = group === "social" ? socialLinks : mainLinks;
+        if (!linksForGroup.length) {
+          listElement.innerHTML = `<div class="gig-admin-empty">${emptyMessage}</div>`;
+          return;
+        }
+
+        linksForGroup.forEach((link, index) => {
+          listElement.appendChild(buildLinkItem(link, index, linksForGroup));
+        });
+      };
+
+      attachListDropTarget(elements.socialLinkList, "social", "No social links loaded yet.");
+      attachListDropTarget(elements.mainLinkList, "main", "No main links loaded yet.");
 
       syncLinkFormState();
       if (state.activePage === "links") {
@@ -3186,7 +3742,10 @@
       syncRefreshButton();
       syncLinkFormState();
       elements.linkCount.textContent = "Loading links...";
-      elements.linkList.innerHTML = `<div class="gig-admin-empty">Loading links...</div>`;
+      elements.socialLinkCount.textContent = "Loading...";
+      elements.mainLinkCount.textContent = "Loading...";
+      elements.socialLinkList.innerHTML = `<div class="gig-admin-empty">Loading links...</div>`;
+      elements.mainLinkList.innerHTML = `<div class="gig-admin-empty">Loading links...</div>`;
       if (state.activePage === "links") {
         elements.collectionNote.textContent = "Loading links from Firestore...";
         updateHeroMeta("Loading...");
@@ -3203,12 +3762,7 @@
 
         state.links = snapshot.docs
           .map((linkDoc, index) => normalizeLinkEntry(linkDoc.data(), linkDoc.id, (index + 1) * 10))
-          .sort((a, b) => {
-            if (a.sortOrder !== b.sortOrder) {
-              return a.sortOrder - b.sortOrder;
-            }
-            return a.title.localeCompare(b.title);
-          });
+          .sort((a, b) => a.sortOrder - b.sortOrder || a.title.localeCompare(b.title));
         renderLinks();
         resetLinkFormDefaults();
         if (state.activePage === "links") {
@@ -3218,7 +3772,10 @@
         console.error("Error loading links:", error);
         state.links = [];
         elements.linkCount.textContent = "Load failed";
-        elements.linkList.innerHTML = `<div class="gig-admin-empty">Could not load links. Check the browser console for details.</div>`;
+        elements.socialLinkCount.textContent = "Load failed";
+        elements.mainLinkCount.textContent = "Load failed";
+        elements.socialLinkList.innerHTML = `<div class="gig-admin-empty">Could not load social links.</div>`;
+        elements.mainLinkList.innerHTML = `<div class="gig-admin-empty">Could not load links. Check the browser console for details.</div>`;
         if (state.activePage === "links") {
           updateHeroMeta("Load failed");
           syncActivePageUI();
@@ -4675,6 +5232,7 @@
     function showDashboard(user) {
       const shouldLoadData = elements.dashboard.style.display !== "block" || state.authUser?.uid !== user.uid;
       state.authUser = user;
+      document.body.classList.remove("auth-loading");
       elements.login.style.display = "none";
       elements.dashboard.style.display = "block";
       elements.loginError.textContent = "";
@@ -4695,6 +5253,7 @@
 
     function hideDashboard(message = "") {
       state.authUser = null;
+      document.body.classList.remove("auth-loading");
       elements.login.style.display = "block";
       elements.dashboard.style.display = "none";
       elements.loginError.textContent = message;
