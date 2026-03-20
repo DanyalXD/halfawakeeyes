@@ -215,7 +215,7 @@
       grid-template-columns: 270px minmax(0, 1fr);
       gap: 1.3rem;
       align-items: start;
-      overflow: hidden;
+      overflow: visible;
     }
 
     .dashboard-rail {
@@ -382,10 +382,14 @@
       gap: 1rem;
       margin-left: 0;
       flex-wrap: wrap;
+      position: sticky;
+      top: 0.9rem;
+      z-index: 20;
       padding: 1rem 1.1rem;
       border: 1px solid var(--line);
       border-radius: 22px;
       background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.02));
+      backdrop-filter: blur(16px);
       box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
     }
 

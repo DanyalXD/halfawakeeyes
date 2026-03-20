@@ -57,6 +57,9 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
       refreshAfterDeleteClose: false
     };
 
+    const ADMIN_ACTIVE_PAGE_STORAGE_KEY = "hae-admin-active-page";
+    const VALID_ADMIN_PAGES = new Set(["analytics", "gigs", "links", "campaigns"]);
+
     const elements = {
       dashboard: document.getElementById("dashboard"),
       dashboardRail: document.getElementById("dashboard-rail"),
@@ -193,6 +196,27 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
       cancelDelete: document.getElementById("cancel-delete"),
       confirmDelete: document.getElementById("confirm-delete")
     };
+
+    function getStoredActivePage() {
+      try {
+        const storedValue = window.localStorage.getItem(ADMIN_ACTIVE_PAGE_STORAGE_KEY);
+        return VALID_ADMIN_PAGES.has(storedValue) ? storedValue : "analytics";
+      } catch (error) {
+        return "analytics";
+      }
+    }
+
+    function persistActivePage(page) {
+      if (!VALID_ADMIN_PAGES.has(page)) {
+        return;
+      }
+
+      try {
+        window.localStorage.setItem(ADMIN_ACTIVE_PAGE_STORAGE_KEY, page);
+      } catch (error) {
+        // Ignore storage failures and keep the admin usable.
+      }
+    }
 
     function formatTimestamp(value) {
       if (!value) {
@@ -3016,6 +3040,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
 
       if (page === "gigs") {
         state.activePage = "gigs";
+        persistActivePage(state.activePage);
         syncActivePageUI();
         loadGigs();
         return;
@@ -3023,6 +3048,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
 
       if (page === "links") {
         state.activePage = "links";
+        persistActivePage(state.activePage);
         syncActivePageUI();
         loadLinks();
         return;
@@ -3030,6 +3056,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
 
       if (page === "campaigns") {
         state.activePage = "campaigns";
+        persistActivePage(state.activePage);
         syncActivePageUI();
         loadCampaign();
         return;
@@ -3037,6 +3064,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
 
       state.activePage = "analytics";
       state.currentCollection = "site-actions";
+      persistActivePage(state.activePage);
       syncActivePageUI();
       loadLogs(state.currentCollection);
     }
@@ -3065,6 +3093,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
       }
 
       hasInitializedAdmin = true;
+      state.activePage = getStoredActivePage();
       syncDeleteDialogState();
       syncDeleteDialogCopy();
       syncActivePageUI();
