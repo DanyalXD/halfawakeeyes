@@ -1,0 +1,506 @@
+@font-face {
+      font-family: "Roabla";
+      src: url("../fonts/Roabla-DemoVersion-Regular.ttf") format("truetype"),
+        url("../fonts/Roabla-DemoVersion-Regular.otf") format("opentype");
+      font-weight: normal;
+      
+      font-display: swap;
+    }
+
+    :root {
+      --bg: #080808;
+      --panel: rgba(12, 12, 12, 0.8);
+      --panel-soft: rgba(255, 255, 255, 0.035);
+      --line: rgba(255, 255, 255, 0.11);
+      --line-strong: rgba(255, 255, 255, 0.18);
+      --text: #f3eee6;
+      --muted: #b9b0a4;
+      --accent: #e1d2be;
+      --accent-strong: #f0e5d7;
+      --accent-soft: #8f948d;
+      --shadow: 0 28px 70px rgba(0, 0, 0, 0.38);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Source Sans Pro", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(201, 124, 92, 0.16), transparent 28%),
+        radial-gradient(circle at top right, rgba(86, 110, 154, 0.15), transparent 24%),
+        linear-gradient(180deg, #111 0%, #0c0c0c 46%, #060606 100%);
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background:
+        linear-gradient(120deg, rgba(255, 255, 255, 0.02), transparent 28%),
+        radial-gradient(circle at 50% 0%, rgba(225, 210, 190, 0.06), transparent 34%);
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .page {
+      position: relative;
+      z-index: 1;
+      width: min(1180px, calc(100% - 1.5rem));
+      margin: 0 auto;
+      padding: 1rem 0 1.5rem;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 0.85rem 0 1.1rem;
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.55rem;
+      color: var(--accent);
+      font-family: "Roabla", "Oswald", sans-serif;
+      font-size: 1.15rem;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+    }
+
+    .brand::before {
+      content: "";
+      width: 0.65rem;
+      height: 0.65rem;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 16px rgba(225, 210, 190, 0.55);
+    }
+
+    .top-links {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 0.65rem;
+    }
+
+    .top-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 40px;
+      padding: 0.55rem 0.9rem;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.03);
+      color: var(--muted);
+      font-size: 0.92rem;
+      font-weight: 700;
+    }
+
+    .top-link:hover,
+    .top-link:focus {
+      border-color: var(--line-strong);
+      background: rgba(255, 255, 255, 0.07);
+      color: var(--text);
+    }
+
+    .campaign-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.08fr) minmax(340px, 0.92fr);
+      gap: 1rem;
+      align-items: stretch;
+    }
+
+    .content-card,
+    .art-card,
+    .empty-card {
+      border: 1px solid var(--line);
+      border-radius: 30px;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+    }
+
+    .content-card {
+      padding: 1.5rem;
+      display: grid;
+      gap: 1rem;
+      align-content: start;
+    }
+
+    .eyebrow-row {
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+      flex-wrap: wrap;
+    }
+
+    .eyebrow,
+    .state-chip,
+    .meta-chip {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 34px;
+      padding: 0.3rem 0.75rem;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      font-size: 0.76rem;
+      font-weight: 700;
+    }
+
+    .eyebrow {
+      color: var(--accent);
+      background: rgba(225, 210, 190, 0.08);
+      border-color: rgba(225, 210, 190, 0.22);
+    }
+
+    .state-chip {
+      color: #cfe8d5;
+      background: rgba(185, 222, 192, 0.1);
+      border-color: rgba(185, 222, 192, 0.25);
+    }
+
+    h1 {
+      margin: 0;
+      font-family: "Roabla", "Oswald", sans-serif;
+      font-size: clamp(2.8rem, 7vw, 5.2rem);
+      font-weight: 400;
+      line-height: 0.92;
+      letter-spacing: 0.02em;
+      color: var(--accent);
+    }
+
+    .subtitle {
+      margin: 0;
+      font-size: 1.1rem;
+      color: #ece4d8;
+      line-height: 1.45;
+      max-width: 38ch;
+    }
+
+    .description {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.65;
+      max-width: 56ch;
+      font-size: 1rem;
+    }
+
+    .meta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.65rem;
+    }
+
+    .meta-chip {
+      color: var(--muted);
+      background: rgba(255, 255, 255, 0.03);
+      letter-spacing: 0.05em;
+      text-transform: none;
+      font-size: 0.86rem;
+    }
+
+    .cta-stack {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.8rem;
+    }
+
+    .cta-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 54px;
+      padding: 0.85rem 1.25rem;
+      border-radius: 999px;
+      font-size: 1rem;
+      font-weight: 700;
+      transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+    }
+
+    .cta-button:hover,
+    .cta-button:focus {
+      transform: translateY(-1px);
+    }
+
+    .cta-button.primary {
+      background: var(--accent);
+      color: #111;
+      border: 1px solid transparent;
+    }
+
+    .cta-button.primary:hover,
+    .cta-button.primary:focus {
+      background: #ecdcca;
+      color: #111;
+    }
+
+    .cta-button.secondary {
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text);
+      border: 1px solid var(--line);
+    }
+
+    .cta-button.secondary:hover,
+    .cta-button.secondary:focus {
+      border-color: var(--line-strong);
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text);
+    }
+
+    .platform-panel {
+      display: grid;
+      gap: 0.8rem;
+      margin-top: 0.2rem;
+      padding-top: 1rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .platform-title {
+      color: var(--accent-strong);
+      font-family: "Roabla", "Oswald", sans-serif;
+      font-size: 1.05rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .platform-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.75rem;
+    }
+
+    .platform-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 58px;
+      padding: 0.8rem 1rem;
+      border-radius: 20px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text);
+      font-size: 0.96rem;
+      font-weight: 700;
+      text-align: center;
+      transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+    }
+
+    .platform-link:hover,
+    .platform-link:focus {
+      transform: translateY(-1px);
+      border-color: var(--line-strong);
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text);
+    }
+
+    .art-card {
+      position: relative;
+      overflow: hidden;
+      min-height: 560px;
+      display: grid;
+      align-content: end;
+      padding: 1.25rem;
+      background:
+        radial-gradient(circle at 22% 18%, rgba(201, 124, 92, 0.22), transparent 30%),
+        radial-gradient(circle at 82% 14%, rgba(86, 110, 154, 0.2), transparent 28%),
+        linear-gradient(180deg, rgba(12, 12, 12, 0.46) 0%, rgba(8, 8, 8, 0.82) 100%);
+    }
+
+    .art-card img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: 0.94;
+    }
+
+    .art-card::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(180deg, rgba(5, 5, 5, 0.05) 0%, rgba(5, 5, 5, 0.82) 100%),
+        linear-gradient(115deg, rgba(0, 0, 0, 0.18) 0%, transparent 36%, rgba(0, 0, 0, 0.32) 100%);
+      pointer-events: none;
+    }
+
+    .artwork-fallback,
+    .art-caption {
+      position: relative;
+      z-index: 1;
+    }
+
+    .artwork-fallback {
+      display: grid;
+      gap: 0.4rem;
+      align-content: center;
+      justify-items: start;
+      height: 100%;
+      color: var(--accent);
+    }
+
+    .fallback-brand {
+      font-family: "Roabla", "Oswald", sans-serif;
+      font-size: clamp(2.6rem, 6vw, 4.8rem);
+      line-height: 0.92;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      max-width: 6ch;
+    }
+
+    .fallback-copy {
+      color: #e7ddd0;
+      font-size: 1rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .art-caption {
+      display: grid;
+      gap: 0.2rem;
+      padding: 1rem;
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(10, 10, 10, 0.52);
+      backdrop-filter: blur(12px);
+    }
+
+    .art-caption-title {
+      color: var(--accent-strong);
+      font-size: 1rem;
+      font-weight: 700;
+    }
+
+    .art-caption-note {
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .empty-wrap {
+      display: none;
+      margin-top: 1rem;
+    }
+
+    .empty-wrap.show {
+      display: block;
+    }
+
+    .empty-card {
+      padding: 1.4rem;
+      display: grid;
+      gap: 0.95rem;
+    }
+
+    .empty-card h2 {
+      margin: 0;
+      font-family: "Roabla", "Oswald", sans-serif;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--accent);
+      font-size: 1.8rem;
+      font-weight: 400;
+    }
+
+    .empty-card p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.65;
+      max-width: 54ch;
+    }
+
+    .empty-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    .footer {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 0.8rem;
+      margin-top: 1rem;
+      padding: 0.25rem 0 0.5rem;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .footer a {
+      color: var(--accent);
+    }
+
+    .footer a:hover,
+    .footer a:focus {
+      color: #efe3d3;
+    }
+
+    [hidden] {
+      display: none !important;
+    }
+
+    @media (max-width: 900px) {
+      .campaign-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .art-card {
+        min-height: 420px;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .page {
+        width: min(100% - 1rem, 1180px);
+        padding-top: 0.5rem;
+      }
+
+      .topbar {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .top-links {
+        width: 100%;
+        justify-content: flex-start;
+      }
+
+      .content-card,
+      .art-card,
+      .empty-card {
+        padding: 1rem;
+        border-radius: 22px;
+      }
+
+      .platform-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .cta-stack {
+        flex-direction: column;
+      }
+
+      .cta-button {
+        width: 100%;
+      }
+
+      .art-card {
+        min-height: 360px;
+      }
+    }
+

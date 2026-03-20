@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Half Awake Eyes | Admin</title>
+  <link rel="icon" type="image/x-icon" href="assets/images/favicon.ico" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600&family=Source+Sans+Pro:wght@400;600;700&display=swap"
+    rel="stylesheet"
+  />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/css/admin.css" />
+</head>
+<body class="auth-loading">
+  <div class="shell">
+    <header class="hero">
+      <div>
+        <span class="eyebrow">Private Dashboard</span>
+        <h1>Admin</h1>
+        <p>Track site activity and manage the public gigs and links pages from one place.</p>
+      </div>
+      <div class="hero-meta">
+        <div id="auth-status">Signed out.</div>
+        <div id="hero-collection">Collection: site-actions</div>
+        <div id="hero-updated">Waiting for login</div>
+      </div>
+    </header>
+
+    <section id="auth-boot" class="surface login-card auth-boot-card">
+      <h2>Loading Admin</h2>
+      <p>Checking your sign-in session...</p>
+    </section>
+
+    <section id="login" class="surface login-card">
+      <h2>Sign In</h2>
+      <p>Sign in with the Firebase Auth admin account to review site activity and manage the public pages.</p>
+      <form id="login-form">
+        <div class="mb-3">
+          <input type="email" id="email" class="form-control" placeholder="Admin email" autocomplete="email" required />
+        </div>
+        <div class="mb-3">
+          <input type="password" id="password" class="form-control" placeholder="Password" autocomplete="current-password" required />
+        </div>
+        <button type="submit" id="login-submit" class="btn btn-accent w-100">Sign In</button>
+      </form>
+      <div id="login-error" class="status-message" aria-live="polite"></div>
+    </section>
+
+    <section id="dashboard" class="surface dashboard">
+      <button type="button" id="mobile-nav-scrim" class="mobile-nav-scrim" aria-label="Close dashboard menu"></button>
+      <div id="dashboard-rail" class="dashboard-rail">
+        <div class="dashboard-sidebar-top">
+          <div class="dashboard-brand">
+            <div class="dashboard-brand-mark">HAE</div>
+            <div>
+              <div class="dashboard-brand-label">Half Awake Eyes</div>
+              <div class="dashboard-brand-title">Control Room</div>
+            </div>
+          </div>
+          <p class="dashboard-sidebar-copy">Monitor traffic, update public pages, and keep live show information current from one workspace.</p>
+        </div>
+        <ul class="nav nav-tabs">
+          <li class="nav-item">
+            <a class="nav-link active tab-label" href="#" data-page="analytics" data-collection="site-actions">Site Actions</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link tab-label" href="#" data-page="gigs">Gigs</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link tab-label" href="#" data-page="links">Links</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link tab-label" href="#" data-page="campaigns">Campaigns</a>
+          </li>
+        </ul>
+        <div class="dashboard-sidebar-bottom">
+          <div class="dashboard-sidebar-caption">Workflow</div>
+          <p>Add ticket URLs to gigs to publish show cards automatically, then drag links to reorder the public stack without leaving this panel.</p>
+        </div>
+      </div>
+      <div class="dashboard-content">
+        <div class="tabs-meta">
+          <div class="dashboard-topbar-copy">
+            <div class="dashboard-topbar-kicker">Current View</div>
+            <div class="collection-note" id="collection-note">Viewing recent events from site-actions.</div>
+          </div>
+          <div class="dashboard-topbar-actions">
+            <button type="button" id="mobile-nav-toggle" class="btn ghost-button mobile-nav-toggle" aria-expanded="false" aria-controls="dashboard-rail" aria-label="Toggle dashboard menu">
+              <span class="mobile-nav-toggle-icon" aria-hidden="true"></span>
+              <span class="mobile-nav-toggle-label">Menu</span>
+            </button>
+            <button type="button" id="refresh-data" class="btn ghost-button header-action-button">Refresh</button>
+            <button type="button" id="sign-out" class="btn ghost-button header-action-button">Sign Out</button>
+          </div>
+        </div>
+
+      <div id="analytics-page" class="dashboard-page active">
+        <div class="stats-grid" id="stats-grid">
+          <article class="stat-card">
+            <div class="label">Total Events</div>
+            <div class="value">0</div>
+            <div class="detail">Nothing loaded yet</div>
+          </article>
+        </div>
+
+        <div class="control-stack">
+          <div class="controls">
+            <div class="search-wrap">
+              <input type="search" id="search-input" class="form-control" placeholder="Search by action, page, campaign, ID, or any field..." />
+            </div>
+            <div>
+              <select id="page-size" class="form-select" aria-label="Rows per page">
+                <option value="10">10 rows</option>
+                <option value="25" selected>25 rows</option>
+                <option value="50">50 rows</option>
+                <option value="100">100 rows</option>
+              </select>
+            </div>
+            <div>
+              <div id="field-count" class="meta-pill">0 fields detected</div>
+            </div>
+          </div>
+
+          <div class="view-toggle" role="tablist" aria-label="Analytics view">
+            <button type="button" class="view-toggle-button active" data-view-mode="events">Events</button>
+            <button type="button" class="view-toggle-button" data-view-mode="sessions">Sessions</button>
+          </div>
+
+          <div class="controls-secondary">
+            <div>
+              <input type="date" id="date-from" class="form-control" aria-label="Filter from date" />
+            </div>
+            <div>
+              <input type="date" id="date-to" class="form-control" aria-label="Filter to date" />
+            </div>
+            <div class="export-wrap">
+              <button type="button" id="export-csv" class="btn ghost-button w-100">Export CSV</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="summary-panel">
+          <div class="section-title">
+            <h3>Event Breakdown</h3>
+            <span id="summary-caption">No data loaded</span>
+          </div>
+          <div class="helper-copy" id="filter-caption">Search, date range, and collection filters apply to the table and export.</div>
+          <div class="chip-list" id="summary"></div>
+        </div>
+
+        <div class="table-panel">
+          <div class="table-responsive">
+            <table>
+              <thead id="log-head"></thead>
+              <tbody id="log-rows"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="mobile-card-list" id="mobile-log-cards"></div>
+
+        <div class="pagination-bar">
+          <div class="pagination-meta" id="pagination-meta">0 results</div>
+          <nav aria-label="Analytics pagination">
+            <ul class="pagination" id="pagination"></ul>
+          </nav>
+        </div>
+      </div>
+
+      <div id="gigs-page" class="dashboard-page">
+        <div class="summary-panel">
+          <div class="section-title">
+            <h3>Gig Manager</h3>
+            <span>Manage the `gigs` collection</span>
+          </div>
+          <div class="helper-copy">Add and review the shows that appear in the EPK gig history section.</div>
+        </div>
+
+        <div class="manager-panel">
+          <div class="manager-card">
+            <div class="section-title">
+              <h3>Add Gig</h3>
+              <span>Write to Firestore</span>
+            </div>
+            <p class="manager-subcopy">Use the same `date`, `event`, `venue`, and `city` fields the public site already reads. Add a ticket URL if you want the show to appear automatically in the `Shows` section on `links.html` until the date passes, and add an image if you want artwork on that card.</p>
+            <form id="gig-form">
+              <div class="gig-form-grid">
+                <div>
+                  <input type="date" id="gig-date" class="form-control" aria-label="Gig date" required />
+                </div>
+                <div>
+                  <input type="text" id="gig-event" class="form-control" placeholder="Event or show name" aria-label="Gig event" required />
+                </div>
+                <div>
+                  <input type="text" id="gig-venue" class="form-control" placeholder="Venue" aria-label="Gig venue" required />
+                </div>
+                <div>
+                  <input type="text" id="gig-city" class="form-control" placeholder="City (optional)" aria-label="Gig city" />
+                </div>
+                <div class="full-span">
+                  <input type="text" id="gig-ticket-url" class="form-control" placeholder="Ticket link (optional)" aria-label="Gig ticket link" />
+                </div>
+                <div class="full-span">
+                  <input type="text" id="gig-image-url" class="form-control" placeholder="Show image URL or asset path (optional)" aria-label="Gig image URL" />
+                </div>
+                <div class="full-span">
+                  <button type="submit" id="save-gig" class="btn btn-accent w-100">Save Gig</button>
+                </div>
+              </div>
+            </form>
+            <div id="gig-status" class="gig-manager-status" aria-live="polite"></div>
+          </div>
+
+          <div class="manager-card">
+            <div class="section-title">
+              <h3>Current Gigs</h3>
+              <span id="gig-count">No gigs loaded</span>
+            </div>
+            <div id="gig-list" class="gig-admin-list">
+              <div class="gig-admin-empty">No gigs loaded yet.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="links-page" class="dashboard-page">
+        <div class="summary-panel">
+          <div class="section-title">
+            <h3>Links Manager</h3>
+            <span>Manage the `links` collection</span>
+          </div>
+          <div class="helper-copy">Control the public link-in-bio page, including socials, sections, featured links, ordering, and hidden entries.</div>
+        </div>
+
+        <div class="manager-panel">
+          <div class="manager-card">
+            <div class="section-title">
+              <h3>Add Link</h3>
+              <span>Write to Firestore</span>
+            </div>
+            <p class="manager-subcopy">Create either a top social icon or a main section card for the public `links.html` page. If you leave the image blank, the links page will try to use the destination site's icon automatically.</p>
+            <form id="link-form">
+              <div class="link-form-grid">
+                <div>
+                  <select id="link-group" class="form-select" aria-label="Link group">
+                    <option value="social">Social Row</option>
+                    <option value="main" selected>Main Link Stack</option>
+                  </select>
+                </div>
+                <div>
+                  <input type="number" id="link-sort-order" class="form-control" placeholder="Sort order (optional)" aria-label="Sort order" min="0" step="1" />
+                </div>
+                <div class="full-span">
+                  <input type="text" id="link-title" class="form-control" placeholder="Link title" aria-label="Link title" required />
+                </div>
+                <div class="full-span">
+                  <input type="text" id="link-url" class="form-control" placeholder="https://example.com or mailto:..." aria-label="Link URL" required />
+                </div>
+                <div class="full-span">
+                  <input type="text" id="link-image-url" class="form-control" placeholder="Image URL or asset path (optional, otherwise auto)" aria-label="Link image URL" />
+                </div>
+                <div>
+                  <input type="text" id="link-section" class="form-control" placeholder="Section (for main links)" aria-label="Link section" />
+                </div>
+                <div>
+                  <input type="text" id="link-kicker" class="form-control" placeholder="Kicker (optional)" aria-label="Link kicker" />
+                </div>
+                <div>
+                  <label class="link-edit-toggle" for="link-featured">
+                    <input type="checkbox" id="link-featured" />
+                    <span>Mark as featured.</span>
+                  </label>
+                </div>
+                <div class="full-span">
+                  <textarea id="link-description" class="form-control" rows="3" placeholder="Description or handle (optional)" aria-label="Link description"></textarea>
+                </div>
+                <div class="full-span">
+                  <button type="submit" id="save-link" class="btn btn-accent w-100">Save Link</button>
+                </div>
+              </div>
+            </form>
+            <div id="link-status" class="gig-manager-status" aria-live="polite"></div>
+          </div>
+
+          <div class="manager-card">
+            <div class="section-title">
+              <h3>Current Links</h3>
+              <span id="link-count">No links loaded</span>
+            </div>
+            <div class="manager-toolbar">
+              <div class="helper-copy">Edit, hide, drag to reorder, or move links between the `Social` row and the `Main` stack.</div>
+              <button type="button" id="seed-links" class="btn ghost-button">Import Current Defaults</button>
+            </div>
+            <div class="link-admin-groups">
+              <section class="link-admin-group">
+                <div class="link-admin-group-header">
+                  <div>
+                    <h4 class="link-admin-group-title">Social Row</h4>
+                    <p class="link-admin-group-copy">These render as icon buttons at the top of `links.html`.</p>
+                  </div>
+                  <span id="social-link-count" class="link-admin-group-meta">No social links</span>
+                </div>
+                <div id="social-link-list" class="link-admin-list has-group-shell" data-link-group="social">
+                  <div class="gig-admin-empty">No social links loaded yet.</div>
+                </div>
+              </section>
+              <section class="link-admin-group">
+                <div class="link-admin-group-header">
+                  <div>
+                    <h4 class="link-admin-group-title">Main Links</h4>
+                    <p class="link-admin-group-copy">These render as the main grouped cards, using sections like `Releases` or `Resources`.</p>
+                  </div>
+                  <span id="main-link-count" class="link-admin-group-meta">No main links</span>
+                </div>
+                <div id="main-link-list" class="link-admin-list has-group-shell" data-link-group="main">
+                  <div class="gig-admin-empty">No main links loaded yet.</div>
+                </div>
+              </section>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="campaigns-page" class="dashboard-page">
+        <div class="summary-panel">
+          <div class="section-title">
+            <h3>Campaign Manager</h3>
+            <span>Manage the `campaigns/active` document</span>
+          </div>
+          <div class="helper-copy">Build a dedicated release or smart-link page without changing the evergreen links page.</div>
+        </div>
+
+        <div class="manager-panel">
+          <div class="manager-card">
+            <div class="section-title">
+              <h3>Active Campaign Settings</h3>
+              <span>Write to Firestore</span>
+            </div>
+            <p class="manager-subcopy">Save one live release page for `smartlink.html`, including hero copy, artwork, and platform destinations.</p>
+            <form id="campaign-form">
+              <div class="campaign-form-grid">
+                <div>
+                  <input type="text" id="campaign-badge" class="form-control" placeholder="Badge or kicker" aria-label="Campaign badge" />
+                </div>
+                <div>
+                  <input type="date" id="campaign-release-date" class="form-control" aria-label="Campaign release date" />
+                </div>
+                <div class="full-span">
+                  <input type="text" id="campaign-title" class="form-control" placeholder="Campaign title" aria-label="Campaign title" required />
+                </div>
+                <div class="full-span">
+                  <input type="text" id="campaign-subtitle" class="form-control" placeholder="Subtitle or release line" aria-label="Campaign subtitle" />
+                </div>
+                <div class="full-span">
+                  <textarea id="campaign-description" class="form-control" rows="4" placeholder="Describe the release, campaign, or call to action" aria-label="Campaign description"></textarea>
+                </div>
+                <div class="full-span">
+                  <input type="url" id="campaign-artwork-url" class="form-control" placeholder="Artwork image URL" aria-label="Campaign artwork URL" />
+                </div>
+                <div class="full-span">
+                  <input type="text" id="campaign-meta-pixel-id" class="form-control" placeholder="Meta Pixel ID (optional)" aria-label="Meta Pixel ID" inputmode="numeric" />
+                </div>
+                <div>
+                  <input type="text" id="campaign-primary-label" class="form-control" placeholder="Primary button label" aria-label="Primary button label" />
+                </div>
+                <div>
+                  <input type="url" id="campaign-primary-url" class="form-control" placeholder="Primary button URL" aria-label="Primary button URL" />
+                </div>
+                <div>
+                  <input type="text" id="campaign-secondary-label" class="form-control" placeholder="Secondary button label" aria-label="Secondary button label" />
+                </div>
+                <div>
+                  <input type="url" id="campaign-secondary-url" class="form-control" placeholder="Secondary button URL" aria-label="Secondary button URL" />
+                </div>
+                <div>
+                  <input type="url" id="campaign-spotify-url" class="form-control" placeholder="Spotify URL" aria-label="Spotify URL" />
+                </div>
+                <div>
+                  <input type="url" id="campaign-apple-url" class="form-control" placeholder="Apple Music URL" aria-label="Apple Music URL" />
+                </div>
+                <div>
+                  <input type="url" id="campaign-youtube-url" class="form-control" placeholder="YouTube URL" aria-label="YouTube URL" />
+                </div>
+                <div>
+                  <input type="url" id="campaign-bandcamp-url" class="form-control" placeholder="Bandcamp URL" aria-label="Bandcamp URL" />
+                </div>
+                <div class="full-span">
+                  <label class="link-edit-toggle" for="campaign-live">
+                    <input type="checkbox" id="campaign-live" />
+                    <span>Make this the live public smart-link page.</span>
+                  </label>
+                </div>
+                <div class="full-span">
+                  <button type="button" id="campaign-delete" class="btn danger-button w-100">Delete Campaign</button>
+                </div>
+                <div class="full-span">
+                  <button type="submit" id="save-campaign" class="btn btn-accent w-100">Save Campaign</button>
+                </div>
+              </div>
+            </form>
+            <div id="campaign-status" class="gig-manager-status" aria-live="polite"></div>
+          </div>
+
+          <div class="manager-card">
+            <div class="section-title">
+              <h3>Public Page Preview</h3>
+              <span id="campaign-count">Not loaded</span>
+            </div>
+            <div class="manager-toolbar">
+              <div class="helper-copy">Open the public page to confirm layout, copy, and destination URLs.</div>
+              <a id="campaign-open-link" class="btn ghost-button" href="smartlink.html" target="_blank" rel="noopener noreferrer">Open smartlink.html</a>
+            </div>
+            <div id="campaign-preview" class="campaign-preview">
+              <div class="campaign-preview-empty">No campaign loaded yet. Save a title and at least one destination URL to publish a first release page.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      </div>
+    </section>
+  </div>
+
+  <dialog id="delete-dialog" class="delete-dialog">
+    <div class="delete-dialog-card">
+      <span class="eyebrow">Delete Entry</span>
+      <h2 id="delete-dialog-title">Remove this analytics entry?</h2>
+      <p id="delete-dialog-description">This action will permanently delete the selected record from the current collection.</p>
+
+      <div class="delete-dialog-meta">
+        <div class="delete-dialog-row">
+          <div class="delete-dialog-label">Event</div>
+          <div class="delete-dialog-value" id="delete-dialog-event">-</div>
+        </div>
+        <div class="delete-dialog-row">
+          <div class="delete-dialog-label">Timestamp</div>
+          <div class="delete-dialog-value" id="delete-dialog-timestamp">-</div>
+        </div>
+      </div>
+
+      <div id="delete-dialog-error" class="status-message" aria-live="polite"></div>
+
+      <div class="delete-dialog-actions">
+        <button type="button" id="cancel-delete" class="btn ghost-button">Cancel</button>
+        <button type="button" id="confirm-delete" class="btn danger-button">Delete Entry</button>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog id="details-dialog" class="details-dialog">
+    <div class="details-dialog-card">
+      <span class="eyebrow">Entry Details</span>
+      <h2 id="details-dialog-title">Analytics Entry</h2>
+      <p id="details-dialog-subtitle" class="details-dialog-subtitle">Full event details</p>
+      <div id="details-dialog-grid" class="details-grid"></div>
+      <div class="details-dialog-actions">
+        <button type="button" id="details-delete" class="btn danger-button">Delete Entry</button>
+        <button type="button" id="close-details" class="btn ghost-button">Close</button>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog id="gig-edit-dialog" class="details-dialog">
+    <div class="details-dialog-card">
+      <span class="eyebrow">Edit Gig</span>
+      <h2 id="gig-edit-title">Update gig entry</h2>
+      <p class="details-dialog-subtitle">Change the gig details, hide it from the public site, or remove it entirely.</p>
+
+      <form id="gig-edit-form" class="gig-edit-form">
+        <div class="gig-edit-grid">
+          <div>
+            <input type="date" id="gig-edit-date" class="form-control" aria-label="Edit gig date" required />
+          </div>
+          <div>
+            <input type="text" id="gig-edit-event" class="form-control" placeholder="Event or show name" aria-label="Edit gig event" required />
+          </div>
+          <div>
+            <input type="text" id="gig-edit-venue" class="form-control" placeholder="Venue" aria-label="Edit gig venue" required />
+          </div>
+          <div>
+            <input type="text" id="gig-edit-city" class="form-control" placeholder="City (optional)" aria-label="Edit gig city" />
+          </div>
+          <div class="full-span">
+            <input type="text" id="gig-edit-ticket-url" class="form-control" placeholder="Ticket link (optional)" aria-label="Edit gig ticket link" />
+          </div>
+          <div class="full-span">
+            <input type="text" id="gig-edit-image-url" class="form-control" placeholder="Show image URL or asset path (optional)" aria-label="Edit gig image URL" />
+          </div>
+          <div class="full-span">
+            <label class="gig-edit-toggle" for="gig-edit-hidden">
+              <input type="checkbox" id="gig-edit-hidden" />
+              <span>Hide this gig from the public EPK gig history.</span>
+            </label>
+          </div>
+        </div>
+        <div class="gig-edit-helper">Hidden gigs stay in Firestore and remain manageable here, but they no longer show on the public site. Ticket links and gig images also stop appearing on `links.html` once the gig date is in the past.</div>
+      </form>
+
+      <div id="gig-edit-error" class="status-message" aria-live="polite"></div>
+
+      <div class="details-dialog-actions">
+        <button type="button" id="gig-delete" class="btn danger-button">Delete Gig</button>
+        <button type="button" id="close-gig-edit" class="btn ghost-button">Close</button>
+        <button type="submit" form="gig-edit-form" id="save-gig-edit" class="btn btn-accent">Save Changes</button>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog id="link-edit-dialog" class="details-dialog">
+    <div class="details-dialog-card">
+      <span class="eyebrow">Edit Link</span>
+      <h2 id="link-edit-title">Update link entry</h2>
+      <p class="details-dialog-subtitle">Change the public link, move it between social and main groups, hide it, or remove it entirely.</p>
+
+      <form id="link-edit-form" class="link-edit-form">
+        <div class="link-edit-grid">
+          <div>
+            <select id="link-edit-group" class="form-select" aria-label="Edit link group">
+              <option value="social">Social Row</option>
+              <option value="main">Main Link Stack</option>
+            </select>
+          </div>
+          <div>
+            <input type="number" id="link-edit-sort-order" class="form-control" placeholder="Sort order" aria-label="Edit link sort order" min="0" step="1" />
+          </div>
+          <div class="full-span">
+            <input type="text" id="link-edit-title-input" class="form-control" placeholder="Link title" aria-label="Edit link title" required />
+          </div>
+          <div class="full-span">
+            <input type="text" id="link-edit-url" class="form-control" placeholder="https://example.com or mailto:..." aria-label="Edit link URL" required />
+          </div>
+          <div class="full-span">
+            <input type="text" id="link-edit-image-url" class="form-control" placeholder="Image URL or asset path (optional, otherwise auto)" aria-label="Edit link image URL" />
+          </div>
+          <div>
+            <input type="text" id="link-edit-section" class="form-control" placeholder="Section (for main links)" aria-label="Edit link section" />
+          </div>
+          <div>
+            <input type="text" id="link-edit-kicker" class="form-control" placeholder="Kicker (optional)" aria-label="Edit link kicker" />
+          </div>
+          <div class="full-span">
+            <textarea id="link-edit-description" class="form-control" rows="3" placeholder="Description or handle (optional)" aria-label="Edit link description"></textarea>
+          </div>
+          <div>
+            <label class="link-edit-toggle" for="link-edit-featured">
+              <input type="checkbox" id="link-edit-featured" />
+              <span>Feature this link on the public page.</span>
+            </label>
+          </div>
+          <div>
+            <label class="link-edit-toggle" for="link-edit-hidden">
+              <input type="checkbox" id="link-edit-hidden" />
+              <span>Hide this link from the public page.</span>
+            </label>
+          </div>
+        </div>
+      </form>
+
+      <div id="link-edit-error" class="status-message" aria-live="polite"></div>
+
+      <div class="details-dialog-actions">
+        <button type="button" id="link-delete" class="btn danger-button">Delete Link</button>
+        <button type="button" id="close-link-edit" class="btn ghost-button">Close</button>
+        <button type="submit" form="link-edit-form" id="save-link-edit" class="btn btn-accent">Save Changes</button>
+      </div>
+    </div>
+  </dialog>
+  <script src="assets/js/admin-entry.js"></script>
+</body>
+</html>
