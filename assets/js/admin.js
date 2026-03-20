@@ -2631,19 +2631,19 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
 
       if (state.activePage === "gigs") {
         elements.refreshButton.disabled = state.isLoadingGigs;
-        elements.refreshButton.textContent = state.isLoadingGigs ? "Refreshing..." : "Refresh Gigs";
+        elements.refreshButton.textContent = state.isLoadingGigs ? "Refreshing..." : "Refresh";
         return;
       }
 
       if (state.activePage === "links") {
         elements.refreshButton.disabled = state.isLoadingLinks;
-        elements.refreshButton.textContent = state.isLoadingLinks ? "Refreshing..." : "Refresh Links";
+        elements.refreshButton.textContent =  state.isLoadingLinks ? "Refreshing..." : "Refresh";
         return;
       }
 
       if (state.activePage === "campaigns") {
         elements.refreshButton.disabled = state.isLoadingCampaign;
-        elements.refreshButton.textContent = state.isLoadingCampaign ? "Refreshing..." : "Refresh Campaign";
+        elements.refreshButton.textContent = state.isLoadingCampaign ? "Refreshing..." : "Refresh";
         return;
       }
 
