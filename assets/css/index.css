@@ -311,7 +311,7 @@
 
         section {
             position: relative;
-            min-height: 100vh;
+            min-height: auto;
             padding: 0;
             max-width: none;
             margin: 0;
@@ -324,9 +324,9 @@
         .section-panel {
             position: relative;
             width: min(1200px, calc(100% - 2.5rem));
-            min-height: 100vh;
+            min-height: auto;
             margin: 0 auto;
-            padding: clamp(4.5rem, 10vh, 7rem) 0;
+            padding: clamp(3rem, 7vh, 5rem) 0;
             background: transparent;
             border: 0;
             border-radius: 0;
@@ -335,7 +335,7 @@
             backdrop-filter: none;
             display: flex;
             flex-direction: column;
-            justify-content: center;
+            justify-content: flex-start;
         }
 
         .section-heading {
@@ -382,10 +382,24 @@
                 linear-gradient(180deg, rgba(10, 10, 10, 0.82), rgba(10, 10, 10, 0.88));
         }
 
+        #release {
+            min-height: auto;
+        }
+
+        #release .section-panel {
+            min-height: auto;
+            justify-content: flex-start;
+            padding: clamp(3.2rem, 8vh, 5.25rem) 0;
+        }
+
+        #release .section-heading {
+            margin-bottom: 1.25rem;
+        }
+
         #about {
             background:
-                linear-gradient(90deg, rgba(8, 8, 8, 0.96) 0%, rgba(8, 8, 8, 0.88) 34%, rgba(8, 8, 8, 0.56) 62%, rgba(8, 8, 8, 0.78) 100%),
-                url('../images/Half Awake Eyes-31.jpg') 72% 10% / cover no-repeat;
+                radial-gradient(circle at top right, rgba(196, 126, 93, 0.08), transparent 26%),
+                linear-gradient(180deg, rgba(10, 10, 10, 0.94), rgba(10, 10, 10, 0.88));
         }
 
         section#videos,
@@ -486,9 +500,10 @@
 
         .release-spotlight {
             display: grid;
-            grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.85fr);
+            grid-template-columns: minmax(0, 1fr);
             gap: 1.5rem;
             align-items: start;
+            max-width: 780px;
         }
 
         .release-kicker {
@@ -973,6 +988,45 @@
             line-height: 1;
         }
 
+        @media (max-width: 1100px) {
+            .section-panel {
+                width: min(100% - 2rem, 1200px);
+                min-height: auto;
+                padding: 4.2rem 0 3.4rem;
+            }
+
+            #about .section-panel {
+                width: min(100% - 2rem, 1080px);
+            }
+
+            .about-layout,
+            .video-layout,
+            .gigs-layout,
+            .resource-layout {
+                grid-template-columns: 1fr;
+                gap: 1.8rem;
+            }
+
+            .release-meta {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .release-meta-item:last-child {
+                grid-column: 1 / -1;
+            }
+
+            .about-layout,
+            .release-spotlight {
+                max-width: 100%;
+            }
+
+            .about-rail,
+            .video-copy,
+            .gigs-copy {
+                max-width: 100%;
+            }
+        }
+
         @media (max-width: 900px) {
             #about {
                 background:
@@ -994,43 +1048,36 @@
             }
 
             .quick-nav {
-                align-items: flex-start;
-                gap: 0.75rem;
-                flex-direction: column;
+                align-items: center;
+                gap: 0.9rem;
+                flex-direction: row;
+                flex-wrap: wrap;
             }
 
             .quick-nav-top {
-                width: 100%;
+                width: auto;
                 display: flex;
                 align-items: center;
-                justify-content: flex-end;
+                justify-content: flex-start;
                 gap: 0.8rem;
             }
 
-            .quick-nav-wrap:not(.is-sticky) .quick-nav-brand {
-                display: none !important;
-            }
-
-            .quick-nav-wrap.is-sticky .quick-nav-brand {
+            .quick-nav-brand {
                 display: inline-flex !important;
             }
 
             .quick-nav-wrap.is-sticky .quick-nav-top {
-                justify-content: space-between;
+                justify-content: flex-start;
             }
 
             .quick-nav-links {
-                width: 100%;
-                justify-content: flex-start;
-                overflow-x: auto;
-                flex-wrap: nowrap;
+                width: auto;
+                margin-left: auto;
+                justify-content: flex-end;
+                overflow: visible;
+                flex-wrap: wrap;
                 gap: 0.35rem 0.85rem;
-                padding-bottom: 0.2rem;
-                scrollbar-width: none;
-            }
-
-            .quick-nav-links::-webkit-scrollbar {
-                display: none;
+                padding-bottom: 0;
             }
 
             .hero-panel-top {
@@ -1193,6 +1240,19 @@
                 gap: 0.55rem;
                 position: relative;
                 align-items: flex-end;
+            }
+
+            .quick-nav-top {
+                width: 100%;
+                justify-content: flex-end;
+            }
+
+            .quick-nav-wrap.is-sticky .quick-nav-top {
+                justify-content: flex-end;
+            }
+
+            .quick-nav-brand {
+                display: none !important;
             }
 
             .quick-nav-toggle {
