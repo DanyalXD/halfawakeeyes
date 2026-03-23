@@ -500,10 +500,10 @@
 
         .release-spotlight {
             display: grid;
-            grid-template-columns: minmax(0, 1fr);
+            grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
             gap: 1.5rem;
             align-items: start;
-            max-width: 780px;
+            max-width: 1120px;
         }
 
         .release-kicker {
@@ -988,6 +988,38 @@
             line-height: 1;
         }
 
+        @media (min-width: 1101px) {
+            section {
+                min-height: 100vh;
+            }
+
+            .section-panel {
+                min-height: 100vh;
+                padding: clamp(4.5rem, 10vh, 7rem) 0;
+                justify-content: center;
+            }
+
+            #release {
+                min-height: 100vh;
+            }
+
+            #release .section-panel {
+                min-height: 100vh;
+                padding: clamp(4.5rem, 10vh, 7rem) 0;
+                justify-content: center;
+            }
+
+            #release .section-heading {
+                margin-bottom: 2rem;
+            }
+
+            #about {
+                background:
+                    linear-gradient(90deg, rgba(8, 8, 8, 0.96) 0%, rgba(8, 8, 8, 0.88) 34%, rgba(8, 8, 8, 0.56) 62%, rgba(8, 8, 8, 0.78) 100%),
+                    url('../images/Half Awake Eyes-31.jpg') 72% 10% / cover no-repeat;
+            }
+        }
+
         @media (max-width: 1100px) {
             .section-panel {
                 width: min(100% - 2rem, 1200px);
@@ -1018,6 +1050,10 @@
             .about-layout,
             .release-spotlight {
                 max-width: 100%;
+            }
+
+            .release-stream {
+                display: none;
             }
 
             .about-rail,
@@ -1248,11 +1284,15 @@
             }
 
             .quick-nav-wrap.is-sticky .quick-nav-top {
-                justify-content: flex-end;
+                justify-content: space-between;
             }
 
             .quick-nav-brand {
                 display: none !important;
+            }
+
+            .quick-nav-wrap.is-sticky .quick-nav-brand {
+                display: inline-flex !important;
             }
 
             .quick-nav-toggle {
