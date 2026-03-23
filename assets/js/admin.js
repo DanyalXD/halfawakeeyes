@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-    import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, getFirestore, orderBy, query, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, getFirestore, orderBy, query, setDoc, updateDoc, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyAv7G28uXxlQNG_HMLbBkuz4xseXzOzm4Y",
@@ -59,6 +59,13 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
 
     const ADMIN_ACTIVE_PAGE_STORAGE_KEY = "hae-admin-active-page";
     const VALID_ADMIN_PAGES = new Set(["analytics", "gigs", "links", "campaigns"]);
+    const ADMIN_LOG_CACHE_DB_NAME = "hae-admin-cache";
+    const ADMIN_LOG_CACHE_DB_VERSION = 1;
+    const ADMIN_LOG_CACHE_ENTRIES_STORE = "analyticsEntries";
+    const ADMIN_LOG_CACHE_META_STORE = "analyticsMeta";
+    const PUBLIC_MIRROR_DOC_ID = "public-index";
+    const PUBLIC_MIRROR_KIND = "public-mirror";
+    let adminLogCachePromise = null;
 
     const elements = {
       dashboard: document.getElementById("dashboard"),
@@ -174,6 +181,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
       closeLinkEdit: document.getElementById("close-link-edit"),
       saveLinkEdit: document.getElementById("save-link-edit"),
       collectionNote: document.getElementById("collection-note"),
+      cacheStatus: document.getElementById("cache-status"),
       authStatus: document.getElementById("auth-status"),
       signOutButton: document.getElementById("sign-out"),
       mobileNavToggle: document.getElementById("mobile-nav-toggle"),
@@ -216,6 +224,45 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
       } catch (error) {
         // Ignore storage failures and keep the admin usable.
       }
+    }
+
+    function openAdminLogCache() {
+      if (!("indexedDB" in window)) {
+        setAnalyticsCacheStatus("Analytics cache: not supported in this browser.");
+        return Promise.resolve(null);
+      }
+
+      if (!adminLogCachePromise) {
+        adminLogCachePromise = new Promise((resolve) => {
+          const request = window.indexedDB.open(ADMIN_LOG_CACHE_DB_NAME, ADMIN_LOG_CACHE_DB_VERSION);
+
+          request.onupgradeneeded = () => {
+            const dbInstance = request.result;
+
+            if (!dbInstance.objectStoreNames.contains(ADMIN_LOG_CACHE_ENTRIES_STORE)) {
+              const entryStore = dbInstance.createObjectStore(ADMIN_LOG_CACHE_ENTRIES_STORE, { keyPath: "cacheId" });
+              entryStore.createIndex("byCollection", "collectionName", { unique: false });
+            }
+
+            if (!dbInstance.objectStoreNames.contains(ADMIN_LOG_CACHE_META_STORE)) {
+              dbInstance.createObjectStore(ADMIN_LOG_CACHE_META_STORE, { keyPath: "collectionName" });
+            }
+          };
+
+          request.onsuccess = () => {
+            resolve(request.result);
+          };
+
+          request.onerror = () => {
+            console.warn("IndexedDB cache is unavailable for admin analytics.", request.error);
+            setAnalyticsCacheStatus("Analytics cache: browser storage unavailable.");
+            adminLogCachePromise = Promise.resolve(null);
+            resolve(null);
+          };
+        });
+      }
+
+      return adminLogCachePromise;
     }
 
     function formatTimestamp(value) {
@@ -283,6 +330,19 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
         month: "short",
         year: "numeric"
       });
+    }
+
+    function normalizeGigEntry(gig = {}, id = "") {
+      return {
+        id,
+        date: String(gig?.date || "").trim(),
+        event: String(gig?.event || "").trim(),
+        venue: String(gig?.venue || "").trim(),
+        city: String(gig?.city || "").trim(),
+        ticketUrl: String(gig?.ticketUrl || "").trim(),
+        imageUrl: String(gig?.imageUrl || "").trim(),
+        hidden: gig?.hidden === true || String(gig?.hidden || "").toLowerCase() === "true"
+      };
     }
 
     function getDefaultLinks() {
@@ -447,6 +507,364 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
 
       const parsed = new Date(value);
       return Number.isNaN(parsed.getTime()) ? null : parsed;
+    }
+
+    function serializeCachedValue(value) {
+      if (value instanceof Date) {
+        return {
+          __haeType: "date",
+          value: value.toISOString()
+        };
+      }
+
+      if (Array.isArray(value)) {
+        return value.map((item) => serializeCachedValue(item));
+      }
+
+      if (value && typeof value === "object") {
+        if (typeof value.seconds === "number") {
+          return {
+            __haeType: "timestamp",
+            seconds: value.seconds,
+            nanoseconds: typeof value.nanoseconds === "number" ? value.nanoseconds : 0
+          };
+        }
+
+        return Object.fromEntries(
+          Object.entries(value).map(([key, entryValue]) => [key, serializeCachedValue(entryValue)])
+        );
+      }
+
+      return value;
+    }
+
+    function deserializeCachedValue(value) {
+      if (Array.isArray(value)) {
+        return value.map((item) => deserializeCachedValue(item));
+      }
+
+      if (!value || typeof value !== "object") {
+        return value;
+      }
+
+      if (value.__haeType === "date") {
+        const parsed = new Date(value.value);
+        return Number.isNaN(parsed.getTime()) ? value.value : parsed;
+      }
+
+      if (value.__haeType === "timestamp" && typeof value.seconds === "number") {
+        return {
+          seconds: value.seconds,
+          nanoseconds: typeof value.nanoseconds === "number" ? value.nanoseconds : 0
+        };
+      }
+
+      return Object.fromEntries(
+        Object.entries(value).map(([key, entryValue]) => [key, deserializeCachedValue(entryValue)])
+      );
+    }
+
+    function getLogTimestampMs(entry) {
+      const eventDate = getDateForFilter(entry?.timestamp);
+      return eventDate ? eventDate.getTime() : 0;
+    }
+
+    function compareLogEntries(a, b) {
+      const timeDelta = getLogTimestampMs(b) - getLogTimestampMs(a);
+      if (timeDelta !== 0) {
+        return timeDelta;
+      }
+
+      return String(b?.id || "").localeCompare(String(a?.id || ""));
+    }
+
+    function sortLogs(entries = []) {
+      return [...entries].sort(compareLogEntries);
+    }
+
+    function mergeLogs(existingEntries = [], incomingEntries = []) {
+      const merged = new Map();
+
+      existingEntries.forEach((entry) => {
+        if (entry?.id) {
+          merged.set(entry.id, entry);
+        }
+      });
+
+      incomingEntries.forEach((entry) => {
+        if (entry?.id) {
+          merged.set(entry.id, entry);
+        }
+      });
+
+      return sortLogs([...merged.values()]);
+    }
+
+    function getLatestLogTimestamp(entries = []) {
+      const latestTimestampMs = entries.reduce((latest, entry) => {
+        const timestampMs = getLogTimestampMs(entry);
+        return timestampMs > latest ? timestampMs : latest;
+      }, 0);
+
+      return latestTimestampMs ? new Date(latestTimestampMs) : null;
+    }
+
+    function createCachedLogRecord(collectionName, entry) {
+      return {
+        cacheId: `${collectionName}:${entry.id}`,
+        collectionName,
+        id: entry.id,
+        entry: serializeCachedValue(entry),
+        timestampMs: getLogTimestampMs(entry)
+      };
+    }
+
+    async function readCachedLogs(collectionName) {
+      const cacheDb = await openAdminLogCache();
+      if (!cacheDb) {
+        return { entries: [], latestTimestamp: null, syncedAt: null };
+      }
+
+      return new Promise((resolve) => {
+        const transaction = cacheDb.transaction([ADMIN_LOG_CACHE_ENTRIES_STORE, ADMIN_LOG_CACHE_META_STORE], "readonly");
+        const entryStore = transaction.objectStore(ADMIN_LOG_CACHE_ENTRIES_STORE);
+        const metaStore = transaction.objectStore(ADMIN_LOG_CACHE_META_STORE);
+        const cachedEntries = [];
+        let cachedMeta = null;
+
+        const metaRequest = metaStore.get(collectionName);
+        metaRequest.onsuccess = () => {
+          cachedMeta = metaRequest.result || null;
+        };
+
+        const index = entryStore.index("byCollection");
+        const keyRange = window.IDBKeyRange.only(collectionName);
+        const cursorRequest = index.openCursor(keyRange);
+
+        cursorRequest.onsuccess = () => {
+          const cursor = cursorRequest.result;
+          if (!cursor) {
+            return;
+          }
+
+          cachedEntries.push(deserializeCachedValue(cursor.value.entry));
+          cursor.continue();
+        };
+
+        transaction.oncomplete = () => {
+          const sortedEntries = sortLogs(cachedEntries);
+          const latestTimestamp = typeof cachedMeta?.latestTimestampMs === "number" && cachedMeta.latestTimestampMs > 0
+            ? new Date(cachedMeta.latestTimestampMs)
+            : getLatestLogTimestamp(sortedEntries);
+
+          resolve({
+            entries: sortedEntries,
+            latestTimestamp,
+            syncedAt: cachedMeta?.syncedAt || null
+          });
+        };
+
+        transaction.onerror = () => {
+          console.warn("Could not read the cached admin analytics log.", transaction.error);
+          resolve({ entries: [], latestTimestamp: null, syncedAt: null });
+        };
+      });
+    }
+
+    async function upsertCachedLogs(collectionName, entries, syncedAt = new Date(), latestTimestamp = null) {
+      const cacheDb = await openAdminLogCache();
+      if (!cacheDb) {
+        return;
+      }
+
+      const latestTimestampMs = latestTimestamp ? latestTimestamp.getTime() : 0;
+
+      await new Promise((resolve, reject) => {
+        const transaction = cacheDb.transaction([ADMIN_LOG_CACHE_ENTRIES_STORE, ADMIN_LOG_CACHE_META_STORE], "readwrite");
+        const entryStore = transaction.objectStore(ADMIN_LOG_CACHE_ENTRIES_STORE);
+        const metaStore = transaction.objectStore(ADMIN_LOG_CACHE_META_STORE);
+
+        entries.forEach((entry) => {
+          if (entry?.id) {
+            entryStore.put(createCachedLogRecord(collectionName, entry));
+          }
+        });
+
+        metaStore.put({
+          collectionName,
+          syncedAt: syncedAt.toISOString(),
+          latestTimestampMs
+        });
+
+        transaction.oncomplete = () => {
+          resolve();
+        };
+
+        transaction.onerror = () => {
+          reject(transaction.error || new Error("Could not update the cached admin analytics log."));
+        };
+      });
+    }
+
+    async function replaceCachedLogs(collectionName, entries, syncedAt = new Date()) {
+      const cacheDb = await openAdminLogCache();
+      if (!cacheDb) {
+        return;
+      }
+
+      const sortedEntries = sortLogs(entries);
+      const latestTimestamp = getLatestLogTimestamp(sortedEntries);
+      const latestTimestampMs = latestTimestamp ? latestTimestamp.getTime() : 0;
+
+      await new Promise((resolve, reject) => {
+        const transaction = cacheDb.transaction([ADMIN_LOG_CACHE_ENTRIES_STORE, ADMIN_LOG_CACHE_META_STORE], "readwrite");
+        const entryStore = transaction.objectStore(ADMIN_LOG_CACHE_ENTRIES_STORE);
+        const metaStore = transaction.objectStore(ADMIN_LOG_CACHE_META_STORE);
+        const index = entryStore.index("byCollection");
+        const keyRange = window.IDBKeyRange.only(collectionName);
+        const cursorRequest = index.openCursor(keyRange);
+
+        cursorRequest.onsuccess = () => {
+          const cursor = cursorRequest.result;
+          if (cursor) {
+            cursor.delete();
+            cursor.continue();
+            return;
+          }
+
+          sortedEntries.forEach((entry) => {
+            if (entry?.id) {
+              entryStore.put(createCachedLogRecord(collectionName, entry));
+            }
+          });
+
+          metaStore.put({
+            collectionName,
+            syncedAt: syncedAt.toISOString(),
+            latestTimestampMs
+          });
+        };
+
+        cursorRequest.onerror = () => {
+          reject(cursorRequest.error || new Error("Could not refresh the cached admin analytics log."));
+        };
+
+        transaction.oncomplete = () => {
+          resolve();
+        };
+
+        transaction.onerror = () => {
+          reject(transaction.error || new Error("Could not refresh the cached admin analytics log."));
+        };
+      });
+    }
+
+    async function clearCachedLogs(collectionName) {
+      const cacheDb = await openAdminLogCache();
+      if (!cacheDb) {
+        return;
+      }
+
+      await new Promise((resolve, reject) => {
+        const transaction = cacheDb.transaction([ADMIN_LOG_CACHE_ENTRIES_STORE, ADMIN_LOG_CACHE_META_STORE], "readwrite");
+        const entryStore = transaction.objectStore(ADMIN_LOG_CACHE_ENTRIES_STORE);
+        const metaStore = transaction.objectStore(ADMIN_LOG_CACHE_META_STORE);
+        const index = entryStore.index("byCollection");
+        const keyRange = window.IDBKeyRange.only(collectionName);
+        const cursorRequest = index.openCursor(keyRange);
+
+        cursorRequest.onsuccess = () => {
+          const cursor = cursorRequest.result;
+          if (!cursor) {
+            metaStore.delete(collectionName);
+            return;
+          }
+
+          cursor.delete();
+          cursor.continue();
+        };
+
+        cursorRequest.onerror = () => {
+          reject(cursorRequest.error || new Error("Could not clear the cached admin analytics log."));
+        };
+
+        transaction.oncomplete = () => {
+          resolve();
+        };
+
+        transaction.onerror = () => {
+          reject(transaction.error || new Error("Could not clear the cached admin analytics log."));
+        };
+      });
+    }
+
+    async function deleteCachedLogEntries(collectionName, ids = []) {
+      const cacheDb = await openAdminLogCache();
+      if (!cacheDb) {
+        return;
+      }
+
+      const idsToDelete = new Set(
+        ids
+          .map((id) => String(id || "").trim())
+          .filter(Boolean)
+      );
+
+      if (!idsToDelete.size) {
+        return;
+      }
+
+      await new Promise((resolve, reject) => {
+        const transaction = cacheDb.transaction([ADMIN_LOG_CACHE_ENTRIES_STORE, ADMIN_LOG_CACHE_META_STORE], "readwrite");
+        const entryStore = transaction.objectStore(ADMIN_LOG_CACHE_ENTRIES_STORE);
+        const metaStore = transaction.objectStore(ADMIN_LOG_CACHE_META_STORE);
+        const index = entryStore.index("byCollection");
+        const keyRange = window.IDBKeyRange.only(collectionName);
+        const cursorRequest = index.openCursor(keyRange);
+        let remainingLatestTimestampMs = 0;
+        let remainingEntryCount = 0;
+
+        cursorRequest.onsuccess = () => {
+          const cursor = cursorRequest.result;
+          if (!cursor) {
+            if (remainingEntryCount > 0) {
+              metaStore.put({
+                collectionName,
+                syncedAt: new Date().toISOString(),
+                latestTimestampMs: remainingLatestTimestampMs
+              });
+            } else {
+              metaStore.delete(collectionName);
+            }
+            return;
+          }
+
+          if (idsToDelete.has(String(cursor.value.id || ""))) {
+            cursor.delete();
+            cursor.continue();
+            return;
+          }
+
+          remainingEntryCount += 1;
+          const timestampMs = Number(cursor.value.timestampMs) || 0;
+          if (timestampMs > remainingLatestTimestampMs) {
+            remainingLatestTimestampMs = timestampMs;
+          }
+          cursor.continue();
+        };
+
+        cursorRequest.onerror = () => {
+          reject(cursorRequest.error || new Error("Could not update the cached admin analytics log."));
+        };
+
+        transaction.oncomplete = () => {
+          resolve();
+        };
+
+        transaction.onerror = () => {
+          reject(transaction.error || new Error("Could not update the cached admin analytics log."));
+        };
+      });
     }
 
     function serializeLog(log) {
@@ -630,6 +1048,21 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
       elements.heroUpdated.textContent = `Updated: ${updatedAt}`;
     }
 
+    function setAnalyticsCacheStatus(message = "") {
+      if (!elements.cacheStatus) {
+        return;
+      }
+
+      const isAnalyticsPage = state.activePage === "analytics";
+      elements.cacheStatus.hidden = !isAnalyticsPage;
+
+      if (!isAnalyticsPage) {
+        return;
+      }
+
+      elements.cacheStatus.textContent = message || "Analytics cache: not loaded yet.";
+    }
+
     function getLoginErrorMessage(error) {
       switch (error?.code) {
         case "auth/invalid-email":
@@ -706,6 +1139,38 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
 
         return String(a?.title || "").localeCompare(String(b?.title || ""));
       });
+    }
+
+    function buildPublicGigsMirrorPayload(gigs = state.gigs) {
+      const items = [...gigs]
+        .map((gig) => normalizeGigEntry(gig, gig?.id || ""))
+        .sort((a, b) => String(a.date || "").localeCompare(String(b.date || "")));
+
+      return {
+        kind: PUBLIC_MIRROR_KIND,
+        items,
+        updatedAt: new Date()
+      };
+    }
+
+    function buildPublicLinksMirrorPayload(links = state.links) {
+      const items = sortLinksByOrder(links).map((link, index) =>
+        normalizeLinkEntry(link, link?.id || "", (index + 1) * 10)
+      );
+
+      return {
+        kind: PUBLIC_MIRROR_KIND,
+        items,
+        updatedAt: new Date()
+      };
+    }
+
+    async function syncPublicGigsMirror(gigs = state.gigs) {
+      await setDoc(doc(db, "gigs", PUBLIC_MIRROR_DOC_ID), buildPublicGigsMirrorPayload(gigs));
+    }
+
+    async function syncPublicLinksMirror(links = state.links) {
+      await setDoc(doc(db, "links", PUBLIC_MIRROR_DOC_ID), buildPublicLinksMirrorPayload(links));
     }
 
     function getLinksByGroup(group) {
@@ -931,6 +1396,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
             sortOrder: link.sortOrder
           }))
         );
+        await syncPublicLinksMirror(state.links);
 
         setLinkStatus("Link order updated.", "is-success");
       } catch (error) {
@@ -973,6 +1439,24 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
       return highestSortOrder + 10 || 10;
     }
 
+    function normalizeCampaignDestinationUrl(value) {
+      const normalizedValue = String(value || "").trim();
+      if (!normalizedValue || /^(javascript|data):/i.test(normalizedValue)) {
+        return "";
+      }
+
+      try {
+        const parsed = new URL(normalizedValue, window.location.href);
+        if (parsed.protocol === "http:" || parsed.protocol === "https:") {
+          return /^[a-z][a-z0-9+.-]*:/i.test(normalizedValue) ? parsed.href : normalizedValue;
+        }
+      } catch (error) {
+        return "";
+      }
+
+      return "";
+    }
+
     function getCampaignPublicUrl() {
       try {
         return new URL("smartlink.html", window.location.href).href;
@@ -987,12 +1471,12 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
       }
 
       return [
-        { label: campaign.primaryLabel || "Primary CTA", url: campaign.primaryUrl, type: "primary" },
-        { label: campaign.secondaryLabel || "Secondary CTA", url: campaign.secondaryUrl, type: "secondary" },
-        { label: "Spotify", url: campaign.spotifyUrl, type: "platform" },
-        { label: "Apple Music", url: campaign.appleMusicUrl, type: "platform" },
-        { label: "YouTube", url: campaign.youtubeUrl, type: "platform" },
-        { label: "Bandcamp", url: campaign.bandcampUrl, type: "platform" }
+        { label: campaign.primaryLabel || "Primary CTA", url: normalizeCampaignDestinationUrl(campaign.primaryUrl), type: "primary" },
+        { label: campaign.secondaryLabel || "Secondary CTA", url: normalizeCampaignDestinationUrl(campaign.secondaryUrl), type: "secondary" },
+        { label: "Spotify", url: normalizeCampaignDestinationUrl(campaign.spotifyUrl), type: "platform" },
+        { label: "Apple Music", url: normalizeCampaignDestinationUrl(campaign.appleMusicUrl), type: "platform" },
+        { label: "YouTube", url: normalizeCampaignDestinationUrl(campaign.youtubeUrl), type: "platform" },
+        { label: "Bandcamp", url: normalizeCampaignDestinationUrl(campaign.bandcampUrl), type: "platform" }
       ].filter((entry) => entry.url);
     }
 
@@ -1434,9 +1918,15 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
         }
 
         state.gigs = snapshot.docs
-          .map((gigDoc) => ({ id: gigDoc.id, ...gigDoc.data() }))
+          .filter((gigDoc) => gigDoc.id !== PUBLIC_MIRROR_DOC_ID)
+          .map((gigDoc) => normalizeGigEntry(gigDoc.data(), gigDoc.id))
           .sort((a, b) => String(a.date || "").localeCompare(String(b.date || "")));
         renderGigs();
+        try {
+          await syncPublicGigsMirror(state.gigs);
+        } catch (mirrorError) {
+          console.warn("Could not sync public gigs mirror.", mirrorError);
+        }
         if (state.activePage === "gigs") {
           updateHeroMeta(new Date().toLocaleString());
         }
@@ -1482,10 +1972,16 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
         }
 
         state.links = snapshot.docs
+          .filter((linkDoc) => linkDoc.id !== PUBLIC_MIRROR_DOC_ID)
           .map((linkDoc, index) => normalizeLinkEntry(linkDoc.data(), linkDoc.id, (index + 1) * 10))
           .sort((a, b) => a.sortOrder - b.sortOrder || a.title.localeCompare(b.title));
         renderLinks();
         resetLinkFormDefaults();
+        try {
+          await syncPublicLinksMirror(state.links);
+        } catch (mirrorError) {
+          console.warn("Could not sync public links mirror.", mirrorError);
+        }
         if (state.activePage === "links") {
           updateHeroMeta(new Date().toLocaleString());
         }
@@ -1523,7 +2019,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
         venue: elements.gigVenue.value.trim(),
         city: elements.gigCity.value.trim(),
         ticketUrl: elements.gigTicketUrl.value.trim(),
-        imageUrl: elements.gigImageUrl.value.trim()
+        imageUrl: elements.gigImageUrl.value.trim(),
+        hidden: false
       };
 
       if (!payload.date || !payload.event || !payload.venue) {
@@ -1886,8 +2383,37 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
         updatedAt: new Date()
       });
 
+      const invalidCampaignUrls = [];
+      const validateCampaignUrl = (key, label) => {
+        const rawValue = String(payload[key] || "").trim();
+        if (!rawValue) {
+          payload[key] = "";
+          return;
+        }
+
+        const normalizedValue = normalizeCampaignDestinationUrl(rawValue);
+        if (!normalizedValue) {
+          invalidCampaignUrls.push(label);
+          return;
+        }
+
+        payload[key] = normalizedValue;
+      };
+
+      validateCampaignUrl("primaryUrl", "Primary button URL");
+      validateCampaignUrl("secondaryUrl", "Secondary button URL");
+      validateCampaignUrl("spotifyUrl", "Spotify URL");
+      validateCampaignUrl("appleMusicUrl", "Apple Music URL");
+      validateCampaignUrl("youtubeUrl", "YouTube URL");
+      validateCampaignUrl("bandcampUrl", "Bandcamp URL");
+
       if (!payload.title) {
         setCampaignStatus("A campaign title is required.", "is-error");
+        return;
+      }
+
+      if (invalidCampaignUrls.length) {
+        setCampaignStatus(`Fix the invalid campaign URL${invalidCampaignUrls.length === 1 ? "" : "s"}: ${invalidCampaignUrls.join(", ")}.`, "is-error");
         return;
       }
 
@@ -1924,7 +2450,10 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
       setCampaignStatus("");
 
       try {
-        await setDoc(doc(db, "campaigns", "active"), payload);
+        await Promise.all([
+          setDoc(doc(db, "campaigns", "active"), payload),
+          setDoc(doc(db, "public-campaigns", "active"), payload)
+        ]);
         setCampaignStatus("Campaign saved to Firestore.", "is-success");
         await loadCampaign();
       } catch (error) {
@@ -2152,6 +2681,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
       tableFields.forEach((field) => {
         const fieldWrap = document.createElement("div");
         fieldWrap.className = "mobile-field";
+        fieldWrap.dataset.field = field;
 
         const label = document.createElement("div");
         label.className = "mobile-field-label";
@@ -2603,6 +3133,11 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
       }
 
       elements.heroCollection.textContent = `Collection: ${getActiveCollectionLabel()}`;
+      if (isAnalyticsPage && !elements.cacheStatus.textContent.trim()) {
+        setAnalyticsCacheStatus();
+      } else {
+        setAnalyticsCacheStatus(elements.cacheStatus.textContent);
+      }
       syncRefreshButton();
     }
 
@@ -2797,11 +3332,16 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
         } else if (target.type === "link") {
           await deleteDoc(doc(db, "links", target.id));
         } else if (target.type === "campaign") {
-          await deleteDoc(doc(db, "campaigns", target.id));
+          await Promise.all([
+            deleteDoc(doc(db, "campaigns", target.id)),
+            deleteDoc(doc(db, "public-campaigns", target.id))
+          ]);
         } else if (target.type === "session") {
           await Promise.all(target.ids.map((id) => deleteDoc(doc(db, state.currentCollection, id))));
+          await deleteCachedLogEntries(state.currentCollection, target.ids);
         } else {
           await deleteDoc(doc(db, state.currentCollection, target.id));
+          await deleteCachedLogEntries(state.currentCollection, [target.id]);
         }
         state.refreshAfterDeleteClose = true;
         closeDeleteDialog();
@@ -2952,44 +3492,86 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
       renderPagination();
     }
 
-    async function loadLogs(collectionName) {
+    async function loadLogs(collectionName, { forceSync = false } = {}) {
       state.isRefreshing = true;
       syncRefreshButton();
       elements.tableHead.innerHTML = "";
       elements.tableBody.innerHTML = `<tr><td><div class="empty-state">Loading ${collectionName}...</div></td></tr>`;
       updateHeroMeta("Loading...");
+      setAnalyticsCacheStatus("Analytics cache: checking browser storage...");
 
       try {
-        let snapshot;
-        try {
-          snapshot = await getDocs(query(collection(db, collectionName), orderBy("timestamp", "desc")));
-        } catch (error) {
-          console.warn(`Falling back to unordered load for ${collectionName}.`, error);
-          snapshot = await getDocs(collection(db, collectionName));
+        const cachedBundle = await readCachedLogs(collectionName);
+        const cachedEntries = Array.isArray(cachedBundle.entries) ? cachedBundle.entries : [];
+        const cachedLatestTimestamp = cachedBundle.latestTimestamp || getLatestLogTimestamp(cachedEntries);
+
+        if (cachedEntries.length) {
+          state.allLogs = sortLogs(cachedEntries);
+          state.dynamicFields = getOrderedFields(state.allLogs);
+          updateHeroMeta(cachedBundle.syncedAt ? `Cached • ${formatTimestamp(cachedBundle.syncedAt) || "recently"}` : "Cached");
+          applyFilters();
+          setAnalyticsCacheStatus(`Analytics cache: ${state.allLogs.length} event${state.allLogs.length === 1 ? "" : "s"} loaded from IndexedDB.`);
+
+          if (!forceSync) {
+            return;
+          }
+
+          setAnalyticsCacheStatus(`Analytics cache: ${state.allLogs.length} cached event${state.allLogs.length === 1 ? "" : "s"} found. Checking Firestore for newer events...`);
         }
 
-        state.allLogs = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+        if (cachedLatestTimestamp) {
+          const snapshot = await getDocs(
+            query(
+              collection(db, collectionName),
+              where("timestamp", ">=", cachedLatestTimestamp),
+              orderBy("timestamp", "asc")
+            )
+          );
+
+          const freshEntries = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+          state.allLogs = mergeLogs(cachedEntries, freshEntries);
+          await upsertCachedLogs(collectionName, freshEntries, new Date(), getLatestLogTimestamp(state.allLogs));
+        } else {
+          let snapshot;
+          try {
+            snapshot = await getDocs(query(collection(db, collectionName), orderBy("timestamp", "desc")));
+          } catch (error) {
+            console.warn(`Falling back to unordered load for ${collectionName}.`, error);
+            snapshot = await getDocs(collection(db, collectionName));
+          }
+
+          state.allLogs = sortLogs(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
+          await replaceCachedLogs(collectionName, state.allLogs, new Date());
+        }
+
         state.dynamicFields = getOrderedFields(state.allLogs);
-        updateHeroMeta(new Date().toLocaleString());
+        updateHeroMeta(`Synced • ${new Date().toLocaleString()}`);
         applyFilters();
+        setAnalyticsCacheStatus(`Analytics cache: ${state.allLogs.length} event${state.allLogs.length === 1 ? "" : "s"} stored locally.`);
       } catch (error) {
         console.error("Error loading logs:", error);
-        state.allLogs = [];
-        state.filteredLogs = [];
-        state.sessionGroups = [];
-        state.dynamicFields = [];
-        updateHeroMeta("Load failed");
-        renderStats();
-        renderSummary();
-        renderTable();
-        renderPagination();
-        elements.tableBody.innerHTML = `
-          <tr>
-            <td>
-              <div class="empty-state">Failed to load Firestore data. Check the browser console for details.</div>
-            </td>
-          </tr>
-        `;
+        if (state.allLogs.length) {
+          updateHeroMeta("Showing cached data");
+          setAnalyticsCacheStatus(`Analytics cache: showing ${state.allLogs.length} cached event${state.allLogs.length === 1 ? "" : "s"}.`);
+        } else {
+          state.allLogs = [];
+          state.filteredLogs = [];
+          state.sessionGroups = [];
+          state.dynamicFields = [];
+          updateHeroMeta("Load failed");
+          setAnalyticsCacheStatus("Analytics cache: unavailable.");
+          renderStats();
+          renderSummary();
+          renderTable();
+          renderPagination();
+          elements.tableBody.innerHTML = `
+            <tr>
+              <td>
+                <div class="empty-state">Failed to load Firestore data. Check the browser console for details.</div>
+              </td>
+            </tr>
+          `;
+        }
       } finally {
         state.isRefreshing = false;
         syncRefreshButton();
@@ -3013,10 +3595,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
       syncMobileNav();
 
       if (shouldLoadData) {
-        loadLogs(state.currentCollection);
-        loadGigs();
-        loadLinks();
-        loadCampaign();
+        loadActivePageData({ forceSync: state.activePage === "analytics" });
       }
     }
 
@@ -3031,6 +3610,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
       setAuthStatus(null);
       elements.heroCollection.textContent = "Collection: site-actions";
       elements.heroUpdated.textContent = "Waiting for sign-in";
+      setAnalyticsCacheStatus("Analytics cache: not loaded yet.");
       syncSignOutButton();
       syncMobileNav();
     }
@@ -3042,7 +3622,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
         state.activePage = "gigs";
         persistActivePage(state.activePage);
         syncActivePageUI();
-        loadGigs();
+        loadActivePageData();
         return;
       }
 
@@ -3050,7 +3630,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
         state.activePage = "links";
         persistActivePage(state.activePage);
         syncActivePageUI();
-        loadLinks();
+        loadActivePageData();
         return;
       }
 
@@ -3058,7 +3638,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
         state.activePage = "campaigns";
         persistActivePage(state.activePage);
         syncActivePageUI();
-        loadCampaign();
+        loadActivePageData();
         return;
       }
 
@@ -3066,7 +3646,26 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
       state.currentCollection = "site-actions";
       persistActivePage(state.activePage);
       syncActivePageUI();
-      loadLogs(state.currentCollection);
+      loadActivePageData();
+    }
+
+    function loadActivePageData(options = {}) {
+      if (state.activePage === "gigs") {
+        loadGigs();
+        return;
+      }
+
+      if (state.activePage === "links") {
+        loadLinks();
+        return;
+      }
+
+      if (state.activePage === "campaigns") {
+        loadCampaign();
+        return;
+      }
+
+      loadLogs(state.currentCollection, options);
     }
 
     function setViewMode(mode) {
@@ -3093,6 +3692,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
       }
 
       hasInitializedAdmin = true;
+      openAdminLogCache();
       state.activePage = getStoredActivePage();
       syncDeleteDialogState();
       syncDeleteDialogCopy();
@@ -3342,7 +3942,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
           return;
         }
 
-        loadLogs(state.currentCollection);
+        loadActivePageData({ forceSync: true });
       });
 
       elements.pageSize.addEventListener("change", (event) => {

@@ -21,8 +21,13 @@ if (window.location.protocol === "file:") {
     `;
   }
 } else {
+  const isLocalDev =
+    window.location.hostname === "localhost" ||
+    window.location.hostname === "127.0.0.1" ||
+    window.location.hostname === "";
+  const scriptVersion = isLocalDev ? String(Date.now()) : "20260323-cache";
   const script = document.createElement("script");
   script.type = "module";
-  script.src = "assets/js/admin.js";
+  script.src = `assets/js/admin.js?v=${encodeURIComponent(scriptVersion)}`;
   document.body.appendChild(script);
 }

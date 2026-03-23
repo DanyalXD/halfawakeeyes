@@ -15,6 +15,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
       window.location.hostname === "localhost" ||
       window.location.hostname === "127.0.0.1" ||
       window.location.hostname === "";
+    const isFileMode = window.location.protocol === "file:";
 
     const params = new URLSearchParams(window.location.search);
     const userId = params.get("id") || "unknown";
@@ -24,6 +25,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
     const pagePath = window.location.pathname || "/smartlink.html";
     const pageName = pagePath.split("/").pop() || "smartlink";
     const pageSessionKey = `hae-page-view:${pagePath}`;
+    const metaDescription = document.querySelector('meta[name="description"]');
 
     const elements = {
       campaignLayout: document.getElementById("campaign-layout"),
@@ -44,12 +46,38 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
       artCaptionNote: document.getElementById("art-caption-note"),
       emptyWrap: document.getElementById("empty-wrap"),
       emptyTitle: document.getElementById("empty-title"),
-      emptyCopy: document.getElementById("empty-copy")
+      emptyCopy: document.getElementById("empty-copy"),
+      retryCampaignLoad: document.getElementById("retry-campaign-load")
     };
 
     let activeCampaign = null;
     let activeMetaPixelId = "";
     let metaPageViewTracked = false;
+
+    function normalizeCampaignDestinationUrl(value) {
+      const normalizedValue = String(value || "").trim();
+      if (!normalizedValue || /^(javascript|data):/i.test(normalizedValue)) {
+        return "";
+      }
+
+      try {
+        const parsed = new URL(normalizedValue, window.location.href);
+        if (parsed.protocol === "http:" || parsed.protocol === "https:") {
+          return parsed.href;
+        }
+      } catch (error) {
+        return "";
+      }
+
+      return "";
+    }
+
+    function updatePageMetadata(title, description) {
+      document.title = title;
+      if (metaDescription) {
+        metaDescription.setAttribute("content", description);
+      }
+    }
 
     function getSessionId() {
       try {
@@ -78,13 +106,13 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
         artworkUrl: String(campaign?.artworkUrl || "").trim(),
         metaPixelId: normalizedMetaPixelId,
         primaryLabel: String(campaign?.primaryLabel || "").trim(),
-        primaryUrl: String(campaign?.primaryUrl || "").trim(),
+        primaryUrl: normalizeCampaignDestinationUrl(campaign?.primaryUrl),
         secondaryLabel: String(campaign?.secondaryLabel || "").trim(),
-        secondaryUrl: String(campaign?.secondaryUrl || "").trim(),
-        spotifyUrl: String(campaign?.spotifyUrl || "").trim(),
-        appleMusicUrl: String(campaign?.appleMusicUrl || "").trim(),
-        youtubeUrl: String(campaign?.youtubeUrl || "").trim(),
-        bandcampUrl: String(campaign?.bandcampUrl || "").trim(),
+        secondaryUrl: normalizeCampaignDestinationUrl(campaign?.secondaryUrl),
+        spotifyUrl: normalizeCampaignDestinationUrl(campaign?.spotifyUrl),
+        appleMusicUrl: normalizeCampaignDestinationUrl(campaign?.appleMusicUrl),
+        youtubeUrl: normalizeCampaignDestinationUrl(campaign?.youtubeUrl),
+        bandcampUrl: normalizeCampaignDestinationUrl(campaign?.bandcampUrl),
         live: campaign?.live === true || String(campaign?.live || "").toLowerCase() === "true"
       };
     }
@@ -187,7 +215,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
         actionSubtype: details.actionSubtype || "",
         section: "smartlink",
         outbound: details.outbound ?? false,
-        campaign: queryCampaign || activeCampaign?.title || "",
+        campaign: activeCampaign?.title || queryCampaign || "",
         source,
         medium,
         referrer: document.referrer || "",
@@ -243,6 +271,14 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
       };
     }
 
+    function setRetryVisibility(isVisible) {
+      if (!elements.retryCampaignLoad) {
+        return;
+      }
+
+      elements.retryCampaignLoad.hidden = !isVisible;
+    }
+
     function applyArtwork(url) {
       if (!url) {
         elements.campaignArtwork.hidden = true;
@@ -256,12 +292,18 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
       elements.artworkFallback.hidden = true;
     }
 
-    function showFallback(title, copy) {
-      document.title = "Half Awake Eyes | Smart Link";
+    function showFallback(title, copy, { allowRetry = false } = {}) {
+      activeCampaign = null;
+      updatePageMetadata("Half Awake Eyes | Smart Link", copy);
       elements.campaignLayout.hidden = true;
       elements.emptyWrap.classList.add("show");
       elements.emptyTitle.textContent = title;
       elements.emptyCopy.textContent = copy;
+      elements.platformGrid.innerHTML = "";
+      elements.platformPanel.hidden = true;
+      setTrackedLink(elements.primaryCta, "", "", "primary_cta");
+      setTrackedLink(elements.secondaryCta, "", "", "secondary_cta");
+      setRetryVisibility(allowRetry);
     }
 
     function renderCampaign(campaign) {
@@ -275,9 +317,13 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
       const platformLinks = destinations.filter((entry) => entry.kind === "platform");
       const releaseDate = formatReleaseDate(campaign.releaseDate);
 
-      document.title = `${campaign.title} | Half Awake Eyes`;
+      updatePageMetadata(
+        `${campaign.title} | Half Awake Eyes`,
+        campaign.description || `Listen to ${campaign.title} by Half Awake Eyes across all available platforms.`
+      );
       elements.campaignLayout.hidden = false;
       elements.emptyWrap.classList.remove("show");
+      setRetryVisibility(false);
       elements.campaignBadge.textContent = campaign.badge || "Smart Link";
       elements.campaignState.textContent = campaign.live ? "Live now" : "Draft";
       elements.campaignTitle.textContent = campaign.title;
@@ -334,10 +380,19 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
       elements.artCaptionNote.textContent = campaign.subtitle || "Official Half Awake Eyes release page";
     }
 
+    function getCampaignPageViewKey() {
+      const campaignId = [activeCampaign?.title || queryCampaign || "default", activeCampaign?.releaseDate || ""]
+        .filter(Boolean)
+        .join(":");
+      return `${pageSessionKey}:${campaignId || "default"}`;
+    }
+
     async function logPageViewOnce() {
+      const storageKey = getCampaignPageViewKey();
+
       try {
-        if (!sessionStorage.getItem(pageSessionKey)) {
-          sessionStorage.setItem(pageSessionKey, "1");
+        if (!sessionStorage.getItem(storageKey)) {
+          sessionStorage.setItem(storageKey, "1");
           await logEvent("page_view", {
             label: document.title,
             target: activeCampaign?.title || pageName,
@@ -355,27 +410,86 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
       }
     }
 
+    function getCampaignLoadFailureState(error) {
+      if (isFileMode) {
+        return {
+          title: "Open Smart Link Through A Local Server",
+          copy: "This page needs to be opened through localhost rather than file:// so it can reach Firebase and Firestore.",
+          allowRetry: false
+        };
+      }
+
+      if (typeof navigator !== "undefined" && navigator.onLine === false) {
+        return {
+          title: "You Appear To Be Offline",
+          copy: "The smart-link page could not reach Firestore because this device is offline right now. Reconnect and try again.",
+          allowRetry: true
+        };
+      }
+
+      if (error?.code === "permission-denied") {
+        return {
+          title: "Campaign Access Blocked",
+          copy: "The public smart-link page cannot read public-campaigns/active from Firestore. If this page should be public, update your Firestore rules to allow read access for that document.",
+          allowRetry: false
+        };
+      }
+
+      if (error?.code === "unavailable") {
+        return {
+          title: "Campaign Temporarily Unavailable",
+          copy: "Firestore could not be reached right now. Try again in a moment.",
+          allowRetry: true
+        };
+      }
+
+      return {
+        title: "Campaign Unavailable",
+        copy: "The release page could not load from Firestore right now. Please try again shortly.",
+        allowRetry: true
+      };
+    }
+
     elements.campaignArtwork.addEventListener("error", () => {
       elements.campaignArtwork.hidden = true;
       elements.artworkFallback.hidden = false;
     });
 
-    try {
-      const campaignSnapshot = await getDoc(doc(db, "campaigns", "active"));
-      if (!campaignSnapshot.exists()) {
-        showFallback("No live campaign yet", "This release page is not live right now. Check back soon, or use the main site links below.");
-      } else {
-        const campaign = normalizeCampaignEntry(campaignSnapshot.data());
-        if (!campaign.title) {
-          showFallback("Campaign incomplete", "A campaign exists, but it still needs a title before the page can go live.");
-        } else if (!campaign.live) {
-          showFallback("Campaign currently in draft", "The smart-link page has been configured in the admin panel, but it is not marked live yet.");
-        } else {
-          renderCampaign(campaign);
-          await logPageViewOnce();
-        }
+    async function loadActiveCampaign() {
+      if (isFileMode) {
+        showFallback("Open Smart Link Through A Local Server", "This page needs to be opened through localhost rather than file:// so it can reach Firebase and Firestore.");
+        return;
       }
-    } catch (error) {
-      console.error("Error loading campaign:", error);
-      showFallback("Campaign unavailable", "The release page could not load from Firestore right now. Please try again shortly.");
+
+      try {
+        const campaignSnapshot = await getDoc(doc(db, "public-campaigns", "active"));
+        if (!campaignSnapshot.exists()) {
+          showFallback("No live campaign yet", "This release page is not live right now. Check back soon, or use the main site links below.");
+        } else {
+          const campaign = normalizeCampaignEntry(campaignSnapshot.data());
+          const destinations = getDestinations(campaign);
+          if (!campaign.title) {
+            showFallback("Campaign incomplete", "A campaign exists, but it still needs a title before the page can go live.");
+          } else if (!campaign.live) {
+            showFallback("Campaign currently in draft", "The smart-link page has been configured in the admin panel, but it is not marked live yet.");
+          } else if (!destinations.length) {
+            showFallback("Campaign incomplete", "This smart-link campaign is live, but it does not have any valid destination URLs yet.");
+          } else {
+            renderCampaign(campaign);
+            await logPageViewOnce();
+          }
+        }
+      } catch (error) {
+        console.error("Error loading campaign:", error);
+        const failureState = getCampaignLoadFailureState(error);
+        showFallback(failureState.title, failureState.copy, { allowRetry: failureState.allowRetry });
+      }
     }
+
+    if (elements.retryCampaignLoad) {
+      elements.retryCampaignLoad.addEventListener("click", () => {
+        loadActiveCampaign();
+      });
+    }
+
+    await loadActiveCampaign();

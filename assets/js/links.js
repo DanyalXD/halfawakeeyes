@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-        import { collection, doc, getDocs, getFirestore, orderBy, query, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import { collection, doc, getDoc, getDocs, getFirestore, orderBy, query, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
         const isLocal =
             window.location.protocol === "file:" ||
@@ -12,6 +12,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
             authDomain: "half-awake-eyes.firebaseapp.com",
             projectId: "half-awake-eyes"
         };
+
+        const PUBLIC_MIRROR_DOC_ID = "public-index";
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
@@ -177,6 +179,17 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
         const isGigHidden = (gig) =>
             gig?.hidden === true || String(gig?.hidden || "").toLowerCase() === "true";
 
+        const normalizeGigEntry = (gig = {}, id = "") => ({
+            id,
+            date: String(gig?.date || "").trim(),
+            event: String(gig?.event || "").trim(),
+            venue: String(gig?.venue || "").trim(),
+            city: String(gig?.city || "").trim(),
+            ticketUrl: String(gig?.ticketUrl || "").trim(),
+            imageUrl: String(gig?.imageUrl || "").trim(),
+            hidden: gig?.hidden === true || String(gig?.hidden || "").toLowerCase() === "true"
+        });
+
         const parseGigDate = (value) => {
             if (!value) {
                 return null;
@@ -286,21 +299,53 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
             return a.title.localeCompare(b.title);
         });
 
+        const loadPublicMirrorItems = async (collectionName, itemNormalizer = (item) => item) => {
+            try {
+                const mirrorSnapshot = await getDoc(doc(db, collectionName, PUBLIC_MIRROR_DOC_ID));
+                if (!mirrorSnapshot.exists()) {
+                    return { found: false, items: [] };
+                }
+
+                const items = mirrorSnapshot.data()?.items;
+                if (!Array.isArray(items)) {
+                    return { found: false, items: [] };
+                }
+
+                return {
+                    found: true,
+                    items: items.map((item, index) => itemNormalizer(item, index))
+                };
+            } catch (error) {
+                console.warn(`Could not load public ${collectionName} mirror.`, error);
+                return { found: false, items: [] };
+            }
+        };
+
         const loadUpcomingGigTicketLinks = async () => {
             try {
-                let snapshot;
-                try {
-                    snapshot = await getDocs(query(collection(db, "gigs"), orderBy("date", "asc")));
-                } catch (error) {
-                    console.warn("Falling back to unordered gig load for links page.", error);
-                    snapshot = await getDocs(collection(db, "gigs"));
+                const mirroredGigs = await loadPublicMirrorItems("gigs", (gig, index) =>
+                    normalizeGigEntry(gig, String(gig?.id || `gig-${index + 1}`))
+                );
+                let gigEntries = mirroredGigs.items;
+
+                if (!mirroredGigs.found) {
+                    let snapshot;
+                    try {
+                        snapshot = await getDocs(query(collection(db, "gigs"), orderBy("date", "asc")));
+                    } catch (error) {
+                        console.warn("Falling back to unordered gig load for links page.", error);
+                        snapshot = await getDocs(collection(db, "gigs"));
+                    }
+
+                    gigEntries = snapshot.docs
+                        .filter((gigDoc) => gigDoc.id !== PUBLIC_MIRROR_DOC_ID)
+                        .map((gigDoc) => normalizeGigEntry(gigDoc.data(), gigDoc.id));
                 }
 
                 const today = new Date();
                 today.setHours(0, 0, 0, 0);
 
-                return snapshot.docs
-                    .map((gigDoc) => ({ id: gigDoc.id, ...gigDoc.data() }))
+                return gigEntries
                     .filter((gig) => !isGigHidden(gig) && String(gig?.ticketUrl || "").trim())
                     .map((gig) => ({
                         gig,
@@ -549,6 +594,20 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
             const gigTicketLinksPromise = loadUpcomingGigTicketLinks();
 
             try {
+                const mirroredLinks = await loadPublicMirrorItems("links", (link, index) =>
+                    normalizeManagedLink(link, (index + 1) * 10)
+                );
+
+                if (mirroredLinks.found) {
+                    if (!mirroredLinks.items.length) {
+                        renderManagedLinks(getDefaultLinks(), await gigTicketLinksPromise);
+                        return;
+                    }
+
+                    renderManagedLinks(mirroredLinks.items, await gigTicketLinksPromise);
+                    return;
+                }
+
                 let snapshot;
                 try {
                     snapshot = await getDocs(query(collection(db, "links"), orderBy("sortOrder", "asc")));
@@ -557,12 +616,13 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
                     snapshot = await getDocs(collection(db, "links"));
                 }
 
-                if (snapshot.empty) {
+                const collectionDocs = snapshot.docs.filter((linkDoc) => linkDoc.id !== PUBLIC_MIRROR_DOC_ID);
+                if (!collectionDocs.length) {
                     renderManagedLinks(getDefaultLinks(), await gigTicketLinksPromise);
                     return;
                 }
 
-                const managedLinks = snapshot.docs.map((linkDoc, index) => normalizeManagedLink(linkDoc.data(), (index + 1) * 10));
+                const managedLinks = collectionDocs.map((linkDoc, index) => normalizeManagedLink(linkDoc.data(), (index + 1) * 10));
                 renderManagedLinks(managedLinks, await gigTicketLinksPromise);
             } catch (error) {
                 console.error("Could not load managed links, using defaults instead.", error);

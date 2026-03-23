@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-        import { getFirestore, doc, setDoc, getDocs, collection, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, setDoc, getDocs, collection, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
         const isLocal =
             window.location.protocol === "file:" ||
@@ -12,6 +12,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
             authDomain: "half-awake-eyes.firebaseapp.com",
             projectId: "half-awake-eyes"
         };
+
+        const PUBLIC_MIRROR_DOC_ID = "public-index";
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
@@ -145,6 +147,17 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
             });
         }
 
+        const normalizeGigEntry = (gig = {}, id = "") => ({
+            id,
+            date: String(gig?.date || "").trim(),
+            event: String(gig?.event || "").trim(),
+            venue: String(gig?.venue || "").trim(),
+            city: String(gig?.city || "").trim(),
+            ticketUrl: String(gig?.ticketUrl || "").trim(),
+            imageUrl: String(gig?.imageUrl || "").trim(),
+            hidden: gig?.hidden === true || String(gig?.hidden || "").toLowerCase() === "true"
+        });
+
         const isGigHidden = (gig) => gig?.hidden === true;
         const parseGigDate = (value) => {
             if (!value) {
@@ -173,6 +186,30 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
         today.setHours(0, 0, 0, 0);
 
         const gigsRef = collection(db, "gigs");
+
+        const loadPublicGigMirror = async () => {
+            try {
+                const mirrorSnapshot = await getDoc(doc(db, "gigs", PUBLIC_MIRROR_DOC_ID));
+                if (!mirrorSnapshot.exists()) {
+                    return { found: false, items: [] };
+                }
+
+                const items = mirrorSnapshot.data()?.items;
+                if (!Array.isArray(items)) {
+                    return { found: false, items: [] };
+                }
+
+                return {
+                    found: true,
+                    items: items
+                        .map((gig, index) => normalizeGigEntry(gig, String(gig?.id || `gig-${index + 1}`)))
+                        .sort((a, b) => String(a.date || "").localeCompare(String(b.date || "")))
+                };
+            } catch (error) {
+                console.warn("Could not load public gigs mirror.", error);
+                return { found: false, items: [] };
+            }
+        };
 
         const renderGigItem = (gig, formattedDate) => {
             const li = document.createElement("li");
@@ -205,18 +242,27 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
         };
 
         try {
-            let snapshot;
-            try {
-                snapshot = await getDocs(query(gigsRef, orderBy("date", "asc")));
-            } catch (error) {
-                console.warn("Falling back to unordered gig load.", error);
-                snapshot = await getDocs(gigsRef);
+            const mirroredGigs = await loadPublicGigMirror();
+            let gigEntries = mirroredGigs.items;
+
+            if (!mirroredGigs.found) {
+                let snapshot;
+                try {
+                    snapshot = await getDocs(query(gigsRef, orderBy("date", "asc")));
+                } catch (error) {
+                    console.warn("Falling back to unordered gig load.", error);
+                    snapshot = await getDocs(gigsRef);
+                }
+
+                gigEntries = snapshot.docs
+                    .filter((gigDoc) => gigDoc.id !== PUBLIC_MIRROR_DOC_ID)
+                    .map((gigDoc) => normalizeGigEntry(gigDoc.data(), gigDoc.id))
+                    .sort((a, b) => String(a.date || "").localeCompare(String(b.date || "")));
             }
 
             const pastEl = document.getElementById("past-gigs");
             const upcomingEl = document.getElementById("upcoming-gigs");
-            const visibleGigs = snapshot.docs
-                .map(doc => ({ id: doc.id, ...doc.data() }))
+            const visibleGigs = gigEntries
                 .filter(gig => !isGigHidden(gig))
                 .sort((a, b) => {
                     const dateA = parseGigDate(a.date);
