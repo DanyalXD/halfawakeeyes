@@ -266,6 +266,8 @@
       border-radius: 0 0 22px 22px;
       border-top: 0;
       padding-top: 0.9rem;
+      display: grid;
+      gap: 0.55rem;
     }
 
     .dashboard-brand {
@@ -380,6 +382,35 @@
       font-size: 0.82rem;
       line-height: 1.35;
       max-width: 34rem;
+    }
+
+    .cache-reset-button {
+      justify-self: start;
+      margin-top: 0.05rem;
+      width: fit-content;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: rgba(212, 203, 188, 0.62);
+      font-size: 0.73rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      text-decoration: underline;
+      text-decoration-color: rgba(212, 203, 188, 0.24);
+      text-underline-offset: 0.18rem;
+      transition: color 160ms ease, text-decoration-color 160ms ease, opacity 160ms ease;
+    }
+
+    .cache-reset-button:hover,
+    .cache-reset-button:focus-visible {
+      color: rgba(246, 237, 223, 0.88);
+      text-decoration-color: rgba(246, 237, 223, 0.45);
+    }
+
+    .cache-reset-button:disabled {
+      opacity: 0.45;
+      cursor: default;
     }
 
     .tabs-meta {
@@ -1943,6 +1974,10 @@
         max-width: none;
       }
 
+      .cache-reset-button {
+        font-size: 0.69rem;
+      }
+
       .dashboard.is-mobile-nav-open .dashboard-rail {
         transform: translateX(0);
         opacity: 1;
@@ -2041,6 +2076,10 @@
       .cache-note {
         font-size: 0.72rem;
         max-width: 18rem;
+      }
+
+      .cache-reset-button {
+        font-size: 0.67rem;
       }
 
       .manager-toolbar {

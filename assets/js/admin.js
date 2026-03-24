@@ -97,6 +97,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
       exportCsv: document.getElementById("export-csv"),
       pageSize: document.getElementById("page-size"),
       fieldCount: document.getElementById("field-count"),
+      resetAnalyticsCacheButton: document.getElementById("reset-analytics-cache"),
       gigForm: document.getElementById("gig-form"),
       gigDate: document.getElementById("gig-date"),
       gigEvent: document.getElementById("gig-event"),
@@ -202,7 +203,10 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
       deleteDialogTimestamp: document.getElementById("delete-dialog-timestamp"),
       deleteDialogError: document.getElementById("delete-dialog-error"),
       cancelDelete: document.getElementById("cancel-delete"),
-      confirmDelete: document.getElementById("confirm-delete")
+      confirmDelete: document.getElementById("confirm-delete"),
+      cacheResetDialog: document.getElementById("cache-reset-dialog"),
+      cancelCacheReset: document.getElementById("cancel-cache-reset"),
+      confirmCacheReset: document.getElementById("confirm-cache-reset")
     };
 
     function getStoredActivePage() {
@@ -1055,12 +1059,26 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
 
       const isAnalyticsPage = state.activePage === "analytics";
       elements.cacheStatus.hidden = !isAnalyticsPage;
+      if (elements.resetAnalyticsCacheButton) {
+        elements.resetAnalyticsCacheButton.hidden = !isAnalyticsPage;
+      }
 
       if (!isAnalyticsPage) {
         return;
       }
 
       elements.cacheStatus.textContent = message || "Analytics cache: not loaded yet.";
+    }
+
+    function syncResetAnalyticsCacheButton(isBusy = false) {
+      if (!elements.resetAnalyticsCacheButton) {
+        return;
+      }
+
+      const isAnalyticsPage = state.activePage === "analytics";
+      elements.resetAnalyticsCacheButton.hidden = !isAnalyticsPage;
+      elements.resetAnalyticsCacheButton.disabled = !isAnalyticsPage || isBusy || state.isRefreshing;
+      elements.resetAnalyticsCacheButton.textContent = isBusy ? "Resetting cache..." : "Reset cache";
     }
 
     function getLoginErrorMessage(error) {
@@ -3188,6 +3206,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
         return;
       }
 
+      syncResetAnalyticsCacheButton();
+
       if (state.activePage === "gigs") {
         elements.refreshButton.disabled = state.isLoadingGigs;
         elements.refreshButton.textContent = state.isLoadingGigs ? "Refreshing..." : "Refresh";
@@ -3213,6 +3233,48 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
     function closeDeleteDialog() {
       if (elements.deleteDialog.open) {
         elements.deleteDialog.close();
+      }
+    }
+
+    function openCacheResetDialog() {
+      if (state.activePage !== "analytics" || state.isRefreshing || !elements.cacheResetDialog) {
+        return;
+      }
+
+      if (!elements.cacheResetDialog.open) {
+        elements.cacheResetDialog.showModal();
+      }
+    }
+
+    function closeCacheResetDialog() {
+      if (elements.cacheResetDialog?.open) {
+        elements.cacheResetDialog.close();
+      }
+    }
+
+    async function confirmCacheReset() {
+      if (state.activePage !== "analytics" || state.isRefreshing) {
+        closeCacheResetDialog();
+        return;
+      }
+
+      syncResetAnalyticsCacheButton(true);
+      closeCacheResetDialog();
+      setAnalyticsCacheStatus("Analytics cache: clearing local copy...");
+
+      try {
+        await clearCachedLogs(state.currentCollection);
+        state.allLogs = [];
+        state.filteredLogs = [];
+        state.sessionGroups = [];
+        state.dynamicFields = [];
+        state.page = 1;
+        updateHeroMeta("Refreshing...");
+        await loadActivePageData({ forceSync: true });
+      } catch (error) {
+        console.error("Failed to clear cached analytics log:", error);
+        setAnalyticsCacheStatus("Analytics cache: could not be cleared.");
+        syncResetAnalyticsCacheButton(false);
       }
     }
 
@@ -3651,21 +3713,18 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
 
     function loadActivePageData(options = {}) {
       if (state.activePage === "gigs") {
-        loadGigs();
-        return;
+        return loadGigs();
       }
 
       if (state.activePage === "links") {
-        loadLinks();
-        return;
+        return loadLinks();
       }
 
       if (state.activePage === "campaigns") {
-        loadCampaign();
-        return;
+        return loadCampaign();
       }
 
-      loadLogs(state.currentCollection, options);
+      return loadLogs(state.currentCollection, options);
     }
 
     function setViewMode(mode) {
@@ -3699,6 +3758,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
       syncActivePageUI();
       syncMobileNav();
       syncRefreshButton();
+      syncResetAnalyticsCacheButton();
       syncLoginButton();
       syncSignOutButton();
       syncViewModeButtons();
@@ -3943,6 +4003,18 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
         }
 
         loadActivePageData({ forceSync: true });
+      });
+
+      elements.resetAnalyticsCacheButton?.addEventListener("click", () => {
+        openCacheResetDialog();
+      });
+
+      elements.cancelCacheReset?.addEventListener("click", () => {
+        closeCacheResetDialog();
+      });
+
+      elements.confirmCacheReset?.addEventListener("click", () => {
+        confirmCacheReset();
       });
 
       elements.pageSize.addEventListener("change", (event) => {
