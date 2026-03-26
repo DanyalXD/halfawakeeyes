@@ -42,6 +42,7 @@
       isLoadingLinks: false,
       isLoadingMailingList: false,
       isLoadingCampaign: false,
+      gigSortMode: "upcoming-first",
       isSavingGig: false,
       isSavingLink: false,
       isSavingCampaign: false,
@@ -124,6 +125,11 @@
       gigStatus: document.getElementById("gig-status"),
       gigList: document.getElementById("gig-list"),
       gigCount: document.getElementById("gig-count"),
+      gigSortMode: document.getElementById("gig-sort-mode"),
+      gigSettingsCard: document.getElementById("gig-settings-card"),
+      gigSettingsScrim: document.getElementById("gig-settings-scrim"),
+      openGigSettings: document.getElementById("open-gig-settings"),
+      closeGigSettings: document.getElementById("close-gig-settings"),
       linkForm: document.getElementById("link-form"),
       linkGroup: document.getElementById("link-group"),
       linkSortOrder: document.getElementById("link-sort-order"),
@@ -384,6 +390,65 @@
         month: "short",
         year: "numeric"
       });
+    }
+
+    function getGigDateValue(gig) {
+      const rawValue = String(gig?.date || "").trim();
+      if (!rawValue) {
+        return null;
+      }
+
+      const parsed = new Date(`${rawValue}T00:00:00`);
+      return Number.isNaN(parsed.getTime()) ? null : parsed;
+    }
+
+    function getSortedGigsForAdmin(gigs = state.gigs) {
+      const sorted = [...gigs].sort((a, b) => {
+        const timeA = getGigDateValue(a)?.getTime() || 0;
+        const timeB = getGigDateValue(b)?.getTime() || 0;
+
+        if (state.gigSortMode === "oldest-first") {
+          return timeA - timeB || String(a?.event || "").localeCompare(String(b?.event || ""));
+        }
+
+        return timeB - timeA || String(a?.event || "").localeCompare(String(b?.event || ""));
+      });
+
+      if (state.gigSortMode !== "upcoming-first") {
+        return sorted;
+      }
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const upcoming = [];
+      const past = [];
+      const hidden = [];
+
+      gigs.forEach((gig) => {
+        if (isGigHidden(gig)) {
+          hidden.push(gig);
+          return;
+        }
+
+        const gigDate = getGigDateValue(gig);
+        if (gigDate && gigDate >= today) {
+          upcoming.push(gig);
+          return;
+        }
+
+        past.push(gig);
+      });
+
+      upcoming.sort((a, b) => (getGigDateValue(a)?.getTime() || 0) - (getGigDateValue(b)?.getTime() || 0));
+      past.sort((a, b) => (getGigDateValue(b)?.getTime() || 0) - (getGigDateValue(a)?.getTime() || 0));
+      hidden.sort((a, b) => (getGigDateValue(b)?.getTime() || 0) - (getGigDateValue(a)?.getTime() || 0));
+
+      return [
+        ...upcoming,
+        ...past,
+        ...hidden
+      ];
     }
 
     function normalizeGigEntry(gig = {}, id = "") {
@@ -2118,6 +2183,51 @@
       elements.campaignDelete.textContent = state.isDeletingCampaign ? "Deleting..." : "Delete Campaign";
     }
 
+    function isMobileGigSettingsViewport() {
+      return window.innerWidth <= 900;
+    }
+
+    function openGigSettingsPanel() {
+      if (!elements.gigSettingsCard || !isMobileGigSettingsViewport()) {
+        return;
+      }
+
+      elements.gigSettingsCard.classList.add("is-mobile-open");
+      if (elements.gigSettingsScrim) {
+        elements.gigSettingsScrim.hidden = false;
+      }
+      document.body.classList.add("campaign-settings-mobile-open");
+    }
+
+    function closeGigSettingsPanel() {
+      if (!elements.gigSettingsCard) {
+        return;
+      }
+
+      elements.gigSettingsCard.classList.remove("is-mobile-open");
+      if (elements.gigSettingsScrim) {
+        elements.gigSettingsScrim.hidden = true;
+      }
+      document.body.classList.remove("campaign-settings-mobile-open");
+    }
+
+    function syncGigSettingsPanel() {
+      if (!elements.gigSettingsCard || !elements.openGigSettings) {
+        return;
+      }
+
+      const isGigsPage = state.activePage === "gigs";
+      const isMobile = isMobileGigSettingsViewport();
+      const shouldUsePopup = isGigsPage && isMobile;
+
+      elements.gigSettingsCard.classList.toggle("is-mobile-popup", shouldUsePopup);
+      elements.openGigSettings.hidden = !shouldUsePopup;
+
+      if (!shouldUsePopup) {
+        closeGigSettingsPanel();
+      }
+    }
+
     function isMobileCampaignSettingsViewport() {
       return window.innerWidth <= 900;
     }
@@ -2257,6 +2367,7 @@
     }
 
     function renderGigs() {
+      const sortedGigs = getSortedGigsForAdmin();
       const hiddenCount = state.gigs.filter((gig) => isGigHidden(gig)).length;
       elements.gigCount.textContent = state.gigs.length
         ? `${state.gigs.length} gig${state.gigs.length === 1 ? "" : "s"} loaded${hiddenCount ? ` - ${hiddenCount} hidden` : ""}`
@@ -2275,7 +2386,31 @@
       }
 
       elements.gigList.innerHTML = "";
-      state.gigs.forEach((gig) => {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const groupedGigs = state.gigSortMode === "upcoming-first"
+        ? [
+          {
+            label: "Upcoming",
+            items: sortedGigs.filter((gig) => !isGigHidden(gig) && (getGigDateValue(gig)?.getTime() || 0) >= today.getTime())
+          },
+          {
+            label: "Past",
+            items: sortedGigs.filter((gig) => !isGigHidden(gig) && ((getGigDateValue(gig)?.getTime() || 0) < today.getTime()))
+          },
+          {
+            label: "Hidden",
+            items: sortedGigs.filter((gig) => isGigHidden(gig))
+          }
+        ]
+        : [
+          {
+            label: state.gigSortMode === "oldest-first" ? "Oldest to newest" : "Newest to oldest",
+            items: sortedGigs
+          }
+        ];
+
+      const createGigItem = (gig) => {
         const item = document.createElement("div");
         item.className = `gig-admin-item${isGigHidden(gig) ? " is-hidden" : ""}`;
 
@@ -2341,7 +2476,39 @@
         item.appendChild(main);
         item.appendChild(meta);
         item.appendChild(actions);
-        elements.gigList.appendChild(item);
+        return item;
+      };
+
+      groupedGigs.forEach((group) => {
+        if (!group.items.length) {
+          return;
+        }
+
+        const section = document.createElement("section");
+        section.className = "gig-admin-group";
+
+        const header = document.createElement("div");
+        header.className = "gig-admin-group-header";
+
+        const title = document.createElement("h4");
+        title.className = "gig-admin-group-title";
+        title.textContent = group.label;
+
+        const meta = document.createElement("span");
+        meta.className = "gig-admin-group-meta";
+        meta.textContent = `${group.items.length} gig${group.items.length === 1 ? "" : "s"}`;
+
+        header.append(title, meta);
+        section.appendChild(header);
+
+        const list = document.createElement("div");
+        list.className = "gig-admin-group-list";
+        group.items.forEach((gig) => {
+          list.appendChild(createGigItem(gig));
+        });
+
+        section.appendChild(list);
+        elements.gigList.appendChild(section);
       });
 
       if (state.activePage === "gigs") {
@@ -2562,6 +2729,7 @@
         const row = document.createElement("tr");
 
         const emailCell = document.createElement("td");
+        emailCell.dataset.label = "Email";
         const emailValue = document.createElement("div");
         emailValue.className = "mailing-list-email";
         emailValue.textContent = signup.email || "Unknown email";
@@ -2569,6 +2737,7 @@
 
         const sourceCell = document.createElement("td");
         sourceCell.className = "mailing-list-cell";
+        sourceCell.dataset.label = "Source";
         sourceCell.textContent = [
           signup.sourcePage ? `Page: ${signup.sourcePage}` : "",
           signup.source ? `Source: ${signup.source}` : "",
@@ -2577,18 +2746,22 @@
 
         const campaignCell = document.createElement("td");
         campaignCell.className = "mailing-list-cell";
+        campaignCell.dataset.label = "Campaign";
         campaignCell.textContent = signup.campaignSlug || "-";
 
         const referrerCell = document.createElement("td");
         referrerCell.className = "mailing-list-cell";
+        referrerCell.dataset.label = "Referrer";
         referrerCell.textContent = signup.referrer ? getReferrerLabel(signup.referrer) : "Direct / unknown";
 
         const updatedCell = document.createElement("td");
         updatedCell.className = "mailing-list-cell";
+        updatedCell.dataset.label = "Updated";
         updatedCell.textContent = signup.updatedAt ? (formatTimestamp(signup.updatedAt) || "-") : "-";
 
         const entriesCell = document.createElement("td");
         entriesCell.className = "mailing-list-cell mailing-list-count-cell";
+        entriesCell.dataset.label = "Entries";
         entriesCell.textContent = Number.isFinite(Number(signup.signupCount)) ? String(signup.signupCount) : "1";
 
         row.append(emailCell, sourceCell, campaignCell, referrerCell, updatedCell, entriesCell);
@@ -2862,6 +3035,7 @@
         elements.gigForm.reset();
         setGigStatus("Gig saved to Firestore.", "is-success");
         await loadGigs();
+        closeGigSettingsPanel();
       } catch (error) {
         console.error("Error saving gig:", error);
         setGigStatus("Could not save gig. Check the browser console for details.", "is-error");
@@ -4107,6 +4281,7 @@
         setAnalyticsCacheStatus(elements.cacheStatus.textContent);
       }
       syncRefreshButton();
+      syncGigSettingsPanel();
       syncCampaignSettingsPanel();
     }
 
@@ -4601,6 +4776,7 @@
       const shouldLoadData = elements.dashboard.style.display !== "grid" || state.authUser?.uid !== user.uid;
       state.authUser = user;
       state.isMobileNavOpen = false;
+      closeGigSettingsPanel();
       closeCampaignSettingsPanel();
       document.body.classList.remove("auth-loading");
       elements.login.style.display = "none";
@@ -4622,6 +4798,7 @@
     function hideDashboard(message = "") {
       state.authUser = null;
       state.isMobileNavOpen = false;
+      closeGigSettingsPanel();
       closeCampaignSettingsPanel();
       document.body.classList.remove("auth-loading");
       elements.login.style.display = "block";
@@ -4674,6 +4851,7 @@
       state.activePage = "analytics";
       state.currentCollection = "site-actions";
       persistActivePage(state.activePage);
+      closeGigSettingsPanel();
       syncActivePageUI();
       loadActivePageData({ forceSync: true });
     }
@@ -4812,12 +4990,24 @@
         openCampaignSettingsPanel();
       });
 
+      elements.openGigSettings?.addEventListener("click", () => {
+        openGigSettingsPanel();
+      });
+
       elements.closeCampaignSettings?.addEventListener("click", () => {
         closeCampaignSettingsPanel();
       });
 
+      elements.closeGigSettings?.addEventListener("click", () => {
+        closeGigSettingsPanel();
+      });
+
       elements.campaignSettingsScrim?.addEventListener("click", () => {
         closeCampaignSettingsPanel();
+      });
+
+      elements.gigSettingsScrim?.addEventListener("click", () => {
+        closeGigSettingsPanel();
       });
 
       elements.refreshCampaignAnalytics?.addEventListener("click", () => {
@@ -5024,6 +5214,11 @@
         applyFilters();
       });
 
+      elements.gigSortMode?.addEventListener("change", (event) => {
+        state.gigSortMode = event.target.value || "upcoming-first";
+        renderGigs();
+      });
+
       elements.campaignTitle?.addEventListener("blur", () => {
         if (!elements.campaignSlug.value.trim()) {
           elements.campaignSlug.value = normalizeCampaignSlug("", elements.campaignTitle.value);
@@ -5091,12 +5286,14 @@
         }
 
         syncMobileNav();
+        syncGigSettingsPanel();
         syncCampaignSettingsPanel();
       });
 
       window.addEventListener("keydown", (event) => {
         if (event.key === "Escape") {
           closeMobileNav();
+          closeGigSettingsPanel();
           closeCampaignSettingsPanel();
         }
       });

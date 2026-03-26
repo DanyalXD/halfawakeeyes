@@ -185,7 +185,11 @@
         </div>
 
         <div class="manager-panel">
-          <div class="manager-card">
+          <div id="gig-settings-card" class="manager-card gig-settings-card">
+            <div id="gig-settings-scrim" class="campaign-settings-scrim" hidden></div>
+            <div class="campaign-settings-mobile-bar">
+              <button type="button" id="close-gig-settings" class="btn ghost-button">Close</button>
+            </div>
             <div class="section-title">
               <h3>Add Gig</h3>
               <span>Write to Firestore</span>
@@ -223,6 +227,17 @@
             <div class="section-title">
               <h3>Current Gigs</h3>
               <span id="gig-count">No gigs loaded</span>
+            </div>
+            <div class="manager-toolbar">
+              <div class="helper-copy">Grouped into upcoming, past, and hidden gigs for quicker scanning.</div>
+              <div class="manager-toolbar-actions">
+                <button type="button" id="open-gig-settings" class="btn ghost-button campaign-settings-launch">Add Gig</button>
+                <select id="gig-sort-mode" class="form-select gig-sort-select" aria-label="Gig sort order">
+                  <option value="upcoming-first" selected>Upcoming first</option>
+                  <option value="newest-first">Newest first</option>
+                  <option value="oldest-first">Oldest first</option>
+                </select>
+              </div>
             </div>
             <div id="gig-list" class="gig-admin-list">
               <div class="gig-admin-empty">No gigs loaded yet.</div>

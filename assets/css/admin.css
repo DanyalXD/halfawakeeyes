@@ -1281,6 +1281,57 @@
       gap: 0.75rem;
     }
 
+    .gig-sort-select {
+      min-width: 180px;
+    }
+
+    #gigs-page .manager-toolbar {
+      align-items: center;
+    }
+
+    #gigs-page .manager-toolbar .helper-copy {
+      max-width: none;
+      flex: 1 1 320px;
+      font-size: 0.88rem;
+      line-height: 1.45;
+    }
+
+    #gigs-page .manager-toolbar .manager-toolbar-actions {
+      flex: 0 0 auto;
+    }
+
+    .gig-admin-group {
+      display: grid;
+      gap: 0.55rem;
+    }
+
+    .gig-admin-group-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      padding: 0 0.15rem;
+      flex-wrap: wrap;
+    }
+
+    .gig-admin-group-title {
+      margin: 0;
+      color: var(--accent-strong);
+      font-size: 0.95rem;
+      font-weight: 700;
+    }
+
+    .gig-admin-group-meta {
+      color: var(--muted);
+      font-size: 0.82rem;
+      white-space: nowrap;
+    }
+
+    .gig-admin-group-list {
+      display: grid;
+      gap: 0.65rem;
+    }
+
     .gig-admin-item {
       display: grid;
       gap: 0.3rem;
@@ -2353,7 +2404,8 @@
         display: inline-flex;
       }
 
-      .campaign-settings-card.is-mobile-popup {
+      .campaign-settings-card.is-mobile-popup,
+      .gig-settings-card.is-mobile-popup {
         display: none;
         position: fixed;
         inset: auto 0.75rem 0.75rem;
@@ -2361,24 +2413,41 @@
         padding: 1rem;
         overflow: auto;
         z-index: 1200;
+        border-color: rgba(255, 255, 255, 0.14);
+        background: linear-gradient(180deg, rgba(17, 17, 17, 0.99), rgba(10, 10, 10, 0.985));
+        box-shadow: 0 28px 70px rgba(0, 0, 0, 0.58);
       }
 
-      .campaign-settings-card.is-mobile-popup.is-mobile-open {
+      .campaign-settings-card.is-mobile-popup.is-mobile-open,
+      .gig-settings-card.is-mobile-popup.is-mobile-open {
         display: grid;
       }
 
-      .campaign-settings-card.is-mobile-popup > :not(.campaign-settings-scrim) {
+      .campaign-settings-card.is-mobile-popup > :not(.campaign-settings-scrim),
+      .gig-settings-card.is-mobile-popup > :not(.campaign-settings-scrim) {
         position: relative;
         z-index: 1;
       }
 
-      .campaign-settings-card.is-mobile-popup .campaign-settings-mobile-bar {
+      .campaign-settings-card.is-mobile-popup .campaign-settings-mobile-bar,
+      .gig-settings-card.is-mobile-popup .campaign-settings-mobile-bar {
         display: flex;
         justify-content: flex-end;
-        margin-bottom: 0.2rem;
+        margin: -0.1rem 0 0.55rem;
+        position: sticky;
+        top: 0;
+        z-index: 2;
       }
 
-      .campaign-settings-card.is-mobile-popup .campaign-settings-scrim {
+      .gig-settings-card.is-mobile-popup .campaign-settings-mobile-bar .ghost-button {
+        min-height: 38px;
+        padding: 0.42rem 0.78rem;
+        border-radius: 12px;
+        font-size: 0.82rem;
+      }
+
+      .campaign-settings-card.is-mobile-popup .campaign-settings-scrim,
+      .gig-settings-card.is-mobile-popup .campaign-settings-scrim {
         display: block;
         position: fixed;
         inset: 0;
@@ -2387,13 +2456,41 @@
         z-index: 0;
       }
 
+      .gig-settings-card.is-mobile-popup .section-title {
+        margin-bottom: 0.45rem;
+      }
+
+      .gig-settings-card.is-mobile-popup .section-title h3 {
+        font-size: 1.08rem;
+      }
+
+      .gig-settings-card.is-mobile-popup .manager-subcopy {
+        margin-bottom: 0.75rem;
+        font-size: 0.84rem;
+        line-height: 1.45;
+        color: #b4aea5;
+      }
+
+      .gig-settings-card.is-mobile-popup .gig-form-grid {
+        gap: 0.72rem;
+      }
+
+      .gig-settings-card.is-mobile-popup .form-control {
+        min-height: 46px;
+      }
+
+      .gig-settings-card.is-mobile-popup .btn-accent {
+        min-height: 46px;
+      }
+
       .mailing-list-table {
         min-width: 760px;
       }
     }
 
     @media (max-width: 576px) {
-      .campaign-settings-card.is-mobile-popup {
+      .campaign-settings-card.is-mobile-popup,
+      .gig-settings-card.is-mobile-popup {
         inset: auto 0.5rem 0.5rem;
         max-height: calc(100vh - 1rem);
         padding: 0.9rem;
@@ -2434,6 +2531,80 @@
 
       .mailing-list-toolbar .manager-toolbar-actions .btn {
         flex: 1 1 0;
+      }
+
+      .mailing-list-table {
+        min-width: 0;
+      }
+
+      .mailing-list-table thead {
+        display: none;
+      }
+
+      .mailing-list-table,
+      .mailing-list-table tbody,
+      .mailing-list-table tr,
+      .mailing-list-table td {
+        display: block;
+        width: 100%;
+      }
+
+      .mailing-list-table tr {
+        padding: 0.75rem 0.8rem;
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.02);
+      }
+
+      .mailing-list-table td {
+        padding: 0.2rem 0;
+        border: 0;
+      }
+
+      .mailing-list-table td[colspan] {
+        padding: 0;
+      }
+
+      .mailing-list-table td[data-label] {
+        display: grid;
+        gap: 0.18rem;
+      }
+
+      .mailing-list-table td[data-label]::before {
+        content: attr(data-label);
+        color: var(--muted);
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .mailing-list-email {
+        font-size: 0.92rem;
+      }
+
+      #gigs-page .manager-toolbar {
+        gap: 0.7rem;
+      }
+
+      #gigs-page .manager-toolbar .helper-copy {
+        max-width: none;
+        font-size: 0.82rem;
+        line-height: 1.38;
+      }
+
+      #gigs-page .manager-toolbar .manager-toolbar-actions {
+        width: 100%;
+        display: grid;
+        grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+        gap: 0.55rem;
+        margin-left: 0;
+      }
+
+      #gigs-page .gig-sort-select,
+      #gigs-page .campaign-settings-launch {
+        width: 100%;
+        min-width: 0;
       }
 
       .dashboard-sidebar-top,
@@ -2551,6 +2722,15 @@
 
       .table-panel {
         display: none;
+      }
+
+      #mailing-list-page .table-panel {
+        display: block;
+        overflow: visible;
+      }
+
+      #mailing-list-page .table-responsive {
+        overflow: visible;
       }
 
       .mobile-card-list {

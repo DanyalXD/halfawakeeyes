@@ -294,6 +294,10 @@
             gap: 0.72rem;
         }
 
+        .shows-links {
+            gap: 0.58rem;
+        }
+
         .link-empty-note {
             padding: 1rem 1.05rem;
             border-radius: 18px;
@@ -328,6 +332,14 @@
             border-color: rgba(225, 210, 190, 0.26);
         }
 
+        .link-card.compact {
+            grid-template-columns: 46px minmax(0, 1fr) auto;
+            gap: 0.78rem;
+            min-height: 70px;
+            padding: 0.62rem 0.8rem;
+            border-radius: 18px;
+        }
+
         .link-thumb {
             width: 56px;
             height: 56px;
@@ -344,6 +356,17 @@
             letter-spacing: 0.06em;
             text-transform: uppercase;
             overflow: hidden;
+        }
+
+        .link-card.compact .link-thumb {
+            width: 46px;
+            height: 46px;
+            border-radius: 14px;
+        }
+
+        .link-card.compact .link-thumb svg {
+            width: 22px;
+            height: 22px;
         }
 
         .link-thumb img {
@@ -382,11 +405,22 @@
             line-height: 1.2;
         }
 
+        .link-card.compact .link-title {
+            font-size: 1rem;
+            line-height: 1.15;
+        }
+
         .link-meta {
             margin-top: 0.18rem;
             color: var(--muted);
             font-size: 0.92rem;
             line-height: 1.42;
+        }
+
+        .link-card.compact .link-meta {
+            margin-top: 0.12rem;
+            font-size: 0.85rem;
+            line-height: 1.35;
         }
 
         .link-arrow {
@@ -398,6 +432,10 @@
             color: rgba(255, 255, 255, 0.72);
             font-size: 1.05rem;
             flex: 0 0 auto;
+        }
+
+        .link-card.compact .link-arrow {
+            font-size: 0.98rem;
         }
 
         .footer {
@@ -473,6 +511,13 @@
                 border-radius: 18px;
             }
 
+            .link-card.compact {
+                grid-template-columns: 42px minmax(0, 1fr) auto;
+                min-height: 64px;
+                padding: 0.56rem 0.7rem;
+                border-radius: 16px;
+            }
+
             .link-title {
                 font-size: 1rem;
             }
@@ -482,6 +527,12 @@
                 height: 48px;
                 font-size: 0.86rem;
                 border-radius: 14px;
+            }
+
+            .link-card.compact .link-thumb {
+                width: 42px;
+                height: 42px;
+                border-radius: 12px;
             }
 
             .link-thumb svg {

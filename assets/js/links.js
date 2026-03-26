@@ -436,9 +436,9 @@
             return anchor;
         };
 
-        const createMainLink = (link) => {
+        const createMainLink = (link, { compact = false, emphasize = false } = {}) => {
             const anchor = document.createElement("a");
-            anchor.className = `link-card${link.featured ? " primary" : ""}`;
+            anchor.className = `link-card${link.featured || emphasize ? " primary" : ""}${compact ? " compact" : ""}`;
             anchor.href = link.url;
             anchor.dataset.linkLabel = link.title || link.url || "Main link";
             if (link.url.startsWith("http")) {
@@ -568,11 +568,21 @@
                 heading.textContent = sectionName;
 
                 const list = document.createElement("div");
-                list.className = "section-links";
+                const isShowsSection = sectionName === "Shows";
+                list.className = `section-links${isShowsSection ? " shows-links" : ""}`;
 
-                sectionLinks.forEach((link) => {
-                    list.appendChild(createMainLink(link));
-                });
+                if (isShowsSection && sectionLinks.length) {
+                    const [nextShow, ...otherShows] = sectionLinks;
+                    list.appendChild(createMainLink(nextShow, { emphasize: true }));
+
+                    otherShows.forEach((link) => {
+                        list.appendChild(createMainLink(link, { compact: true }));
+                    });
+                } else {
+                    sectionLinks.forEach((link) => {
+                        list.appendChild(createMainLink(link));
+                    });
+                }
 
                 section.appendChild(heading);
                 section.appendChild(list);
