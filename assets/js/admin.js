@@ -1,6 +1,7 @@
 ﻿import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
     import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, getFirestore, orderBy, query, setDoc, updateDoc, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import QRCode from "https://cdn.jsdelivr.net/npm/qrcode@1.5.4/+esm";
 
     const firebaseConfig = {
       apiKey: "AIzaSyAv7G28uXxlQNG_HMLbBkuz4xseXzOzm4Y",
@@ -18,12 +19,15 @@
       sessionGroups: [],
       gigs: [],
       links: [],
+      mailingListSignups: [],
       campaign: null,
       campaigns: [],
       activeCampaignId: "",
       activeCampaignAnalyticsId: "",
+      activeCampaignQrId: "",
       campaignAnalyticsLogs: [],
       isLoadingCampaignAnalytics: false,
+      isGeneratingCampaignQr: false,
       activePage: "analytics",
       currentCollection: "site-actions",
       dynamicFields: [],
@@ -36,6 +40,7 @@
       isRefreshing: false,
       isLoadingGigs: false,
       isLoadingLinks: false,
+      isLoadingMailingList: false,
       isLoadingCampaign: false,
       isSavingGig: false,
       isSavingLink: false,
@@ -63,7 +68,11 @@
     };
 
     const ADMIN_ACTIVE_PAGE_STORAGE_KEY = "hae-admin-active-page";
-    const VALID_ADMIN_PAGES = new Set(["analytics", "gigs", "links", "campaigns"]);
+    const VALID_ADMIN_PAGES = new Set(["analytics", "gigs", "links", "mailing-list", "campaigns"]);
+    const ADMIN_EMAIL_ALLOWLIST = new Set([
+      "danyal1995@hotmail.co.uk",
+      "danyalc95@gmail.com"
+    ]);
     const ADMIN_LOG_CACHE_DB_NAME = "hae-admin-cache";
     const ADMIN_LOG_CACHE_DB_VERSION = 1;
     const ADMIN_LOG_CACHE_ENTRIES_STORE = "analyticsEntries";
@@ -84,6 +93,7 @@
       analyticsPage: document.getElementById("analytics-page"),
       gigsPage: document.getElementById("gigs-page"),
       linksPage: document.getElementById("links-page"),
+      mailingListPage: document.getElementById("mailing-list-page"),
       campaignsPage: document.getElementById("campaigns-page"),
       pageTabs: Array.from(document.querySelectorAll("[data-page]")),
       summary: document.getElementById("summary"),
@@ -132,6 +142,12 @@
       mainLinkList: document.getElementById("main-link-list"),
       socialLinkCount: document.getElementById("social-link-count"),
       mainLinkCount: document.getElementById("main-link-count"),
+      mailingListCount: document.getElementById("mailing-list-count"),
+      mailingListSummary: document.getElementById("mailing-list-summary"),
+      mailingListList: document.getElementById("mailing-list-list"),
+      mailingListStatus: document.getElementById("mailing-list-status"),
+      copyMailingListEmails: document.getElementById("copy-mailing-list-emails"),
+      exportMailingListCsv: document.getElementById("export-mailing-list-csv"),
       campaignForm: document.getElementById("campaign-form"),
       campaignSlug: document.getElementById("campaign-slug"),
       campaignBadge: document.getElementById("campaign-badge"),
@@ -164,10 +180,21 @@
       campaignAnalyticsDestinations: document.getElementById("campaign-analytics-destinations"),
       refreshCampaignAnalytics: document.getElementById("refresh-campaign-analytics"),
       closeCampaignAnalytics: document.getElementById("close-campaign-analytics"),
+      campaignQrDialog: document.getElementById("campaign-qr-dialog"),
+      campaignQrTitle: document.getElementById("campaign-qr-title"),
+      campaignQrSubtitle: document.getElementById("campaign-qr-subtitle"),
+      campaignQrImage: document.getElementById("campaign-qr-image"),
+      campaignQrPlaceholder: document.getElementById("campaign-qr-placeholder"),
+      campaignQrUrl: document.getElementById("campaign-qr-url"),
+      campaignQrStatus: document.getElementById("campaign-qr-status"),
+      downloadCampaignQr: document.getElementById("download-campaign-qr"),
+      copyCampaignQrUrl: document.getElementById("copy-campaign-qr-url"),
+      closeCampaignQr: document.getElementById("close-campaign-qr"),
       campaignListCount: document.getElementById("campaign-list-count"),
       campaignList: document.getElementById("campaign-list"),
       campaignPreview: document.getElementById("campaign-preview"),
       campaignOpenLink: document.getElementById("campaign-open-link"),
+      openCampaignQr: document.getElementById("open-campaign-qr"),
       campaignSettingsCard: document.getElementById("campaign-settings-card"),
       campaignSettingsScrim: document.getElementById("campaign-settings-scrim"),
       openCampaignSettings: document.getElementById("open-campaign-settings"),
@@ -567,6 +594,50 @@
       }
     }
 
+    function getMailingListSummary(signups = state.mailingListSignups) {
+      const ordered = [...signups].sort((a, b) => {
+        const timeA = getDateForFilter(a?.updatedAt)?.getTime() || 0;
+        const timeB = getDateForFilter(b?.updatedAt)?.getTime() || 0;
+        return timeB - timeA;
+      });
+
+      const latestSignup = ordered[0] || null;
+      const sourceCounts = new Map();
+      const pageCounts = new Map();
+      const campaignCounts = new Map();
+
+      ordered.forEach((signup) => {
+        const sourceLabel = String(signup?.source || "").trim() || "Direct";
+        const pageLabel = String(signup?.sourcePage || "").trim() || "Unknown page";
+        const campaignLabel = String(signup?.campaignSlug || "").trim();
+
+        sourceCounts.set(sourceLabel, (sourceCounts.get(sourceLabel) || 0) + 1);
+        pageCounts.set(pageLabel, (pageCounts.get(pageLabel) || 0) + 1);
+
+        if (campaignLabel) {
+          campaignCounts.set(campaignLabel, (campaignCounts.get(campaignLabel) || 0) + 1);
+        }
+      });
+
+      const getTopEntry = (counts) => {
+        const [label = "", count = 0] = [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))[0] || [];
+        return { label, count };
+      };
+
+      return {
+        total: ordered.length,
+        latestSignup,
+        topSource: getTopEntry(sourceCounts),
+        topPage: getTopEntry(pageCounts),
+        topCampaign: getTopEntry(campaignCounts)
+      };
+    }
+
+    function isAllowedAdminUser(user) {
+      const email = String(user?.email || "").trim().toLowerCase();
+      return Boolean(email) && ADMIN_EMAIL_ALLOWLIST.has(email);
+    }
+
     function getCampaignAnalyticsSummary(entries = [], campaign = getCampaignForAnalytics()) {
       if (!campaign?.title) {
         return {
@@ -809,6 +880,98 @@
     function closeCampaignAnalyticsDialog() {
       if (elements.campaignAnalyticsDialog?.open) {
         elements.campaignAnalyticsDialog.close();
+      }
+    }
+
+    function setCampaignQrStatus(message = "", tone = "") {
+      if (!elements.campaignQrStatus) {
+        return;
+      }
+
+      elements.campaignQrStatus.textContent = message;
+      elements.campaignQrStatus.classList.remove("is-error", "is-success");
+      if (tone) {
+        elements.campaignQrStatus.classList.add(tone);
+      }
+    }
+
+    async function openCampaignQrDialog(campaignId = "") {
+      const qrCampaign = getCampaignById(campaignId) || state.campaign;
+      if (!qrCampaign || !elements.campaignQrDialog) {
+        return;
+      }
+
+      state.activeCampaignQrId = qrCampaign.slug;
+      state.isGeneratingCampaignQr = true;
+      const publicUrl = getCampaignPublicUrl(qrCampaign);
+
+      if (elements.campaignQrTitle) {
+        elements.campaignQrTitle.textContent = qrCampaign.title || "Smart-link QR code";
+      }
+      if (elements.campaignQrSubtitle) {
+        elements.campaignQrSubtitle.textContent = qrCampaign.slug
+          ? `QR code for /smartlink/${qrCampaign.slug}`
+          : "QR code for this smart-link campaign.";
+      }
+      if (elements.campaignQrUrl) {
+        elements.campaignQrUrl.textContent = publicUrl;
+      }
+      if (elements.campaignQrPlaceholder) {
+        elements.campaignQrPlaceholder.hidden = false;
+        elements.campaignQrPlaceholder.textContent = "Generating QR code...";
+      }
+      if (elements.campaignQrImage) {
+        elements.campaignQrImage.hidden = true;
+        elements.campaignQrImage.removeAttribute("src");
+      }
+      if (elements.downloadCampaignQr) {
+        elements.downloadCampaignQr.removeAttribute("href");
+        elements.downloadCampaignQr.setAttribute("aria-disabled", "true");
+      }
+      setCampaignQrStatus("Generating QR code...");
+
+      if (!elements.campaignQrDialog.open) {
+        elements.campaignQrDialog.showModal();
+      }
+
+      try {
+        const qrDataUrl = await QRCode.toDataURL(publicUrl, {
+          width: 720,
+          margin: 1,
+          color: {
+            dark: "#111111",
+            light: "#ffffff"
+          }
+        });
+
+        if (elements.campaignQrImage) {
+          elements.campaignQrImage.src = qrDataUrl;
+          elements.campaignQrImage.hidden = false;
+        }
+        if (elements.campaignQrPlaceholder) {
+          elements.campaignQrPlaceholder.hidden = true;
+        }
+        if (elements.downloadCampaignQr) {
+          elements.downloadCampaignQr.href = qrDataUrl;
+          elements.downloadCampaignQr.download = `${normalizeCampaignSlug(qrCampaign.slug, qrCampaign.title) || "campaign"}-qr.png`;
+          elements.downloadCampaignQr.removeAttribute("aria-disabled");
+        }
+        setCampaignQrStatus("QR code ready to download.", "is-success");
+      } catch (error) {
+        console.error("Could not generate campaign QR code:", error);
+        if (elements.campaignQrPlaceholder) {
+          elements.campaignQrPlaceholder.hidden = false;
+          elements.campaignQrPlaceholder.textContent = "Could not generate QR code right now.";
+        }
+        setCampaignQrStatus("Could not generate QR code right now.", "is-error");
+      } finally {
+        state.isGeneratingCampaignQr = false;
+      }
+    }
+
+    function closeCampaignQrDialog() {
+      if (elements.campaignQrDialog?.open) {
+        elements.campaignQrDialog.close();
       }
     }
 
@@ -1391,6 +1554,9 @@
       if (state.activePage === "links") {
         return "links";
       }
+      if (state.activePage === "mailing-list") {
+        return "mailing-list-signups";
+      }
       if (state.activePage === "campaigns") {
         return "campaigns";
       }
@@ -1485,6 +1651,18 @@
       elements.linkStatus.classList.remove("is-success", "is-error");
       if (type) {
         elements.linkStatus.classList.add(type);
+      }
+    }
+
+    function setMailingListStatus(message = "", type = "") {
+      if (!elements.mailingListStatus) {
+        return;
+      }
+
+      elements.mailingListStatus.textContent = message;
+      elements.mailingListStatus.classList.remove("is-success", "is-error");
+      if (type) {
+        elements.mailingListStatus.classList.add(type);
       }
     }
 
@@ -2326,6 +2504,225 @@
       }
     }
 
+    function renderMailingListSignups() {
+      if (!elements.mailingListList || !elements.mailingListCount || !elements.mailingListSummary) {
+        return;
+      }
+
+      const signups = [...state.mailingListSignups].sort((a, b) => {
+        const timeA = getDateForFilter(a?.updatedAt)?.getTime() || 0;
+        const timeB = getDateForFilter(b?.updatedAt)?.getTime() || 0;
+        return timeB - timeA || String(a?.email || "").localeCompare(String(b?.email || ""));
+      });
+
+      elements.mailingListCount.textContent = signups.length
+        ? `${signups.length} signup${signups.length === 1 ? "" : "s"}`
+        : "No signups yet";
+      elements.mailingListList.innerHTML = "";
+      const summary = getMailingListSummary(signups);
+      const latestSignupLabel = summary.latestSignup?.updatedAt
+        ? (formatTimestamp(summary.latestSignup.updatedAt) || "Recently")
+        : "No recent signup";
+
+      elements.mailingListSummary.innerHTML = `
+        <article class="campaign-analytics-card">
+          <div class="label">Signups</div>
+          <div class="value">${summary.total}</div>
+          <div class="detail">Collected across links and smart-link pages</div>
+        </article>
+        <article class="campaign-analytics-card">
+          <div class="label">Latest Signup</div>
+          <div class="value">${summary.latestSignup ? "Recent" : "None"}</div>
+          <div class="detail">${latestSignupLabel}</div>
+        </article>
+        <article class="campaign-analytics-card">
+          <div class="label">Top Source</div>
+          <div class="value">${summary.topSource.count || 0}</div>
+          <div class="detail">${summary.topSource.label || "No source data yet"}</div>
+        </article>
+        <article class="campaign-analytics-card">
+          <div class="label">Top Campaign</div>
+          <div class="value">${summary.topCampaign.count || 0}</div>
+          <div class="detail">${summary.topCampaign.label || "No campaign signups yet"}</div>
+        </article>
+      `;
+
+      if (!signups.length) {
+        elements.mailingListList.innerHTML = `
+          <tr>
+            <td colspan="6">
+              <div class="gig-admin-empty">No mailing list signups yet.</div>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      signups.forEach((signup) => {
+        const row = document.createElement("tr");
+
+        const emailCell = document.createElement("td");
+        const emailValue = document.createElement("div");
+        emailValue.className = "mailing-list-email";
+        emailValue.textContent = signup.email || "Unknown email";
+        emailCell.appendChild(emailValue);
+
+        const sourceCell = document.createElement("td");
+        sourceCell.className = "mailing-list-cell";
+        sourceCell.textContent = [
+          signup.sourcePage ? `Page: ${signup.sourcePage}` : "",
+          signup.source ? `Source: ${signup.source}` : "",
+          signup.medium ? `Medium: ${signup.medium}` : ""
+        ].filter(Boolean).join(" | ") || "No source details";
+
+        const campaignCell = document.createElement("td");
+        campaignCell.className = "mailing-list-cell";
+        campaignCell.textContent = signup.campaignSlug || "-";
+
+        const referrerCell = document.createElement("td");
+        referrerCell.className = "mailing-list-cell";
+        referrerCell.textContent = signup.referrer ? getReferrerLabel(signup.referrer) : "Direct / unknown";
+
+        const updatedCell = document.createElement("td");
+        updatedCell.className = "mailing-list-cell";
+        updatedCell.textContent = signup.updatedAt ? (formatTimestamp(signup.updatedAt) || "-") : "-";
+
+        const entriesCell = document.createElement("td");
+        entriesCell.className = "mailing-list-cell mailing-list-count-cell";
+        entriesCell.textContent = Number.isFinite(Number(signup.signupCount)) ? String(signup.signupCount) : "1";
+
+        row.append(emailCell, sourceCell, campaignCell, referrerCell, updatedCell, entriesCell);
+        elements.mailingListList.appendChild(row);
+      });
+
+      if (state.activePage === "mailing-list") {
+        syncActivePageUI();
+      }
+    }
+
+    function getMailingListEmails() {
+      return [...new Set(
+        state.mailingListSignups
+          .map((signup) => String(signup?.email || "").trim())
+          .filter(Boolean)
+      )].sort((a, b) => a.localeCompare(b));
+    }
+
+    async function copyMailingListEmails() {
+      const emails = getMailingListEmails();
+      if (!emails.length) {
+        setMailingListStatus("No signup emails available to copy.", "is-error");
+        return;
+      }
+
+      try {
+        await navigator.clipboard.writeText(emails.join(", "));
+        setMailingListStatus(`Copied ${emails.length} email${emails.length === 1 ? "" : "s"} to the clipboard.`, "is-success");
+      } catch (error) {
+        console.error("Could not copy mailing list emails:", error);
+        setMailingListStatus("Could not copy the email list. Check clipboard permissions.", "is-error");
+      }
+    }
+
+    function exportMailingListCsv() {
+      if (!state.mailingListSignups.length) {
+        setMailingListStatus("No signup data available to export.", "is-error");
+        return;
+      }
+
+      const headers = ["email", "sourcePage", "campaignSlug", "source", "medium", "referrer", "signupCount", "updatedAt"];
+      const rows = [...state.mailingListSignups]
+        .sort((a, b) => {
+          const timeA = getDateForFilter(a?.updatedAt)?.getTime() || 0;
+          const timeB = getDateForFilter(b?.updatedAt)?.getTime() || 0;
+          return timeB - timeA;
+        })
+        .map((signup) => headers.map((field) => {
+          const rawValue = field === "updatedAt"
+            ? (formatTimestamp(signup?.updatedAt) || "")
+            : String(signup?.[field] ?? "");
+          return `"${rawValue.replace(/"/g, "\"\"")}"`;
+        }).join(","));
+
+      const csv = [headers.join(","), ...rows].join("\n");
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = `mailing-list-signups-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      document.body.removeChild(anchor);
+      URL.revokeObjectURL(url);
+      setMailingListStatus(`Exported ${state.mailingListSignups.length} signup${state.mailingListSignups.length === 1 ? "" : "s"} to CSV.`, "is-success");
+    }
+
+    async function loadMailingListSignups() {
+      if (!elements.mailingListList || !elements.mailingListCount || !elements.mailingListSummary) {
+        return;
+      }
+
+      state.isLoadingMailingList = true;
+      syncRefreshButton();
+      setMailingListStatus("");
+      elements.mailingListCount.textContent = "Loading signups...";
+      elements.mailingListSummary.innerHTML = `
+        <article class="campaign-analytics-card">
+          <div class="label">Loading</div>
+          <div class="value">...</div>
+          <div class="detail">Fetching mailing list signups from Firestore.</div>
+        </article>
+      `;
+      elements.mailingListList.innerHTML = `
+        <tr>
+          <td colspan="6">
+            <div class="gig-admin-empty">Loading mailing list signups...</div>
+          </td>
+        </tr>
+      `;
+      if (state.activePage === "mailing-list") {
+        elements.collectionNote.textContent = "Loading mailing list signups from Firestore...";
+        updateHeroMeta("Loading...");
+      }
+
+      try {
+        const snapshot = await getDocs(collection(db, "mailing-list-signups"));
+        state.mailingListSignups = snapshot.docs.map((signupDoc) => ({ id: signupDoc.id, ...signupDoc.data() }));
+        renderMailingListSignups();
+        if (state.activePage === "mailing-list") {
+          updateHeroMeta(new Date().toLocaleString());
+        }
+      } catch (error) {
+        console.error("Error loading mailing list signups:", error);
+        state.mailingListSignups = [];
+        elements.mailingListCount.textContent = "Load failed";
+        elements.mailingListSummary.innerHTML = `
+          <article class="campaign-analytics-card">
+            <div class="label">Load Failed</div>
+            <div class="value">0</div>
+            <div class="detail">Could not load mailing list signups.</div>
+          </article>
+        `;
+        elements.mailingListList.innerHTML = `
+          <tr>
+            <td colspan="6">
+              <div class="gig-admin-empty">Could not load mailing list signups.</div>
+            </td>
+          </tr>
+        `;
+        setMailingListStatus("Could not load mailing list signups.", "is-error");
+        if (state.activePage === "mailing-list") {
+          updateHeroMeta("Load failed");
+        }
+      } finally {
+        state.isLoadingMailingList = false;
+        syncRefreshButton();
+        if (state.activePage === "mailing-list") {
+          syncActivePageUI();
+        }
+      }
+    }
+
     async function loadGigs() {
       state.isLoadingGigs = true;
       syncRefreshButton();
@@ -2624,6 +3021,9 @@
     function renderCampaign() {
       if (!state.campaign || !state.campaign.title) {
         elements.campaignOpenLink.href = getCampaignPublicUrl();
+        if (elements.openCampaignQr) {
+          elements.openCampaignQr.disabled = true;
+        }
         elements.campaignCount.textContent = "No campaign selected";
         elements.campaignPreview.innerHTML = `<div class="campaign-preview-empty">No campaign loaded yet. Save a title and at least one destination URL to publish a first release page.</div>`;
         renderCampaignAnalytics();
@@ -2637,8 +3037,11 @@
       const destinations = getCampaignDestinations(campaign);
       const releaseDate = campaign.releaseDate ? formatGigDate(campaign.releaseDate) : "";
       elements.campaignOpenLink.href = getCampaignPublicUrl();
+      if (elements.openCampaignQr) {
+        elements.openCampaignQr.disabled = false;
+      }
 
-      elements.campaignCount.textContent = `${campaign.live ? "Default" : "Saved"} | /smartlink/${campaign.slug || "campaign"} | ${destinations.length} destination${destinations.length === 1 ? "" : "s"}`;
+      elements.campaignCount.textContent = `${campaign.live ? "Live" : "Draft"} | /smartlink/${campaign.slug || "campaign"} | ${destinations.length} destination${destinations.length === 1 ? "" : "s"}`;
       elements.campaignPreview.innerHTML = "";
 
       const card = document.createElement("article");
@@ -2809,7 +3212,15 @@
           openCampaignAnalyticsDialog(campaign.slug);
         });
 
-        actions.append(selectButton, publicLink, analyticsButton);
+        const qrButton = document.createElement("button");
+        qrButton.type = "button";
+        qrButton.className = "campaign-library-open";
+        qrButton.textContent = "QR Code";
+        qrButton.addEventListener("click", () => {
+          openCampaignQrDialog(campaign.slug);
+        });
+
+        actions.append(selectButton, publicLink, analyticsButton, qrButton);
         item.append(top, meta, actions);
 
         elements.campaignList.appendChild(item);
@@ -3647,10 +4058,12 @@
       const isAnalyticsPage = state.activePage === "analytics";
       const isGigsPage = state.activePage === "gigs";
       const isLinksPage = state.activePage === "links";
+      const isMailingListPage = state.activePage === "mailing-list";
       const isCampaignsPage = state.activePage === "campaigns";
       elements.analyticsPage.classList.toggle("active", isAnalyticsPage);
       elements.gigsPage.classList.toggle("active", isGigsPage);
       elements.linksPage.classList.toggle("active", isLinksPage);
+      elements.mailingListPage.classList.toggle("active", isMailingListPage);
       elements.campaignsPage.classList.toggle("active", isCampaignsPage);
 
       elements.pageTabs.forEach((link) => {
@@ -3674,6 +4087,10 @@
         elements.collectionNote.textContent = state.isLoadingLinks
           ? "Loading links from Firestore..."
           : `Managing ${state.links.length} link${state.links.length === 1 ? "" : "s"} in the links collection.`;
+      } else if (isMailingListPage) {
+        elements.collectionNote.textContent = state.isLoadingMailingList
+          ? "Loading mailing list signups from Firestore..."
+          : `Managing ${state.mailingListSignups.length} signup${state.mailingListSignups.length === 1 ? "" : "s"} in the mailing-list-signups collection.`;
       } else {
         const destinationCount = getCampaignDestinations().length;
         elements.collectionNote.textContent = state.isLoadingCampaign
@@ -3757,6 +4174,12 @@
       if (state.activePage === "campaigns") {
         elements.refreshButton.disabled = state.isLoadingCampaign;
         elements.refreshButton.textContent = state.isLoadingCampaign ? "Refreshing..." : "Refresh";
+        return;
+      }
+
+      if (state.activePage === "mailing-list") {
+        elements.refreshButton.disabled = state.isLoadingMailingList;
+        elements.refreshButton.textContent = state.isLoadingMailingList ? "Refreshing..." : "Refresh";
         return;
       }
 
@@ -4232,6 +4655,14 @@
         return;
       }
 
+      if (page === "mailing-list") {
+        state.activePage = "mailing-list";
+        persistActivePage(state.activePage);
+        syncActivePageUI();
+        loadActivePageData();
+        return;
+      }
+
       if (page === "campaigns") {
         state.activePage = "campaigns";
         persistActivePage(state.activePage);
@@ -4254,6 +4685,10 @@
 
       if (state.activePage === "links") {
         return loadLinks();
+      }
+
+      if (state.activePage === "mailing-list") {
+        return loadMailingListSignups();
       }
 
       if (state.activePage === "campaigns") {
@@ -4312,6 +4747,13 @@
       onAuthStateChanged(auth, (user) => {
         syncLoginButton(false);
         if (user) {
+          if (!isAllowedAdminUser(user)) {
+            signOut(auth).catch((error) => {
+              console.error("Could not sign out unauthorized user:", error);
+            });
+            hideDashboard("This account is not authorised for the admin dashboard.");
+            return;
+          }
           showDashboard(user);
           return;
         }
@@ -4340,6 +4782,12 @@
         state.activeCampaignAnalyticsId = "";
       });
 
+      elements.campaignQrDialog?.addEventListener("close", () => {
+        state.activeCampaignQrId = "";
+        state.isGeneratingCampaignQr = false;
+        setCampaignQrStatus("");
+      });
+
       elements.detailsDelete.addEventListener("click", () => {
         openDeleteFromDetails();
       });
@@ -4350,6 +4798,14 @@
 
       elements.closeCampaignAnalytics?.addEventListener("click", () => {
         closeCampaignAnalyticsDialog();
+      });
+
+      elements.closeCampaignQr?.addEventListener("click", () => {
+        closeCampaignQrDialog();
+      });
+
+      elements.openCampaignQr?.addEventListener("click", () => {
+        openCampaignQrDialog(state.activeCampaignId);
       });
 
       elements.openCampaignSettings?.addEventListener("click", () => {
@@ -4366,6 +4822,23 @@
 
       elements.refreshCampaignAnalytics?.addEventListener("click", () => {
         loadCampaignAnalytics({ forceSync: true });
+      });
+
+      elements.copyCampaignQrUrl?.addEventListener("click", async () => {
+        const qrCampaign = getCampaignById(state.activeCampaignQrId) || state.campaign;
+        if (!qrCampaign) {
+          return;
+        }
+
+        const publicUrl = getCampaignPublicUrl(qrCampaign);
+
+        try {
+          await navigator.clipboard.writeText(publicUrl);
+          setCampaignQrStatus("Campaign URL copied.", "is-success");
+        } catch (error) {
+          console.error("Could not copy campaign URL:", error);
+          setCampaignQrStatus("Could not copy URL. You can still copy it manually below.", "is-error");
+        }
       });
 
       elements.closeGigEdit.addEventListener("click", () => {
@@ -4435,6 +4908,8 @@
             loadGigs();
           } else if (state.activePage === "links") {
             loadLinks();
+          } else if (state.activePage === "mailing-list") {
+            loadMailingListSignups();
           } else if (state.activePage === "campaigns") {
             loadCampaign();
           } else {
@@ -4445,6 +4920,8 @@
             renderGigs();
           } else if (state.activePage === "links") {
             renderLinks();
+          } else if (state.activePage === "mailing-list") {
+            renderMailingListSignups();
           } else if (state.activePage === "campaigns") {
             syncCampaignFormState();
             renderCampaign();
@@ -4557,6 +5034,14 @@
         downloadCsv();
       });
 
+      elements.copyMailingListEmails?.addEventListener("click", () => {
+        copyMailingListEmails();
+      });
+
+      elements.exportMailingListCsv?.addEventListener("click", () => {
+        exportMailingListCsv();
+      });
+
       elements.refreshButton.addEventListener("click", () => {
         if (state.activePage === "gigs") {
           loadGigs();
@@ -4565,6 +5050,11 @@
 
         if (state.activePage === "links") {
           loadLinks();
+          return;
+        }
+
+        if (state.activePage === "mailing-list") {
+          loadMailingListSignups();
           return;
         }
 

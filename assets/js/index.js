@@ -1,5 +1,14 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
         import { getFirestore, doc, getDoc, setDoc, getDocs, collection, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import {
+            createSiteAnalytics,
+            firebaseConfig,
+            getTrackingParams,
+            normalizeImageUrl,
+            normalizePublicUrl,
+            normalizeText,
+            PUBLIC_MIRROR_DOC_ID
+        } from "./public-site-utils.js";
 
         const isLocal =
             window.location.protocol === "file:" ||
@@ -7,93 +16,32 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
             window.location.hostname === "127.0.0.1" ||
             window.location.hostname === "";
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyAv7G28uXxlQNG_HMLbBkuz4xseXzOzm4Y",
-            authDomain: "half-awake-eyes.firebaseapp.com",
-            projectId: "half-awake-eyes"
-        };
-
-        const PUBLIC_MIRROR_DOC_ID = "public-index";
-
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        const params = new URLSearchParams(window.location.search);
-        const userId = params.get("id") || "unknown";
-        const campaign = params.get("campaign") || params.get("utm_campaign") || "";
-        const source = params.get("source") || params.get("utm_source") || "";
-        const medium = params.get("utm_medium") || "";
+        const { userId, campaign, source, medium } = getTrackingParams(new URLSearchParams(window.location.search));
         const pagePath = window.location.pathname || "/";
         const pageName = pagePath.split("/").pop() || "home";
-        const pageSessionKey = `hae-page-view:${pagePath}`;
-
-        const getSessionId = () => {
-            try {
-                const existing = sessionStorage.getItem("hae-session-id");
-                if (existing) {
-                    return existing;
-                }
-                const created = `s-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-                sessionStorage.setItem("hae-session-id", created);
-                return created;
-            } catch (error) {
-                return `s-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-            }
-        };
-
-        const sessionId = getSessionId();
-
-        const normalizeText = (value = "") => value.replace(/\s+/g, " ").trim();
-
-        const buildEventPayload = (action, details = {}) => ({
-            userId,
-            sessionId,
-            action,
-            page: pagePath,
+        const { logEvent, logPageViewOnce } = createSiteAnalytics({
+            db,
+            doc,
+            setDoc,
+            pagePath,
             pageName,
-            target: details.target || "",
-            label: details.label || "",
-            href: details.href || "",
-            elementType: details.elementType || "",
-            actionSubtype: details.actionSubtype || "",
-            section: details.section || "",
-            outbound: details.outbound ?? false,
-            campaign,
-            source,
-            medium,
-            referrer: document.referrer || "",
-            viewport: `${window.innerWidth}x${window.innerHeight}`,
-            timestamp: new Date()
+            isDisabled: isLocal,
+            getContext: () => ({
+                userId,
+                campaign,
+                source,
+                medium
+            })
         });
 
-        const logEvent = async (action, details = {}) => {
-            if (isLocal) {
-                return;
-            }
-
-            try {
-                const docId = `${userId}-${sessionId}-${Date.now()}-${action}`;
-                await setDoc(doc(db, "site-actions", docId), buildEventPayload(action, details));
-            } catch (e) {
-                console.error("Logging error:", e);
-            }
-        };
-
         if (!window.location.pathname.includes("analytics.html")) {
-            try {
-                if (!sessionStorage.getItem(pageSessionKey)) {
-                    sessionStorage.setItem(pageSessionKey, "1");
-                    logEvent("page_view", {
-                        label: document.title,
-                        target: pageName
-                    });
-                }
-            } catch (error) {
-                logEvent("page_view", {
-                    label: document.title,
-                    target: pageName
-                });
-            }
+            logPageViewOnce({
+                label: document.title,
+                target: pageName
+            });
 
             document.addEventListener("click", (e) => {
                 const el = e.target.closest("a, button");
@@ -153,8 +101,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
             event: String(gig?.event || "").trim(),
             venue: String(gig?.venue || "").trim(),
             city: String(gig?.city || "").trim(),
-            ticketUrl: String(gig?.ticketUrl || "").trim(),
-            imageUrl: String(gig?.imageUrl || "").trim(),
+            ticketUrl: normalizePublicUrl(gig?.ticketUrl),
+            imageUrl: normalizeImageUrl(gig?.imageUrl),
             hidden: gig?.hidden === true || String(gig?.hidden || "").toLowerCase() === "true"
         });
 

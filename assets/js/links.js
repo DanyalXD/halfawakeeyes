@@ -1,5 +1,15 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
         import { collection, doc, getDoc, getDocs, getFirestore, orderBy, query, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import {
+            createEmailSignupService,
+            createSiteAnalytics,
+            firebaseConfig,
+            getTrackingParams,
+            isValidEmailAddress,
+            normalizeImageUrl,
+            normalizePublicUrl,
+            PUBLIC_MIRROR_DOC_ID
+        } from "./public-site-utils.js";
 
         const isLocal =
             window.location.protocol === "file:" ||
@@ -7,27 +17,18 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
             window.location.hostname === "127.0.0.1" ||
             window.location.hostname === "";
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyAv7G28uXxlQNG_HMLbBkuz4xseXzOzm4Y",
-            authDomain: "half-awake-eyes.firebaseapp.com",
-            projectId: "half-awake-eyes"
-        };
-
-        const PUBLIC_MIRROR_DOC_ID = "public-index";
-
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        const params = new URLSearchParams(window.location.search);
-        const userId = params.get("id") || "unknown";
-        const campaign = params.get("campaign") || params.get("utm_campaign") || "";
-        const source = params.get("source") || params.get("utm_source") || "";
-        const medium = params.get("utm_medium") || "";
+        const { userId, campaign, source, medium } = getTrackingParams(new URLSearchParams(window.location.search));
         const pagePath = window.location.pathname || "/links.html";
         const pageName = pagePath.split("/").pop() || "links";
-        const pageSessionKey = `hae-page-view:${pagePath}`;
         const socialLinksRoot = document.getElementById("social-links");
         const mainLinksRoot = document.getElementById("main-links");
+        const emailSignupForm = document.getElementById("email-signup-form");
+        const emailSignupInput = document.getElementById("email-signup-input");
+        const emailSignupSubmit = document.getElementById("email-signup-submit");
+        const emailSignupStatus = document.getElementById("email-signup-status");
 
         const getDefaultLinks = () => ([
             {
@@ -110,53 +111,42 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
 
         const AUTO_SHOW_SORT_BASE = 105;
 
-        const getSessionId = () => {
-            try {
-                const existing = sessionStorage.getItem("hae-session-id");
-                if (existing) {
-                    return existing;
-                }
-                const created = `s-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-                sessionStorage.setItem("hae-session-id", created);
-                return created;
-            } catch (error) {
-                return `s-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-            }
-        };
-
-        const sessionId = getSessionId();
-
-        const buildEventPayload = (action, details = {}) => ({
-            userId,
-            sessionId,
-            action,
-            page: pagePath,
+        const { logEvent, logPageViewOnce } = createSiteAnalytics({
+            db,
+            doc,
+            setDoc,
+            pagePath,
             pageName,
-            target: details.target || "",
-            label: details.label || "",
-            href: details.href || "",
-            elementType: details.elementType || "",
-            actionSubtype: details.actionSubtype || "",
-            section: details.section || "links",
-            outbound: details.outbound ?? false,
-            campaign,
-            source,
-            medium,
-            referrer: document.referrer || "",
-            viewport: `${window.innerWidth}x${window.innerHeight}`,
-            timestamp: new Date()
+            isDisabled: isLocal,
+            getContext: () => ({
+                userId,
+                campaign,
+                source,
+                medium,
+                section: "links"
+            })
+        });
+        const { submitEmailSignup } = createEmailSignupService({
+            db,
+            doc,
+            setDoc,
+            getContext: () => ({
+                pageName,
+                pagePath,
+                campaign,
+                source,
+                medium
+            })
         });
 
-        const logEvent = async (action, details = {}) => {
-            if (isLocal) {
+        const setEmailSignupStatus = (message, tone = "") => {
+            if (!emailSignupStatus) {
                 return;
             }
-
-            try {
-                const docId = `${userId}-${sessionId}-${Date.now()}-${action}`;
-                await setDoc(doc(db, "site-actions", docId), buildEventPayload(action, details));
-            } catch (error) {
-                console.error("Logging error:", error);
+            emailSignupStatus.textContent = message;
+            emailSignupStatus.classList.remove("is-error", "is-success");
+            if (tone) {
+                emailSignupStatus.classList.add(tone);
             }
         };
 
@@ -164,8 +154,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
             const numericSortOrder = Number.parseInt(link?.sortOrder, 10);
             return {
                 title: String(link?.title || "").trim(),
-                url: String(link?.url || "").trim(),
-                imageUrl: String(link?.imageUrl || "").trim(),
+                url: normalizePublicUrl(link?.url, { allowMailto: true }),
+                imageUrl: normalizeImageUrl(link?.imageUrl),
                 section: String(link?.section || "").trim(),
                 kicker: String(link?.kicker || "").trim(),
                 description: String(link?.description || "").trim(),
@@ -185,8 +175,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
             event: String(gig?.event || "").trim(),
             venue: String(gig?.venue || "").trim(),
             city: String(gig?.city || "").trim(),
-            ticketUrl: String(gig?.ticketUrl || "").trim(),
-            imageUrl: String(gig?.imageUrl || "").trim(),
+            ticketUrl: normalizePublicUrl(gig?.ticketUrl),
+            imageUrl: normalizeImageUrl(gig?.imageUrl),
             hidden: gig?.hidden === true || String(gig?.hidden || "").toLowerCase() === "true"
         });
 
@@ -256,8 +246,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
         const buildGigTicketLink = (gig, fallbackSortOrder) => normalizeManagedLink({
             group: "main",
             title: String(gig?.event || "Live show").trim() || "Live show",
-            url: String(gig?.ticketUrl || "").trim(),
-            imageUrl: String(gig?.imageUrl || "").trim(),
+            url: normalizePublicUrl(gig?.ticketUrl),
+            imageUrl: normalizeImageUrl(gig?.imageUrl),
             section: "Shows",
             kicker: "Tickets",
             description: getGigTicketDescription(gig),
@@ -630,18 +620,41 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
             }
         };
 
-        try {
-            if (!sessionStorage.getItem(pageSessionKey)) {
-                sessionStorage.setItem(pageSessionKey, "1");
-                logEvent("page_view", {
-                    label: document.title,
-                    target: pageName
-                });
-            }
-        } catch (error) {
-            logEvent("page_view", {
-                label: document.title,
-                target: pageName
+        logPageViewOnce({
+            label: document.title,
+            target: pageName
+        });
+
+        if (emailSignupForm && emailSignupInput && emailSignupSubmit) {
+            emailSignupForm.addEventListener("submit", async (event) => {
+                event.preventDefault();
+                const email = emailSignupInput.value.trim();
+
+                if (!isValidEmailAddress(email)) {
+                    setEmailSignupStatus("Enter a valid email address.", "is-error");
+                    return;
+                }
+
+                emailSignupSubmit.disabled = true;
+                setEmailSignupStatus("Joining mailing list...");
+
+                try {
+                    await submitEmailSignup(email, { label: "Links signup" });
+                    await logEvent("email_signup", {
+                        target: "mailing-list",
+                        label: "Links signup",
+                        elementType: "form",
+                        actionSubtype: "email_signup",
+                        section: "links"
+                    });
+                    setEmailSignupStatus("Thanks, you’re on the list.", "is-success");
+                    emailSignupForm.reset();
+                } catch (error) {
+                    console.error("Email signup failed:", error);
+                    setEmailSignupStatus(error?.message || "Could not save your signup right now.", "is-error");
+                } finally {
+                    emailSignupSubmit.disabled = false;
+                }
             });
         }
 

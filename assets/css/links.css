@@ -165,6 +165,116 @@
             margin-top: 1.25rem;
         }
 
+        .signup-shell {
+            display: grid;
+            gap: 0.4rem;
+            margin-top: 1rem;
+            padding: 0.64rem 0.68rem;
+            border-radius: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.015);
+        }
+
+        .signup-copy {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 0.6rem;
+            text-align: left;
+        }
+
+        .signup-title {
+            margin: 0;
+            color: var(--accent-strong);
+            font-size: 0.8rem;
+            font-weight: 700;
+            line-height: 1.05;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .signup-description {
+            margin: 0;
+            color: var(--muted);
+            font-size: 0.68rem;
+            line-height: 1.2;
+            text-align: right;
+        }
+
+        .signup-form {
+            display: contents;
+        }
+
+        .signup-form-row {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+            padding: 0.18rem;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .signup-input,
+        .signup-submit {
+            min-height: 34px;
+            border-radius: 9px;
+            font: inherit;
+        }
+
+        .signup-input {
+            flex: 1 1 auto;
+            width: 100%;
+            border: 0;
+            background: transparent;
+            color: var(--text);
+            padding: 0.44rem 0.56rem;
+            outline: none;
+        }
+
+        .signup-input::placeholder {
+            color: rgba(255, 255, 255, 0.38);
+        }
+
+        .signup-input:-webkit-autofill,
+        .signup-input:-webkit-autofill:hover,
+        .signup-input:-webkit-autofill:focus {
+            -webkit-text-fill-color: var(--text);
+            box-shadow: 0 0 0 1000px rgba(0, 0, 0, 0) inset;
+            transition: background-color 9999s ease-in-out 0s;
+        }
+
+        .signup-submit {
+            flex: 0 0 auto;
+            border: 1px solid rgba(225, 210, 190, 0.2);
+            background: rgba(225, 210, 190, 0.14);
+            color: var(--accent-strong);
+            min-width: 82px;
+            padding: 0.44rem 0.78rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .signup-submit:hover,
+        .signup-submit:focus {
+            background: rgba(225, 210, 190, 0.22);
+        }
+
+        .signup-status {
+            min-height: 0.9rem;
+            color: var(--muted);
+            font-size: 0.72rem;
+            padding: 0 0.05rem;
+        }
+
+        .signup-status.is-error {
+            color: #f0b1a8;
+        }
+
+        .signup-status.is-success {
+            color: #cfe8d5;
+        }
+
         .links-section {
             display: grid;
             gap: 0.7rem;
@@ -382,6 +492,31 @@
             .link-arrow {
                 width: 16px;
                 height: 16px;
+            }
+
+            .signup-copy {
+                display: grid;
+                gap: 0.08rem;
+            }
+
+            .signup-description {
+                text-align: left;
+            }
+
+            .signup-form-row {
+                display: flex;
+                align-items: center;
+                gap: 0.24rem;
+                padding: 0.16rem;
+            }
+
+            .signup-input {
+                min-width: 0;
+                padding: 0.42rem 0.52rem;
+            }
+
+            .signup-submit {
+                min-width: 74px;
             }
         }
 

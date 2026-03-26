@@ -73,6 +73,9 @@
             <a class="nav-link tab-label" href="#" data-page="links">Links</a>
           </li>
           <li class="nav-item">
+            <a class="nav-link tab-label" href="#" data-page="mailing-list">Mailing List</a>
+          </li>
+          <li class="nav-item">
             <a class="nav-link tab-label" href="#" data-page="campaigns">Campaigns</a>
           </li>
         </ul>
@@ -326,6 +329,63 @@
         </div>
       </div>
 
+      <div id="mailing-list-page" class="dashboard-page">
+        <div class="summary-panel">
+          <div class="section-title">
+            <h3>Mailing List</h3>
+            <span>Manage the `mailing-list-signups` collection</span>
+          </div>
+          <div class="helper-copy">Review signups collected from the links page and smart-link campaigns, then copy or export them for outreach.</div>
+        </div>
+
+        <div class="manager-panel">
+          <div class="manager-card manager-card-full">
+            <div class="section-title">
+              <h3>Audience Snapshot</h3>
+              <span id="mailing-list-count">No signups loaded</span>
+            </div>
+            <div class="manager-toolbar mailing-list-toolbar">
+              <div class="helper-copy">Use these tools to pull a clean email list or a CSV with source, campaign, and referrer context.</div>
+              <div class="manager-toolbar-actions">
+                <button type="button" id="copy-mailing-list-emails" class="btn ghost-button">Copy Emails</button>
+                <button type="button" id="export-mailing-list-csv" class="btn ghost-button">Export CSV</button>
+              </div>
+            </div>
+            <div id="mailing-list-summary" class="mailing-list-summary-grid">
+              <article class="campaign-analytics-card">
+                <div class="label">Signups</div>
+                <div class="value">0</div>
+                <div class="detail">No mailing list data loaded yet.</div>
+              </article>
+            </div>
+            <div id="mailing-list-status" class="gig-manager-status" aria-live="polite"></div>
+            <div class="table-panel mailing-list-table-panel">
+              <div class="table-responsive">
+                <table class="mailing-list-table">
+                  <thead>
+                    <tr>
+                      <th>Email</th>
+                      <th>Source</th>
+                      <th>Campaign</th>
+                      <th>Referrer</th>
+                      <th>Updated</th>
+                      <th>Entries</th>
+                    </tr>
+                  </thead>
+                  <tbody id="mailing-list-list">
+                    <tr>
+                      <td colspan="6">
+                        <div class="gig-admin-empty">No signups loaded yet.</div>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div id="campaigns-page" class="dashboard-page">
         <div class="summary-panel">
           <div class="section-title">
@@ -423,6 +483,7 @@
               <div class="manager-toolbar-actions">
                 <button type="button" id="open-campaign-settings" class="btn ghost-button campaign-settings-launch">Campaign Settings</button>
                 <button type="button" id="new-campaign" class="btn ghost-button">New Campaign</button>
+                <button type="button" id="open-campaign-qr" class="btn ghost-button">QR Code</button>
                 <a id="campaign-open-link" class="btn ghost-button" href="smartlink.html" target="_blank" rel="noopener noreferrer">Open Public Page</a>
               </div>
             </div>
@@ -540,6 +601,34 @@
       <div class="details-dialog-actions">
         <button type="button" id="refresh-campaign-analytics" class="btn ghost-button">Refresh Analytics</button>
         <button type="button" id="close-campaign-analytics" class="btn ghost-button">Close</button>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog id="campaign-qr-dialog" class="details-dialog">
+    <div class="details-dialog-card campaign-qr-dialog-card">
+      <span class="eyebrow">Campaign QR</span>
+      <h2 id="campaign-qr-title">Smart-link QR code</h2>
+      <p id="campaign-qr-subtitle" class="details-dialog-subtitle">Generate a poster-ready QR code for this release page.</p>
+
+      <div class="campaign-qr-layout">
+        <div class="campaign-qr-preview">
+          <img id="campaign-qr-image" alt="Campaign QR code" hidden />
+          <div id="campaign-qr-placeholder" class="campaign-qr-placeholder">Select a campaign to generate a QR code.</div>
+        </div>
+        <div class="campaign-qr-meta">
+          <div class="delete-dialog-row">
+            <div class="delete-dialog-label">Campaign URL</div>
+            <div class="delete-dialog-value" id="campaign-qr-url">-</div>
+          </div>
+          <div id="campaign-qr-status" class="status-message" aria-live="polite"></div>
+        </div>
+      </div>
+
+      <div class="details-dialog-actions">
+        <button type="button" id="copy-campaign-qr-url" class="btn ghost-button">Copy URL</button>
+        <a id="download-campaign-qr" class="btn ghost-button" href="#" download="campaign-qr.png">Download QR</a>
+        <button type="button" id="close-campaign-qr" class="btn ghost-button">Close</button>
       </div>
     </div>
   </dialog>

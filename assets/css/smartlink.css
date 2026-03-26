@@ -910,6 +910,101 @@
       color: #3f3f3f;
     }
 
+    .signup-panel {
+      display: grid;
+      gap: 0.7rem;
+      margin-top: 0.2rem;
+      padding: 0.95rem;
+      border-radius: 22px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .signup-kicker {
+      color: var(--accent);
+      font-family: "Roabla", "Oswald", sans-serif;
+      font-size: 0.76rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .signup-title {
+      margin: 0;
+      color: var(--text);
+      font-size: 1.18rem;
+      line-height: 1.06;
+    }
+
+    .signup-copy {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.94rem;
+      line-height: 1.5;
+    }
+
+    .signup-form {
+      display: grid;
+      gap: 0.55rem;
+    }
+
+    .signup-label {
+      color: var(--muted);
+      font-size: 0.86rem;
+      font-weight: 700;
+    }
+
+    .signup-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 0.65rem;
+    }
+
+    .signup-input,
+    .signup-submit {
+      min-height: 46px;
+      border-radius: 14px;
+      font: inherit;
+    }
+
+    .signup-input {
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text);
+      padding: 0.8rem 0.95rem;
+    }
+
+    .signup-input::placeholder {
+      color: rgba(255, 255, 255, 0.38);
+    }
+
+    .signup-submit {
+      border: 1px solid rgba(225, 210, 190, 0.28);
+      background: var(--accent);
+      color: #111;
+      font-weight: 700;
+      padding: 0.8rem 1.1rem;
+      cursor: pointer;
+    }
+
+    .signup-submit:hover,
+    .signup-submit:focus {
+      background: #ecdcca;
+    }
+
+    .signup-status {
+      min-height: 1.15rem;
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+
+    .signup-status.is-error {
+      color: #f0b1a8;
+    }
+
+    .signup-status.is-success {
+      color: #cfe8d5;
+    }
+
     .footer {
       width: min(100%, 400px);
       margin: auto auto 0;
@@ -992,6 +1087,10 @@
 
       .platform-action {
         min-width: 100px;
+      }
+
+      .signup-row {
+        grid-template-columns: 1fr;
       }
 
     }

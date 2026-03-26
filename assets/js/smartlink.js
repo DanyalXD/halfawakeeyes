@@ -1,11 +1,13 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { doc, getDoc, getFirestore, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-
-    const firebaseConfig = {
-      apiKey: "AIzaSyAv7G28uXxlQNG_HMLbBkuz4xseXzOzm4Y",
-      authDomain: "half-awake-eyes.firebaseapp.com",
-      projectId: "half-awake-eyes"
-    };
+    import {
+      createEmailSignupService,
+      createSiteAnalytics,
+      firebaseConfig,
+      getTrackingParams,
+      isValidEmailAddress,
+      normalizeTrackingValue
+    } from "./public-site-utils.js";
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
@@ -15,13 +17,9 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
       window.location.hostname === "";
 
     const params = new URLSearchParams(window.location.search);
-    const userId = params.get("id") || "unknown";
-    const source = params.get("source") || params.get("utm_source") || "";
-    const medium = params.get("utm_medium") || "";
-    const queryCampaign = params.get("campaign") || params.get("utm_campaign") || "";
+    const { userId, source, medium, campaign: queryCampaign } = getTrackingParams(params);
     const pagePath = window.location.pathname || "/smartlink.html";
     const pageName = pagePath.split("/").pop() || "smartlink";
-    const pageSessionKey = `hae-page-view:${pagePath}`;
     const metaDescription = document.querySelector('meta[name="description"]');
 
     const elements = {
@@ -41,6 +39,10 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
       artworkFallback: document.getElementById("artwork-fallback"),
       artCaptionTitle: document.getElementById("art-caption-title"),
       artCaptionNote: document.getElementById("art-caption-note"),
+      emailSignupForm: document.getElementById("email-signup-form"),
+      emailSignupInput: document.getElementById("email-signup-input"),
+      emailSignupSubmit: document.getElementById("email-signup-submit"),
+      emailSignupStatus: document.getElementById("email-signup-status"),
       emptyWrap: document.getElementById("empty-wrap"),
       emptyTitle: document.getElementById("empty-title"),
       emptyCopy: document.getElementById("empty-copy"),
@@ -87,21 +89,47 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
       }
     }
 
-    function getSessionId() {
-      try {
-        const existing = sessionStorage.getItem("hae-session-id");
-        if (existing) {
-          return existing;
-        }
-        const created = `s-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-        sessionStorage.setItem("hae-session-id", created);
-        return created;
-      } catch (error) {
-        return `s-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const { logEvent, logPageViewOnce: logTrackedPageViewOnce } = createSiteAnalytics({
+      db,
+      doc,
+      setDoc,
+      pagePath,
+      pageName,
+      isDisabled: isFileMode,
+      getContext: () => ({
+        userId,
+        campaign: activeCampaign?.title || queryCampaign,
+        campaignSlug: activeCampaign?.slug || requestedCampaignSlug,
+        source,
+        medium,
+        section: "smartlink"
+      })
+    });
+    const { submitEmailSignup } = createEmailSignupService({
+      db,
+      doc,
+      setDoc,
+      getContext: () => ({
+        pageName,
+        pagePath,
+        campaign: activeCampaign?.title || queryCampaign,
+        campaignSlug: activeCampaign?.slug || requestedCampaignSlug,
+        source,
+        medium
+      })
+    });
+
+    function setEmailSignupStatus(message, tone = "") {
+      if (!elements.emailSignupStatus) {
+        return;
+      }
+
+      elements.emailSignupStatus.textContent = message;
+      elements.emailSignupStatus.classList.remove("is-error", "is-success");
+      if (tone) {
+        elements.emailSignupStatus.classList.add(tone);
       }
     }
-
-    const sessionId = getSessionId();
 
     function normalizeCampaignEntry(campaign = {}) {
       const normalizedMetaPixelId = String(campaign?.metaPixelId || "").replace(/\s+/g, "").trim();
@@ -229,44 +257,6 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
         destination_type: details.type || "",
         page_name: pageName
       });
-    }
-
-    function buildEventPayload(action, details = {}) {
-      return {
-        userId,
-        sessionId,
-        action,
-        page: pagePath,
-        pageName,
-        target: details.target || "",
-        label: details.label || "",
-        href: details.href || "",
-        elementType: details.elementType || "",
-        actionSubtype: details.actionSubtype || "",
-        platform: details.platform || "",
-        section: "smartlink",
-        outbound: details.outbound ?? false,
-        campaign: activeCampaign?.title || queryCampaign || "",
-        campaignSlug: activeCampaign?.slug || requestedCampaignSlug || "",
-        source,
-        medium,
-        referrer: document.referrer || "",
-        viewport: `${window.innerWidth}x${window.innerHeight}`,
-        timestamp: new Date()
-      };
-    }
-
-    async function logEvent(action, details = {}) {
-      if (isFileMode) {
-        return;
-      }
-
-      try {
-        const docId = `${userId}-${sessionId}-${Date.now()}-${action}`;
-        await setDoc(doc(db, "site-actions", docId), buildEventPayload(action, details));
-      } catch (error) {
-        console.error("Logging error:", error);
-      }
     }
 
     function setTrackedLink(element, label, url, variant = "link") {
@@ -432,33 +422,63 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
     }
 
     function getCampaignPageViewKey() {
-      const campaignId = [activeCampaign?.title || queryCampaign || "default", activeCampaign?.releaseDate || ""]
+      const campaignId = [activeCampaign?.slug || requestedCampaignSlug || queryCampaign || "default", activeCampaign?.releaseDate || ""]
         .filter(Boolean)
         .join(":");
-      return `${pageSessionKey}:${campaignId || "default"}`;
+      return `${pagePath}:campaign:${campaignId || "default"}`;
     }
 
     async function logPageViewOnce() {
       const storageKey = getCampaignPageViewKey();
+      await logPageViewOnceFromAnalytics(storageKey);
+    }
 
-      try {
-        if (!sessionStorage.getItem(storageKey)) {
-          sessionStorage.setItem(storageKey, "1");
-          await logEvent("page_view", {
-            label: document.title,
-            target: activeCampaign?.title || pageName,
-            elementType: "page",
-            actionSubtype: "campaign_page"
-          });
-        }
-      } catch (error) {
-        await logEvent("page_view", {
-          label: document.title,
-          target: activeCampaign?.title || pageName,
-          elementType: "page",
-          actionSubtype: "campaign_page"
-        });
+    async function logPageViewOnceFromAnalytics(storageKey) {
+      await logTrackedPageViewOnce({
+        label: document.title,
+        target: activeCampaign?.title || pageName,
+        elementType: "page",
+        actionSubtype: "campaign_page"
+      }, storageKey);
+    }
+
+    function attachEmailSignup() {
+      if (!elements.emailSignupForm || !elements.emailSignupInput || !elements.emailSignupSubmit) {
+        return;
       }
+
+      elements.emailSignupForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const email = elements.emailSignupInput.value.trim();
+
+        if (!isValidEmailAddress(email)) {
+          setEmailSignupStatus("Enter a valid email address.", "is-error");
+          return;
+        }
+
+        elements.emailSignupSubmit.disabled = true;
+        setEmailSignupStatus("Joining mailing list...");
+
+        try {
+          await submitEmailSignup(email, {
+            label: activeCampaign?.title ? `${activeCampaign.title} signup` : "Smart link signup"
+          });
+          await logEvent("email_signup", {
+            target: "mailing-list",
+            label: activeCampaign?.title || "Smart link signup",
+            elementType: "form",
+            actionSubtype: "email_signup",
+            section: "smartlink"
+          });
+          setEmailSignupStatus("Thanks, you’re on the list.", "is-success");
+          elements.emailSignupForm.reset();
+        } catch (error) {
+          console.error("Email signup failed:", error);
+          setEmailSignupStatus(error?.message || "Could not save your signup right now.", "is-error");
+        } finally {
+          elements.emailSignupSubmit.disabled = false;
+        }
+      });
     }
 
     function getCampaignLoadFailureState(error) {
@@ -551,5 +571,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
         loadActiveCampaign();
       });
     }
+
+    attachEmailSignup();
 
     await loadActiveCampaign();
