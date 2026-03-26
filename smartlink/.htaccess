@@ -1,4 +1,4 @@
 RewriteEngine On
 
-RewriteRule ^$ ../smartlink.html [L,QSA,NC]
-RewriteRule ^([^/]+)/?$ ../smartlink.html?campaign=$1 [L,QSA,NC]
+RewriteRule ^$ ../smartlink.html [L,NC]
+RewriteRule ^[^/]+/?$ ../smartlink.html [L,NC]
