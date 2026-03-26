@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Half Awake Eyes | Smart Link</title>
+  <meta name="description" content="Listen to the latest Half Awake Eyes release across all platforms." />
+  <script>
+    (function() {
+      var path = window.location.pathname || "";
+      var isSlugPath = /\/smartlink\/[^/]+\/?$/i.test(path);
+      var needsExtraParent = isSlugPath && /\/$/.test(path);
+      var baseHref = isSlugPath ? (needsExtraParent ? "../../" : "../") : "./";
+      document.write('<base href="' + baseHref + '">');
+    })();
+  </script>
+  <link rel="icon" type="image/x-icon" href="assets/images/favicon.ico" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600&family=Source+Sans+Pro:wght@400;600;700&display=swap"
+    rel="stylesheet"
+  />
+  <link rel="stylesheet" href="assets/css/smartlink.css" />
+</head>
+<body>
+  <div class="page">
+    <main id="campaign-layout" class="campaign-layout">
+      <section class="content-card">
+        <div class="eyebrow-row">
+          <span class="eyebrow" id="campaign-badge">Loading</span>
+          <span class="state-chip" id="campaign-state">Preparing campaign</span>
+        </div>
+
+        <h1 id="campaign-title">Loading smart link...</h1>
+        <p class="subtitle" id="campaign-subtitle">Fetching the current campaign settings from Firestore.</p>
+        <p class="description" id="campaign-description">Give it a moment while the page pulls the latest release details.</p>
+
+        <div class="meta-row">
+          <span class="meta-chip" id="campaign-date" hidden></span>
+          <span class="meta-chip" id="campaign-destination-count">0 destinations configured</span>
+        </div>
+
+        <div class="cta-stack">
+          <a id="primary-cta" class="cta-button primary" href="#" hidden></a>
+          <a id="secondary-cta" class="cta-button secondary" href="#" hidden></a>
+        </div>
+
+        <section id="platform-panel" class="platform-panel">
+          <div class="platform-title">Choose A Platform</div>
+          <div class="platform-grid" id="platform-grid"></div>
+        </section>
+      </section>
+
+      <aside class="art-card">
+        <img id="campaign-artwork" alt="" hidden />
+        <div id="artwork-fallback" class="artwork-fallback">
+          <div class="fallback-brand">Half Awake Eyes</div>
+          <div class="fallback-copy">Release Page</div>
+        </div>
+
+        <div class="art-caption">
+          <div class="art-caption-title" id="art-caption-title">Smart Link</div>
+          <div class="art-caption-note" id="art-caption-note">A single page for the current release, built from your own admin panel.</div>
+        </div>
+      </aside>
+    </main>
+
+    <section id="empty-wrap" class="empty-wrap">
+      <div class="empty-card">
+        <h2 id="empty-title">No live campaign yet</h2>
+        <p id="empty-copy">This release page is not live right now. Check back soon, or use the main site links below.</p>
+        <div class="empty-actions">
+          <button type="button" id="retry-campaign-load" class="top-link" hidden>Retry</button>
+          <a class="top-link" href="index.html">Back to Home</a>
+          <a class="top-link" href="links.html">Open Links Page</a>
+        </div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <div>Official release page for Half Awake Eyes.</div>
+      <div><a href="privacy.html">Privacy Policy</a></div>
+    </footer>
+  </div>
+
+  <script type="module" src="assets/js/smartlink.js"></script>
+</body>
+</html>
