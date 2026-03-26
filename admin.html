@@ -330,20 +330,27 @@
         <div class="summary-panel">
           <div class="section-title">
             <h3>Campaign Manager</h3>
-            <span>Manage the `campaigns/active` document</span>
+            <span>Manage smart-link campaign documents</span>
           </div>
           <div class="helper-copy">Build a dedicated release or smart-link page without changing the evergreen links page.</div>
         </div>
 
         <div class="manager-panel">
-          <div class="manager-card">
+          <div id="campaign-settings-card" class="manager-card campaign-settings-card">
+            <div id="campaign-settings-scrim" class="campaign-settings-scrim" hidden></div>
             <div class="section-title">
-              <h3>Active Campaign Settings</h3>
+              <h3>Campaign Settings</h3>
               <span>Write to Firestore</span>
             </div>
-            <p class="manager-subcopy">Save one live release page for `smartlink.html`, including hero copy, artwork, and platform destinations.</p>
+            <div class="campaign-settings-mobile-bar">
+              <button type="button" id="close-campaign-settings" class="btn ghost-button">Close</button>
+            </div>
+            <p class="manager-subcopy">Save multiple release pages with their own slugs, artwork, and destination links.</p>
             <form id="campaign-form">
               <div class="campaign-form-grid">
+                <div class="full-span">
+                  <input type="text" id="campaign-slug" class="form-control" placeholder="campaign-slug" aria-label="Campaign slug" />
+                </div>
                 <div>
                   <input type="text" id="campaign-badge" class="form-control" placeholder="Badge or kicker" aria-label="Campaign badge" />
                 </div>
@@ -392,7 +399,7 @@
                 <div class="full-span">
                   <label class="link-edit-toggle" for="campaign-live">
                     <input type="checkbox" id="campaign-live" />
-                    <span>Make this the live public smart-link page.</span>
+                    <span>Make this campaign live at its slug URL.</span>
                   </label>
                 </div>
                 <div class="full-span">
@@ -413,10 +420,23 @@
             </div>
             <div class="manager-toolbar">
               <div class="helper-copy">Open the public page to confirm layout, copy, and destination URLs.</div>
-              <a id="campaign-open-link" class="btn ghost-button" href="smartlink.html" target="_blank" rel="noopener noreferrer">Open smartlink.html</a>
+              <div class="manager-toolbar-actions">
+                <button type="button" id="open-campaign-settings" class="btn ghost-button campaign-settings-launch">Campaign Settings</button>
+                <button type="button" id="new-campaign" class="btn ghost-button">New Campaign</button>
+                <a id="campaign-open-link" class="btn ghost-button" href="smartlink.html" target="_blank" rel="noopener noreferrer">Open Public Page</a>
+              </div>
             </div>
             <div id="campaign-preview" class="campaign-preview">
               <div class="campaign-preview-empty">No campaign loaded yet. Save a title and at least one destination URL to publish a first release page.</div>
+            </div>
+            <div class="campaign-library">
+              <div class="section-title">
+                <h3>Saved Campaigns</h3>
+                <span id="campaign-list-count">No campaigns</span>
+              </div>
+              <div id="campaign-list" class="gig-admin-list">
+                <div class="gig-admin-empty">No campaigns saved yet.</div>
+              </div>
             </div>
           </div>
         </div>
@@ -471,6 +491,55 @@
       <div class="delete-dialog-actions">
         <button type="button" id="cancel-cache-reset" class="btn ghost-button">Cancel</button>
         <button type="button" id="confirm-cache-reset" class="btn danger-button">Reset Cache</button>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog id="campaign-analytics-dialog" class="details-dialog">
+    <div class="details-dialog-card">
+      <span class="eyebrow">Campaign Analytics</span>
+      <h2 id="campaign-analytics-title">Smart-link analytics</h2>
+      <p id="campaign-analytics-subtitle" class="details-dialog-subtitle">Visits, click-throughs, and top destinations for this campaign.</p>
+
+      <div class="section-title">
+        <h3>Overview</h3>
+        <span id="campaign-analytics-status">No campaign selected</span>
+      </div>
+      <div id="campaign-analytics-grid" class="campaign-analytics-grid">
+        <article class="campaign-analytics-card">
+          <div class="label">Visits</div>
+          <div class="value">0</div>
+          <div class="detail">Page views for this smart-link</div>
+        </article>
+      </div>
+
+      <div class="section-title">
+        <h3>Platforms</h3>
+        <span>Streaming click split</span>
+      </div>
+      <div id="campaign-analytics-platforms" class="campaign-analytics-destinations">
+        <div class="gig-admin-empty">No platform click-through data yet.</div>
+      </div>
+
+      <div class="section-title">
+        <h3>Referrers</h3>
+        <span>Where visits came from</span>
+      </div>
+      <div id="campaign-analytics-referrers" class="campaign-analytics-destinations">
+        <div class="gig-admin-empty">No referrer data yet.</div>
+      </div>
+
+      <div class="section-title">
+        <h3>Top Destinations</h3>
+        <span>Click-through ranking</span>
+      </div>
+      <div id="campaign-analytics-destinations" class="campaign-analytics-destinations">
+        <div class="gig-admin-empty">No click-through data yet.</div>
+      </div>
+
+      <div class="details-dialog-actions">
+        <button type="button" id="refresh-campaign-analytics" class="btn ghost-button">Refresh Analytics</button>
+        <button type="button" id="close-campaign-analytics" class="btn ghost-button">Close</button>
       </div>
     </div>
   </dialog>

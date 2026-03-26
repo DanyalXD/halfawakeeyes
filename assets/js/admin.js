@@ -1,4 +1,4 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+﻿import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
     import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, getFirestore, orderBy, query, setDoc, updateDoc, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
@@ -19,6 +19,11 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
       gigs: [],
       links: [],
       campaign: null,
+      campaigns: [],
+      activeCampaignId: "",
+      activeCampaignAnalyticsId: "",
+      campaignAnalyticsLogs: [],
+      isLoadingCampaignAnalytics: false,
       activePage: "analytics",
       currentCollection: "site-actions",
       dynamicFields: [],
@@ -128,6 +133,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
       socialLinkCount: document.getElementById("social-link-count"),
       mainLinkCount: document.getElementById("main-link-count"),
       campaignForm: document.getElementById("campaign-form"),
+      campaignSlug: document.getElementById("campaign-slug"),
       campaignBadge: document.getElementById("campaign-badge"),
       campaignTitle: document.getElementById("campaign-title"),
       campaignSubtitle: document.getElementById("campaign-subtitle"),
@@ -148,8 +154,25 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
       saveCampaign: document.getElementById("save-campaign"),
       campaignStatus: document.getElementById("campaign-status"),
       campaignCount: document.getElementById("campaign-count"),
+      campaignAnalyticsDialog: document.getElementById("campaign-analytics-dialog"),
+      campaignAnalyticsTitle: document.getElementById("campaign-analytics-title"),
+      campaignAnalyticsSubtitle: document.getElementById("campaign-analytics-subtitle"),
+      campaignAnalyticsStatus: document.getElementById("campaign-analytics-status"),
+      campaignAnalyticsGrid: document.getElementById("campaign-analytics-grid"),
+      campaignAnalyticsPlatforms: document.getElementById("campaign-analytics-platforms"),
+      campaignAnalyticsReferrers: document.getElementById("campaign-analytics-referrers"),
+      campaignAnalyticsDestinations: document.getElementById("campaign-analytics-destinations"),
+      refreshCampaignAnalytics: document.getElementById("refresh-campaign-analytics"),
+      closeCampaignAnalytics: document.getElementById("close-campaign-analytics"),
+      campaignListCount: document.getElementById("campaign-list-count"),
+      campaignList: document.getElementById("campaign-list"),
       campaignPreview: document.getElementById("campaign-preview"),
       campaignOpenLink: document.getElementById("campaign-open-link"),
+      campaignSettingsCard: document.getElementById("campaign-settings-card"),
+      campaignSettingsScrim: document.getElementById("campaign-settings-scrim"),
+      openCampaignSettings: document.getElementById("open-campaign-settings"),
+      closeCampaignSettings: document.getElementById("close-campaign-settings"),
+      newCampaign: document.getElementById("new-campaign"),
       gigEditDialog: document.getElementById("gig-edit-dialog"),
       gigEditTitle: document.getElementById("gig-edit-title"),
       gigEditForm: document.getElementById("gig-edit-form"),
@@ -476,6 +499,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
     function normalizeCampaignEntry(campaign = {}) {
       const normalizedMetaPixelId = String(campaign?.metaPixelId || "").replace(/\s+/g, "").trim();
       return {
+        slug: String(campaign?.slug || "").trim(),
         badge: String(campaign?.badge || "").trim(),
         title: String(campaign?.title || "").trim(),
         subtitle: String(campaign?.subtitle || "").trim(),
@@ -494,6 +518,332 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
         live: campaign?.live === true || String(campaign?.live || "").toLowerCase() === "true",
         updatedAt: campaign?.updatedAt || null
       };
+    }
+
+    function slugifyCampaign(value = "") {
+      return String(value || "")
+        .trim()
+        .toLowerCase()
+        .replace(/[^\x00-\x7F]/g, "")
+        .replace(/'+/g, "")
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "");
+    }
+
+    function normalizeCampaignSlug(value = "", fallbackTitle = "") {
+      return slugifyCampaign(value) || slugifyCampaign(fallbackTitle);
+    }
+
+    function getCampaignById(id = "") {
+      return state.campaigns.find((campaign) => campaign.slug === id) || null;
+    }
+
+    function getSortedCampaigns(campaigns = state.campaigns) {
+      return [...campaigns].sort((a, b) => {
+        const dateA = getDateForFilter(a?.updatedAt)?.getTime() || 0;
+        const dateB = getDateForFilter(b?.updatedAt)?.getTime() || 0;
+        if (dateA !== dateB) {
+          return dateB - dateA;
+        }
+        return String(a?.title || "").localeCompare(String(b?.title || ""));
+      });
+    }
+
+    function getCampaignForAnalytics() {
+      return getCampaignById(state.activeCampaignAnalyticsId) || state.campaign || null;
+    }
+
+    function getReferrerLabel(value = "") {
+      const referrer = String(value || "").trim();
+      if (!referrer) {
+        return "Direct / unknown";
+      }
+
+      try {
+        const parsed = new URL(referrer);
+        return parsed.hostname.replace(/^www\./i, "") || referrer;
+      } catch (error) {
+        return referrer;
+      }
+    }
+
+    function getCampaignAnalyticsSummary(entries = [], campaign = getCampaignForAnalytics()) {
+      if (!campaign?.title) {
+        return {
+          visits: 0,
+          uniqueVisitors: 0,
+          clicks: 0,
+          platformClicks: 0,
+          primaryClicks: 0,
+          secondaryClicks: 0,
+          ctr: "0%",
+          latestActivity: "No activity",
+          platforms: [],
+          referrers: [],
+          destinations: []
+        };
+      }
+
+      const slug = normalizeCampaignSlug(campaign.slug, campaign.title);
+      const filteredEntries = entries.filter((entry) => {
+        if (String(entry?.section || "").trim() !== "smartlink") {
+          return false;
+        }
+
+        const entrySlug = normalizeCampaignSlug(entry?.campaignSlug || "", "");
+        if (entrySlug && slug) {
+          return entrySlug === slug;
+        }
+
+        return String(entry?.campaign || "").trim() === campaign.title;
+      });
+
+      const visits = filteredEntries.filter((entry) => entry?.action === "page_view" || entry?.actionSubtype === "campaign_page");
+      const clicks = filteredEntries.filter((entry) => entry?.action === "click");
+      const platformClicks = clicks.filter((entry) => entry?.actionSubtype === "platform_link");
+      const primaryClicks = clicks.filter((entry) => entry?.actionSubtype === "primary_cta");
+      const secondaryClicks = clicks.filter((entry) => entry?.actionSubtype === "secondary_cta");
+      const uniqueVisitors = new Set(filteredEntries.map((entry) => String(entry?.sessionId || "").trim()).filter(Boolean)).size;
+      const platformCounts = new Map();
+      const referrerCounts = new Map();
+      const destinationCounts = new Map();
+
+      clicks.forEach((entry) => {
+        const label = String(entry?.label || entry?.target || "Unknown destination").trim() || "Unknown destination";
+        destinationCounts.set(label, (destinationCounts.get(label) || 0) + 1);
+      });
+
+      platformClicks.forEach((entry) => {
+        const platformLabel = String(entry?.platform || entry?.label || entry?.target || "Unknown platform").trim() || "Unknown platform";
+        platformCounts.set(platformLabel, (platformCounts.get(platformLabel) || 0) + 1);
+      });
+
+      visits.forEach((entry) => {
+        const referrerLabel = getReferrerLabel(entry?.referrer);
+        referrerCounts.set(referrerLabel, (referrerCounts.get(referrerLabel) || 0) + 1);
+      });
+
+      const platforms = [...platformCounts.entries()]
+        .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+        .map(([label, count]) => ({ label, count }));
+
+      const referrers = [...referrerCounts.entries()]
+        .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+        .map(([label, count]) => ({ label, count }));
+
+      const destinations = [...destinationCounts.entries()]
+        .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+        .map(([label, count]) => ({ label, count }));
+
+      const latestEntry = filteredEntries[0] || null;
+      const ctr = visits.length ? `${Math.round((clicks.length / visits.length) * 100)}%` : "0%";
+
+      return {
+        visits: visits.length,
+        uniqueVisitors,
+        clicks: clicks.length,
+        platformClicks: platformClicks.length,
+        primaryClicks: primaryClicks.length,
+        secondaryClicks: secondaryClicks.length,
+        ctr,
+        latestActivity: latestEntry ? (formatTimestamp(latestEntry.timestamp) || "Recent") : "No activity",
+        platforms,
+        referrers,
+        destinations
+      };
+    }
+
+    function renderCampaignAnalytics() {
+      if (!elements.campaignAnalyticsGrid || !elements.campaignAnalyticsPlatforms || !elements.campaignAnalyticsReferrers || !elements.campaignAnalyticsDestinations || !elements.campaignAnalyticsStatus) {
+        return;
+      }
+
+      const analyticsCampaign = getCampaignForAnalytics();
+      if (elements.campaignAnalyticsTitle) {
+        elements.campaignAnalyticsTitle.textContent = analyticsCampaign?.title || "Smart-link analytics";
+      }
+      if (elements.campaignAnalyticsSubtitle) {
+        elements.campaignAnalyticsSubtitle.textContent = analyticsCampaign?.slug
+          ? `/smartlink/${analyticsCampaign.slug}`
+          : "Visits, click-throughs, and top destinations for this campaign.";
+      }
+
+      if (!analyticsCampaign?.title) {
+        elements.campaignAnalyticsStatus.textContent = "No campaign selected";
+        elements.campaignAnalyticsGrid.innerHTML = `
+          <article class="campaign-analytics-card">
+            <div class="label">Visits</div>
+            <div class="value">0</div>
+            <div class="detail">Select a campaign to view its smart-link analytics.</div>
+          </article>
+        `;
+        elements.campaignAnalyticsPlatforms.innerHTML = `<div class="gig-admin-empty">No platform click-through data yet.</div>`;
+        elements.campaignAnalyticsReferrers.innerHTML = `<div class="gig-admin-empty">No referrer data yet.</div>`;
+        elements.campaignAnalyticsDestinations.innerHTML = `<div class="gig-admin-empty">No click-through data yet.</div>`;
+        return;
+      }
+
+      if (state.isLoadingCampaignAnalytics && !state.campaignAnalyticsLogs.length) {
+        elements.campaignAnalyticsStatus.textContent = "Loading analytics...";
+        elements.campaignAnalyticsGrid.innerHTML = `
+          <article class="campaign-analytics-card">
+            <div class="label">Loading</div>
+            <div class="value">...</div>
+            <div class="detail">Checking smart-link activity for this campaign.</div>
+          </article>
+        `;
+        elements.campaignAnalyticsPlatforms.innerHTML = `<div class="gig-admin-empty">Loading platform click-through data...</div>`;
+        elements.campaignAnalyticsReferrers.innerHTML = `<div class="gig-admin-empty">Loading referrer data...</div>`;
+        elements.campaignAnalyticsDestinations.innerHTML = `<div class="gig-admin-empty">Loading click-through data...</div>`;
+        return;
+      }
+
+      const summary = getCampaignAnalyticsSummary(state.campaignAnalyticsLogs, analyticsCampaign);
+      elements.campaignAnalyticsStatus.textContent = state.isLoadingCampaignAnalytics
+        ? "Syncing latest analytics..."
+        : `${summary.visits} visit${summary.visits === 1 ? "" : "s"} - ${summary.clicks} click${summary.clicks === 1 ? "" : "s"}`;
+      elements.campaignAnalyticsGrid.innerHTML = `
+        <article class="campaign-analytics-card">
+          <div class="label">Visits</div>
+          <div class="value">${summary.visits}</div>
+          <div class="detail">${summary.uniqueVisitors} unique session${summary.uniqueVisitors === 1 ? "" : "s"}</div>
+        </article>
+        <article class="campaign-analytics-card">
+          <div class="label">Clicks</div>
+          <div class="value">${summary.clicks}</div>
+          <div class="detail">${summary.platformClicks} platform, ${summary.primaryClicks + summary.secondaryClicks} CTA</div>
+        </article>
+        <article class="campaign-analytics-card">
+          <div class="label">Click Rate</div>
+          <div class="value">${summary.ctr}</div>
+          <div class="detail">Clicks divided by visits</div>
+        </article>
+        <article class="campaign-analytics-card">
+          <div class="label">Latest Activity</div>
+          <div class="value">${summary.latestActivity === "No activity" ? "None" : "Recent"}</div>
+          <div class="detail">${summary.latestActivity}</div>
+        </article>
+      `;
+
+      if (!summary.platforms.length) {
+        elements.campaignAnalyticsPlatforms.innerHTML = `<div class="gig-admin-empty">No platform click-through data yet for this campaign.</div>`;
+      } else {
+        elements.campaignAnalyticsPlatforms.innerHTML = "";
+        summary.platforms.forEach((platform) => {
+          const item = document.createElement("div");
+          item.className = "campaign-analytics-destination";
+
+          const label = document.createElement("div");
+          label.className = "campaign-analytics-destination-label";
+          label.textContent = platform.label;
+
+          const meta = document.createElement("div");
+          meta.className = "campaign-analytics-destination-meta is-strong";
+          meta.textContent = `${platform.count} click${platform.count === 1 ? "" : "s"}`;
+
+          item.append(label, meta);
+          elements.campaignAnalyticsPlatforms.appendChild(item);
+        });
+      }
+
+      if (!summary.referrers.length) {
+        elements.campaignAnalyticsReferrers.innerHTML = `<div class="gig-admin-empty">No referrer data yet for this campaign.</div>`;
+      } else {
+        elements.campaignAnalyticsReferrers.innerHTML = "";
+        summary.referrers.slice(0, 8).forEach((referrer) => {
+          const item = document.createElement("div");
+          item.className = "campaign-analytics-destination";
+
+          const label = document.createElement("div");
+          label.className = "campaign-analytics-destination-label";
+          label.textContent = referrer.label;
+
+          const meta = document.createElement("div");
+          meta.className = "campaign-analytics-destination-meta";
+          meta.textContent = `${referrer.count} visit${referrer.count === 1 ? "" : "s"}`;
+
+          item.append(label, meta);
+          elements.campaignAnalyticsReferrers.appendChild(item);
+        });
+      }
+
+      if (!summary.destinations.length) {
+        elements.campaignAnalyticsDestinations.innerHTML = `<div class="gig-admin-empty">No click-through data yet for this campaign.</div>`;
+        return;
+      }
+
+      elements.campaignAnalyticsDestinations.innerHTML = "";
+      summary.destinations.slice(0, 5).forEach((destination) => {
+        const item = document.createElement("div");
+        item.className = "campaign-analytics-destination";
+
+        const label = document.createElement("div");
+        label.className = "campaign-analytics-destination-label";
+        label.textContent = destination.label;
+
+        const meta = document.createElement("div");
+        meta.className = "campaign-analytics-destination-meta";
+        meta.textContent = `${destination.count} click${destination.count === 1 ? "" : "s"}`;
+
+        item.append(label, meta);
+        elements.campaignAnalyticsDestinations.appendChild(item);
+      });
+    }
+
+    function openCampaignAnalyticsDialog(campaignId = "", { forceSync = false, syncAfterCache = true } = {}) {
+      const analyticsCampaign = getCampaignById(campaignId) || state.campaign;
+      if (!analyticsCampaign || !elements.campaignAnalyticsDialog) {
+        return;
+      }
+
+      state.activeCampaignAnalyticsId = analyticsCampaign.slug;
+      renderCampaignAnalytics();
+
+      if (!elements.campaignAnalyticsDialog.open) {
+        elements.campaignAnalyticsDialog.showModal();
+      }
+
+      loadCampaignAnalytics({ forceSync, syncAfterCache });
+    }
+
+    function closeCampaignAnalyticsDialog() {
+      if (elements.campaignAnalyticsDialog?.open) {
+        elements.campaignAnalyticsDialog.close();
+      }
+    }
+
+    async function loadCampaignAnalytics({ forceSync = false, syncAfterCache = false } = {}) {
+      if (state.isLoadingCampaignAnalytics) {
+        return;
+      }
+
+      state.isLoadingCampaignAnalytics = true;
+      renderCampaignAnalytics();
+
+      let cachedEntries = [];
+      try {
+        const cachedBundle = await readCachedLogs("site-actions");
+        cachedEntries = Array.isArray(cachedBundle.entries) ? cachedBundle.entries : [];
+
+        const cachedSmartlinkEntries = cachedEntries.filter((entry) => String(entry?.section || "").trim() === "smartlink");
+        if (cachedSmartlinkEntries.length) {
+          state.campaignAnalyticsLogs = cachedSmartlinkEntries;
+          renderCampaignAnalytics();
+
+          if (!forceSync && !syncAfterCache) {
+            return;
+          }
+        }
+
+        const snapshot = await getDocs(query(collection(db, "site-actions"), where("section", "==", "smartlink")));
+        state.campaignAnalyticsLogs = sortLogs(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
+      } catch (error) {
+        console.error("Error loading campaign analytics:", error);
+        state.campaignAnalyticsLogs = cachedEntries.filter((entry) => String(entry?.section || "").trim() === "smartlink");
+      } finally {
+        state.isLoadingCampaignAnalytics = false;
+        renderCampaignAnalytics();
+      }
     }
 
     function getDateForFilter(value) {
@@ -1475,11 +1825,14 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
       return "";
     }
 
-    function getCampaignPublicUrl() {
+    function getCampaignPublicUrl(campaign = state.campaign) {
+      const slug = normalizeCampaignSlug(campaign?.slug, campaign?.title);
+      const path = slug ? `smartlink/${encodeURIComponent(slug)}` : "smartlink.html";
+
       try {
-        return new URL("smartlink.html", window.location.href).href;
+        return new URL(path, window.location.href).href;
       } catch (error) {
-        return "smartlink.html";
+        return slug ? `${path}` : "smartlink.html";
       }
     }
 
@@ -1512,6 +1865,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
 
     function populateCampaignForm(campaign = null) {
       const activeCampaign = campaign || normalizeCampaignEntry();
+      state.activeCampaignId = normalizeCampaignSlug(activeCampaign.slug, activeCampaign.title);
+      elements.campaignSlug.value = activeCampaign.slug || "";
       elements.campaignBadge.value = activeCampaign.badge || "";
       elements.campaignTitle.value = activeCampaign.title || "";
       elements.campaignSubtitle.value = activeCampaign.subtitle || "";
@@ -1528,6 +1883,16 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
       elements.campaignYoutubeUrl.value = activeCampaign.youtubeUrl || "";
       elements.campaignBandcampUrl.value = activeCampaign.bandcampUrl || "";
       elements.campaignLive.checked = activeCampaign.live === true;
+    }
+
+    function resetCampaignForm() {
+      state.activeCampaignId = "";
+      state.campaign = null;
+      populateCampaignForm(null);
+      renderCampaign();
+      renderCampaignLibrary();
+      renderCampaignAnalytics();
+      setCampaignStatus("");
     }
 
     function syncGigFormState() {
@@ -1573,6 +1938,51 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
           : "Save Campaign";
       elements.campaignDelete.disabled = state.isSavingCampaign || state.isLoadingCampaign || state.isDeletingCampaign || !state.campaign?.title;
       elements.campaignDelete.textContent = state.isDeletingCampaign ? "Deleting..." : "Delete Campaign";
+    }
+
+    function isMobileCampaignSettingsViewport() {
+      return window.innerWidth <= 900;
+    }
+
+    function openCampaignSettingsPanel() {
+      if (!elements.campaignSettingsCard || !isMobileCampaignSettingsViewport()) {
+        return;
+      }
+
+      elements.campaignSettingsCard.classList.add("is-mobile-open");
+      if (elements.campaignSettingsScrim) {
+        elements.campaignSettingsScrim.hidden = false;
+      }
+      document.body.classList.add("campaign-settings-mobile-open");
+    }
+
+    function closeCampaignSettingsPanel() {
+      if (!elements.campaignSettingsCard) {
+        return;
+      }
+
+      elements.campaignSettingsCard.classList.remove("is-mobile-open");
+      if (elements.campaignSettingsScrim) {
+        elements.campaignSettingsScrim.hidden = true;
+      }
+      document.body.classList.remove("campaign-settings-mobile-open");
+    }
+
+    function syncCampaignSettingsPanel() {
+      if (!elements.campaignSettingsCard || !elements.openCampaignSettings) {
+        return;
+      }
+
+      const isCampaignsPage = state.activePage === "campaigns";
+      const isMobile = isMobileCampaignSettingsViewport();
+      const shouldUsePopup = isCampaignsPage && isMobile;
+
+      elements.campaignSettingsCard.classList.toggle("is-mobile-popup", shouldUsePopup);
+      elements.openCampaignSettings.hidden = !shouldUsePopup;
+
+      if (!shouldUsePopup) {
+        closeCampaignSettingsPanel();
+      }
     }
 
     function resetGigEditDialog() {
@@ -1671,7 +2081,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
     function renderGigs() {
       const hiddenCount = state.gigs.filter((gig) => isGigHidden(gig)).length;
       elements.gigCount.textContent = state.gigs.length
-        ? `${state.gigs.length} gig${state.gigs.length === 1 ? "" : "s"} loaded${hiddenCount ? ` • ${hiddenCount} hidden` : ""}`
+        ? `${state.gigs.length} gig${state.gigs.length === 1 ? "" : "s"} loaded${hiddenCount ? ` - ${hiddenCount} hidden` : ""}`
         : "No gigs loaded";
 
       if (state.gigs.length) {
@@ -2214,8 +2624,9 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
     function renderCampaign() {
       if (!state.campaign || !state.campaign.title) {
         elements.campaignOpenLink.href = getCampaignPublicUrl();
-        elements.campaignCount.textContent = "No campaign saved";
+        elements.campaignCount.textContent = "No campaign selected";
         elements.campaignPreview.innerHTML = `<div class="campaign-preview-empty">No campaign loaded yet. Save a title and at least one destination URL to publish a first release page.</div>`;
+        renderCampaignAnalytics();
         if (state.activePage === "campaigns") {
           syncActivePageUI();
         }
@@ -2227,7 +2638,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
       const releaseDate = campaign.releaseDate ? formatGigDate(campaign.releaseDate) : "";
       elements.campaignOpenLink.href = getCampaignPublicUrl();
 
-      elements.campaignCount.textContent = `${campaign.live ? "Live" : "Draft"} | ${destinations.length} destination${destinations.length === 1 ? "" : "s"}`;
+      elements.campaignCount.textContent = `${campaign.live ? "Default" : "Saved"} | /smartlink/${campaign.slug || "campaign"} | ${destinations.length} destination${destinations.length === 1 ? "" : "s"}`;
       elements.campaignPreview.innerHTML = "";
 
       const card = document.createElement("article");
@@ -2324,43 +2735,142 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
       }
 
       elements.campaignPreview.appendChild(card);
+      renderCampaignAnalytics();
 
       if (state.activePage === "campaigns") {
         syncActivePageUI();
       }
     }
 
+    function renderCampaignLibrary() {
+      if (!elements.campaignList || !elements.campaignListCount) {
+        return;
+      }
+
+      const campaigns = getSortedCampaigns();
+      elements.campaignListCount.textContent = `${campaigns.length} campaign${campaigns.length === 1 ? "" : "s"}`;
+      elements.campaignList.innerHTML = "";
+
+      if (!campaigns.length) {
+        elements.campaignList.innerHTML = `<div class="gig-admin-empty">No campaigns saved yet.</div>`;
+        return;
+      }
+
+      campaigns.forEach((campaign) => {
+        const item = document.createElement("article");
+        item.className = `campaign-library-item${campaign.slug === state.activeCampaignId ? " is-active" : ""}`;
+        item.dataset.campaignId = campaign.slug;
+
+        const top = document.createElement("div");
+        top.className = "campaign-library-top";
+
+        const title = document.createElement("div");
+        title.className = "campaign-library-title";
+        title.textContent = campaign.title || campaign.slug;
+
+        const status = document.createElement("span");
+        status.className = `campaign-library-status${campaign.live ? " is-live" : ""}`;
+        status.textContent = campaign.live ? "Live" : "Saved";
+
+        top.append(title, status);
+
+        const meta = document.createElement("div");
+        meta.className = "campaign-library-meta";
+        meta.textContent = `/${campaign.slug}${campaign.releaseDate ? ` - ${formatGigDate(campaign.releaseDate)}` : ""}`;
+        const actions = document.createElement("div");
+        actions.className = "campaign-library-actions";
+
+        const selectButton = document.createElement("button");
+        selectButton.type = "button";
+        selectButton.className = "campaign-library-open";
+        selectButton.textContent = "Edit Campaign";
+        selectButton.addEventListener("click", () => {
+          state.activeCampaignId = campaign.slug;
+          state.campaign = getCampaignById(campaign.slug);
+          populateCampaignForm(state.campaign);
+          renderCampaign();
+          renderCampaignLibrary();
+          setCampaignStatus("");
+          openCampaignSettingsPanel();
+        });
+
+        const publicLink = document.createElement("a");
+        publicLink.className = "campaign-library-open";
+        publicLink.href = getCampaignPublicUrl(campaign);
+        publicLink.target = "_blank";
+        publicLink.rel = "noopener noreferrer";
+        publicLink.textContent = "Open Campaign";
+
+        const analyticsButton = document.createElement("button");
+        analyticsButton.type = "button";
+        analyticsButton.className = "campaign-library-open";
+        analyticsButton.textContent = "Analytics";
+        analyticsButton.addEventListener("click", () => {
+          openCampaignAnalyticsDialog(campaign.slug);
+        });
+
+        actions.append(selectButton, publicLink, analyticsButton);
+        item.append(top, meta, actions);
+
+        elements.campaignList.appendChild(item);
+      });
+    }
+
     async function loadCampaign() {
       state.isLoadingCampaign = true;
       syncRefreshButton();
       syncCampaignFormState();
-      elements.campaignCount.textContent = "Loading campaign...";
+      elements.campaignCount.textContent = "Loading campaigns...";
       elements.campaignPreview.innerHTML = `<div class="campaign-preview-empty">Loading campaign settings...</div>`;
+      if (elements.campaignList) {
+        elements.campaignList.innerHTML = `<div class="gig-admin-empty">Loading campaigns...</div>`;
+      }
       if (state.activePage === "campaigns") {
         elements.collectionNote.textContent = "Loading campaign settings from Firestore...";
         updateHeroMeta("Loading...");
       }
 
       try {
-        const campaignSnapshot = await getDoc(doc(db, "campaigns", "active"));
-        state.campaign = campaignSnapshot.exists() ? normalizeCampaignEntry(campaignSnapshot.data()) : null;
+        let campaignSnapshot;
+        try {
+          campaignSnapshot = await getDocs(collection(db, "campaigns"));
+        } catch (error) {
+          campaignSnapshot = { docs: [] };
+        }
+
+        state.campaigns = campaignSnapshot.docs
+          .filter((entry) => entry.id !== "active")
+          .map((entry) => normalizeCampaignEntry({ ...entry.data(), slug: entry.id }));
+
+        const nextActiveId = getCampaignById(state.activeCampaignId)
+          ? state.activeCampaignId
+          : getSortedCampaigns(state.campaigns)[0]?.slug || "";
+
+        state.activeCampaignId = nextActiveId;
+        state.campaign = nextActiveId ? getCampaignById(nextActiveId) : null;
         populateCampaignForm(state.campaign);
         renderCampaign();
+        renderCampaignLibrary();
 
         if (state.activePage === "campaigns") {
           const updatedLabel = state.campaign?.updatedAt
             ? (formatTimestamp(state.campaign.updatedAt) || new Date().toLocaleString())
             : state.campaign
               ? "Saved"
-              : "No campaign saved";
+              : `${state.campaigns.length} campaign${state.campaigns.length === 1 ? "" : "s"}`;
           updateHeroMeta(updatedLabel);
         }
       } catch (error) {
         console.error("Error loading campaign:", error);
         state.campaign = null;
+        state.campaigns = [];
+        state.activeCampaignId = "";
         populateCampaignForm(null);
         elements.campaignCount.textContent = "Load failed";
         elements.campaignPreview.innerHTML = `<div class="campaign-preview-empty">Could not load campaign settings. Check the browser console for details.</div>`;
+        if (elements.campaignList) {
+          elements.campaignList.innerHTML = `<div class="gig-admin-empty">Could not load campaigns.</div>`;
+        }
         if (state.activePage === "campaigns") {
           updateHeroMeta("Load failed");
           syncActivePageUI();
@@ -2430,6 +2940,14 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
         return;
       }
 
+      const previousCampaignId = state.activeCampaignId || "";
+      const slug = normalizeCampaignSlug(elements.campaignSlug.value, payload.title);
+      if (!slug) {
+        setCampaignStatus("Add a title or slug before saving this campaign.", "is-error");
+        return;
+      }
+      payload.slug = slug;
+
       if (invalidCampaignUrls.length) {
         setCampaignStatus(`Fix the invalid campaign URL${invalidCampaignUrls.length === 1 ? "" : "s"}: ${invalidCampaignUrls.join(", ")}.`, "is-error");
         return;
@@ -2469,11 +2987,26 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
 
       try {
         await Promise.all([
-          setDoc(doc(db, "campaigns", "active"), payload),
-          setDoc(doc(db, "public-campaigns", "active"), payload)
+          setDoc(doc(db, "campaigns", slug), payload),
+          setDoc(doc(db, "public-campaigns", slug), payload)
         ]);
-        setCampaignStatus("Campaign saved to Firestore.", "is-success");
+
+        if (previousCampaignId && previousCampaignId !== slug) {
+          await Promise.all([
+            deleteDoc(doc(db, "campaigns", previousCampaignId)),
+            deleteDoc(doc(db, "public-campaigns", previousCampaignId))
+          ]);
+        }
+
+        await Promise.allSettled([
+          deleteDoc(doc(db, "campaigns", "active")),
+          deleteDoc(doc(db, "public-campaigns", "active"))
+        ]);
+
+        state.activeCampaignId = slug;
+        setCampaignStatus(`Campaign saved to /smartlink/${slug}.`, "is-success");
         await loadCampaign();
+        closeCampaignSettingsPanel();
       } catch (error) {
         console.error("Error saving campaign:", error);
         setCampaignStatus("Could not save campaign. Check the browser console for details.", "is-error");
@@ -2995,7 +3528,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
         const gig = getGigById(target.id);
         return {
           eventLabel: gig?.event || "Live show",
-          timestamp: gig ? `${formatGigDate(gig.date)} • ${gig.venue || "Venue"}${gig.city ? `, ${gig.city}` : ""}` : "No gig details available"
+          timestamp: gig ? `${formatGigDate(gig.date)} - ${gig.venue || "Venue"}${gig.city ? `, ${gig.city}` : ""}` : "No gig details available"
         };
       }
 
@@ -3096,7 +3629,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
 
       if (state.pendingDeleteTarget.type === "campaign") {
         elements.deleteDialogTitle.textContent = "Remove this campaign?";
-        elements.deleteDialogDescription.textContent = "This action will permanently delete the active campaign document used by the public smart-link page.";
+        elements.deleteDialogDescription.textContent = "This action will permanently delete the selected campaign and its public smart-link page.";
         return;
       }
 
@@ -3146,8 +3679,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
         elements.collectionNote.textContent = state.isLoadingCampaign
           ? "Loading campaign settings from Firestore..."
           : state.campaign?.title
-            ? `Managing the ${state.campaign.live ? "live" : "draft"} smart-link page with ${destinationCount} destination${destinationCount === 1 ? "" : "s"}.`
-            : "No active campaign saved yet in campaigns/active.";
+            ? `Managing /smartlink/${state.campaign.slug || "campaign"} with ${destinationCount} destination${destinationCount === 1 ? "" : "s"}.`
+            : `No campaign selected. ${state.campaigns.length} saved campaign${state.campaigns.length === 1 ? "" : "s"} available.`;
       }
 
       elements.heroCollection.textContent = `Collection: ${getActiveCollectionLabel()}`;
@@ -3157,6 +3690,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
         setAnalyticsCacheStatus(elements.cacheStatus.textContent);
       }
       syncRefreshButton();
+      syncCampaignSettingsPanel();
     }
 
     function isMobileNavViewport() {
@@ -3343,7 +3877,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
         return;
       }
 
-      state.pendingDeleteTarget = { type: "campaign", id: "active" };
+      state.pendingDeleteTarget = { type: "campaign", id: state.activeCampaignId || state.campaign.slug };
       state.refreshAfterDeleteClose = false;
       elements.deleteDialogError.textContent = "";
 
@@ -3570,7 +4104,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
         if (cachedEntries.length) {
           state.allLogs = sortLogs(cachedEntries);
           state.dynamicFields = getOrderedFields(state.allLogs);
-          updateHeroMeta(cachedBundle.syncedAt ? `Cached • ${formatTimestamp(cachedBundle.syncedAt) || "recently"}` : "Cached");
+          updateHeroMeta(cachedBundle.syncedAt ? `Cached - ${formatTimestamp(cachedBundle.syncedAt) || "recently"}` : "Cached");
           applyFilters();
           setAnalyticsCacheStatus(`Analytics cache: ${state.allLogs.length} event${state.allLogs.length === 1 ? "" : "s"} loaded from IndexedDB.`);
 
@@ -3607,7 +4141,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
         }
 
         state.dynamicFields = getOrderedFields(state.allLogs);
-        updateHeroMeta(`Synced • ${new Date().toLocaleString()}`);
+        updateHeroMeta(`Synced - ${new Date().toLocaleString()}`);
         applyFilters();
         setAnalyticsCacheStatus(`Analytics cache: ${state.allLogs.length} event${state.allLogs.length === 1 ? "" : "s"} stored locally.`);
       } catch (error) {
@@ -3644,6 +4178,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
       const shouldLoadData = elements.dashboard.style.display !== "grid" || state.authUser?.uid !== user.uid;
       state.authUser = user;
       state.isMobileNavOpen = false;
+      closeCampaignSettingsPanel();
       document.body.classList.remove("auth-loading");
       elements.login.style.display = "none";
       elements.dashboard.style.display = "grid";
@@ -3664,6 +4199,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
     function hideDashboard(message = "") {
       state.authUser = null;
       state.isMobileNavOpen = false;
+      closeCampaignSettingsPanel();
       document.body.classList.remove("auth-loading");
       elements.login.style.display = "block";
       elements.dashboard.style.display = "none";
@@ -3708,7 +4244,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
       state.currentCollection = "site-actions";
       persistActivePage(state.activePage);
       syncActivePageUI();
-      loadActivePageData();
+      loadActivePageData({ forceSync: true });
     }
 
     function loadActivePageData(options = {}) {
@@ -3767,6 +4303,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
       syncLinkFormState();
       syncLinkEditState();
       syncCampaignFormState();
+      syncCampaignSettingsPanel();
       resetLinkFormDefaults();
       setAuthStatus(null);
       elements.heroUpdated.textContent = "Checking authentication...";
@@ -3799,12 +4336,36 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
         resetLinkEditDialog();
       });
 
+      elements.campaignAnalyticsDialog?.addEventListener("close", () => {
+        state.activeCampaignAnalyticsId = "";
+      });
+
       elements.detailsDelete.addEventListener("click", () => {
         openDeleteFromDetails();
       });
 
       elements.closeDetails.addEventListener("click", () => {
         closeDetailsDialog();
+      });
+
+      elements.closeCampaignAnalytics?.addEventListener("click", () => {
+        closeCampaignAnalyticsDialog();
+      });
+
+      elements.openCampaignSettings?.addEventListener("click", () => {
+        openCampaignSettingsPanel();
+      });
+
+      elements.closeCampaignSettings?.addEventListener("click", () => {
+        closeCampaignSettingsPanel();
+      });
+
+      elements.campaignSettingsScrim?.addEventListener("click", () => {
+        closeCampaignSettingsPanel();
+      });
+
+      elements.refreshCampaignAnalytics?.addEventListener("click", () => {
+        loadCampaignAnalytics({ forceSync: true });
       });
 
       elements.closeGigEdit.addEventListener("click", () => {
@@ -3952,6 +4513,10 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
       elements.seedLinks.addEventListener("click", () => {
         seedDefaultLinks();
       });
+      elements.newCampaign?.addEventListener("click", () => {
+        resetCampaignForm();
+        openCampaignSettingsPanel();
+      });
 
       elements.pageTabs.forEach((link) => {
         link.addEventListener("click", (event) => {
@@ -3980,6 +4545,12 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
       elements.dateTo.addEventListener("change", (event) => {
         state.dateTo = event.target.value;
         applyFilters();
+      });
+
+      elements.campaignTitle?.addEventListener("blur", () => {
+        if (!elements.campaignSlug.value.trim()) {
+          elements.campaignSlug.value = normalizeCampaignSlug("", elements.campaignTitle.value);
+        }
       });
 
       elements.exportCsv.addEventListener("click", () => {
@@ -4030,11 +4601,13 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
         }
 
         syncMobileNav();
+        syncCampaignSettingsPanel();
       });
 
       window.addEventListener("keydown", (event) => {
         if (event.key === "Escape") {
           closeMobileNav();
+          closeCampaignSettingsPanel();
         }
       });
     }
@@ -4044,3 +4617,4 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
     } else {
       initAdmin();
     }
+

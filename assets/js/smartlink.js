@@ -10,12 +10,9 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    const isLocal =
+    const isFileMode =
       window.location.protocol === "file:" ||
-      window.location.hostname === "localhost" ||
-      window.location.hostname === "127.0.0.1" ||
       window.location.hostname === "";
-    const isFileMode = window.location.protocol === "file:";
 
     const params = new URLSearchParams(window.location.search);
     const userId = params.get("id") || "unknown";
@@ -53,6 +50,17 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
     let activeCampaign = null;
     let activeMetaPixelId = "";
     let metaPageViewTracked = false;
+
+    function getRequestedCampaignSlug() {
+      if (queryCampaign) {
+        return queryCampaign.trim();
+      }
+
+      const match = window.location.pathname.match(/\/smartlink\/([^/?#]+)\/?$/i);
+      return match ? decodeURIComponent(match[1]).trim() : "";
+    }
+
+    const requestedCampaignSlug = getRequestedCampaignSlug();
 
     function normalizeCampaignDestinationUrl(value) {
       const normalizedValue = String(value || "").trim();
@@ -98,6 +106,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
     function normalizeCampaignEntry(campaign = {}) {
       const normalizedMetaPixelId = String(campaign?.metaPixelId || "").replace(/\s+/g, "").trim();
       return {
+        slug: String(campaign?.slug || "").trim(),
         badge: String(campaign?.badge || "").trim(),
         title: String(campaign?.title || "").trim(),
         subtitle: String(campaign?.subtitle || "").trim(),
@@ -143,6 +152,27 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
         { label: "YouTube", url: campaign.youtubeUrl, kind: "platform" },
         { label: "Bandcamp", url: campaign.bandcampUrl, kind: "platform" }
       ].filter((entry) => entry.url);
+    }
+
+    function getPlatformKey(label = "") {
+      return String(label || "")
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "");
+    }
+
+    function getPlatformActionLabel(label = "") {
+      const normalized = getPlatformKey(label);
+      if (normalized === "youtube") {
+        return "Watch";
+      }
+
+      if (normalized === "bandcamp") {
+        return "Open";
+      }
+
+      return "Play";
     }
 
     function initializeMetaPixel(pixelId) {
@@ -213,9 +243,11 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
         href: details.href || "",
         elementType: details.elementType || "",
         actionSubtype: details.actionSubtype || "",
+        platform: details.platform || "",
         section: "smartlink",
         outbound: details.outbound ?? false,
         campaign: activeCampaign?.title || queryCampaign || "",
+        campaignSlug: activeCampaign?.slug || requestedCampaignSlug || "",
         source,
         medium,
         referrer: document.referrer || "",
@@ -225,7 +257,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
     }
 
     async function logEvent(action, details = {}) {
-      if (isLocal) {
+      if (isFileMode) {
         return;
       }
 
@@ -347,10 +379,28 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
         platformLinks.forEach((entry) => {
           const link = document.createElement("a");
           link.className = "platform-link";
+          link.dataset.platform = getPlatformKey(entry.label);
           link.href = entry.url;
           link.target = "_blank";
           link.rel = "noopener noreferrer";
-          link.textContent = entry.label;
+          const platformCopy = document.createElement("span");
+          platformCopy.className = "platform-copy";
+
+          const platformEyebrow = document.createElement("span");
+          platformEyebrow.className = "platform-eyebrow";
+          platformEyebrow.textContent = "Listen on";
+
+          const platformLabel = document.createElement("span");
+          platformLabel.className = "platform-label";
+          platformLabel.textContent = entry.label;
+
+          platformCopy.append(platformEyebrow, platformLabel);
+
+          const actionChip = document.createElement("span");
+          actionChip.className = "platform-action";
+          actionChip.textContent = getPlatformActionLabel(entry.label);
+
+          link.append(platformCopy, actionChip);
           link.addEventListener("click", () => {
             logEvent("click", {
               label: entry.label,
@@ -358,6 +408,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
               href: entry.url,
               elementType: "link",
               actionSubtype: "platform_link",
+              platform: getPlatformKey(entry.label),
               section: "smartlink",
               outbound: true
             });
@@ -430,7 +481,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
       if (error?.code === "permission-denied") {
         return {
           title: "Campaign Access Blocked",
-          copy: "The public smart-link page cannot read public-campaigns/active from Firestore. If this page should be public, update your Firestore rules to allow read access for that document.",
+          copy: `The public smart-link page cannot read public-campaigns/${requestedCampaignSlug || "active"} from Firestore. If this page should be public, update your Firestore rules to allow read access for that document.`,
           allowRetry: false
         };
       }
@@ -462,11 +513,20 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
       }
 
       try {
-        const campaignSnapshot = await getDoc(doc(db, "public-campaigns", "active"));
+        const campaignId = requestedCampaignSlug;
+        if (!campaignId) {
+          showFallback("Campaign not specified", "Open a specific release slug such as /smartlink/your-release-name to view a live campaign.");
+          return;
+        }
+
+        const campaignSnapshot = await getDoc(doc(db, "public-campaigns", campaignId));
         if (!campaignSnapshot.exists()) {
-          showFallback("No live campaign yet", "This release page is not live right now. Check back soon, or use the main site links below.");
+          showFallback(
+            "Campaign not found",
+            "That release page could not be found. Check the campaign URL or use the main site links below."
+          );
         } else {
-          const campaign = normalizeCampaignEntry(campaignSnapshot.data());
+          const campaign = normalizeCampaignEntry({ ...campaignSnapshot.data(), slug: campaignId });
           const destinations = getDestinations(campaign);
           if (!campaign.title) {
             showFallback("Campaign incomplete", "A campaign exists, but it still needs a title before the page can go live.");

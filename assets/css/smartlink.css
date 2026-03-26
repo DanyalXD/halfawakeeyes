@@ -8,17 +8,17 @@
     }
 
     :root {
-      --bg: #080808;
-      --panel: rgba(12, 12, 12, 0.8);
+      --bg: #050505;
+      --panel: rgba(12, 12, 12, 0.82);
       --panel-soft: rgba(255, 255, 255, 0.035);
-      --line: rgba(255, 255, 255, 0.11);
-      --line-strong: rgba(255, 255, 255, 0.18);
-      --text: #f3eee6;
+      --line: rgba(255, 255, 255, 0.1);
+      --line-strong: rgba(255, 255, 255, 0.2);
+      --text: #f5efe8;
       --muted: #b9b0a4;
-      --accent: #e1d2be;
-      --accent-strong: #f0e5d7;
-      --accent-soft: #8f948d;
-      --shadow: 0 28px 70px rgba(0, 0, 0, 0.38);
+      --accent: #e7d6be;
+      --accent-strong: #f7ecde;
+      --accent-soft: #9ca18f;
+      --shadow: 0 36px 90px rgba(0, 0, 0, 0.45);
     }
 
     * {
@@ -31,9 +31,10 @@
       font-family: "Source Sans Pro", sans-serif;
       color: var(--text);
       background:
-        radial-gradient(circle at top left, rgba(201, 124, 92, 0.16), transparent 28%),
-        radial-gradient(circle at top right, rgba(86, 110, 154, 0.15), transparent 24%),
-        linear-gradient(180deg, #111 0%, #0c0c0c 46%, #060606 100%);
+        radial-gradient(circle at 18% 16%, rgba(214, 188, 152, 0.12), transparent 24%),
+        radial-gradient(circle at 78% 14%, rgba(86, 110, 154, 0.12), transparent 24%),
+        radial-gradient(circle at 50% 52%, rgba(255, 255, 255, 0.04), transparent 18%),
+        linear-gradient(180deg, #0d0d0d 0%, #070707 45%, #020202 100%);
     }
 
     body::before {
@@ -42,8 +43,22 @@
       inset: 0;
       pointer-events: none;
       background:
-        linear-gradient(120deg, rgba(255, 255, 255, 0.02), transparent 28%),
-        radial-gradient(circle at 50% 0%, rgba(225, 210, 190, 0.06), transparent 34%);
+        linear-gradient(120deg, rgba(255, 255, 255, 0.018), transparent 28%),
+        radial-gradient(circle at 50% 0%, rgba(225, 210, 190, 0.05), transparent 34%);
+      opacity: 0.9;
+    }
+
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(255, 255, 255, 0.018) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.018) 1px, transparent 1px);
+      background-size: 140px 140px;
+      mask-image: radial-gradient(circle at center, black 22%, transparent 72%);
+      opacity: 0.12;
     }
 
     a {
@@ -54,9 +69,12 @@
     .page {
       position: relative;
       z-index: 1;
-      width: min(1180px, calc(100% - 1.5rem));
+      width: min(1320px, calc(100% - 1.5rem));
       margin: 0 auto;
       padding: 1rem 0 1.5rem;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
     }
 
     .topbar {
@@ -120,26 +138,43 @@
 
     .campaign-layout {
       display: grid;
-      grid-template-columns: minmax(0, 1.08fr) minmax(340px, 0.92fr);
+      grid-template-columns: minmax(0, 1.05fr) minmax(360px, 0.78fr);
       gap: 1rem;
-      align-items: stretch;
+      align-items: start;
+      flex: 1 0 auto;
     }
 
     .content-card,
     .art-card,
     .empty-card {
       border: 1px solid var(--line);
-      border-radius: 30px;
+      border-radius: 32px;
       background: var(--panel);
       box-shadow: var(--shadow);
       backdrop-filter: blur(18px);
     }
 
     .content-card {
+      order: 2;
       padding: 1.5rem;
       display: grid;
       gap: 1rem;
       align-content: start;
+      position: relative;
+      overflow: hidden;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.018)),
+        rgba(10, 10, 10, 0.84);
+    }
+
+    .content-card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle at top right, rgba(225, 210, 190, 0.07), transparent 32%),
+        linear-gradient(180deg, transparent 0%, rgba(255, 255, 255, 0.015) 100%);
+      pointer-events: none;
     }
 
     .eyebrow-row {
@@ -147,6 +182,8 @@
       align-items: center;
       gap: 0.7rem;
       flex-wrap: wrap;
+      position: relative;
+      z-index: 1;
     }
 
     .eyebrow,
@@ -180,33 +217,42 @@
     h1 {
       margin: 0;
       font-family: "Roabla", "Oswald", sans-serif;
-      font-size: clamp(2.8rem, 7vw, 5.2rem);
+      font-size: clamp(2.2rem, 3.8vw, 3.7rem);
       font-weight: 400;
-      line-height: 0.92;
-      letter-spacing: 0.02em;
+      line-height: 0.95;
+      letter-spacing: 0.03em;
       color: var(--accent);
+      position: relative;
+      z-index: 1;
+      max-width: 9ch;
     }
 
     .subtitle {
       margin: 0;
-      font-size: 1.1rem;
+      font-size: 1.02rem;
       color: #ece4d8;
-      line-height: 1.45;
-      max-width: 38ch;
+      line-height: 1.42;
+      max-width: 28ch;
+      position: relative;
+      z-index: 1;
     }
 
     .description {
       margin: 0;
       color: var(--muted);
-      line-height: 1.65;
-      max-width: 56ch;
-      font-size: 1rem;
+      line-height: 1.6;
+      max-width: 34ch;
+      font-size: 0.98rem;
+      position: relative;
+      z-index: 1;
     }
 
     .meta-row {
       display: flex;
       flex-wrap: wrap;
       gap: 0.65rem;
+      position: relative;
+      z-index: 1;
     }
 
     .meta-chip {
@@ -221,6 +267,8 @@
       display: flex;
       flex-wrap: wrap;
       gap: 0.8rem;
+      position: relative;
+      z-index: 1;
     }
 
     .cta-button {
@@ -229,7 +277,7 @@
       justify-content: center;
       min-height: 54px;
       padding: 0.85rem 1.25rem;
-      border-radius: 999px;
+      border-radius: 18px;
       font-size: 1rem;
       font-weight: 700;
       transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
@@ -267,39 +315,46 @@
 
     .platform-panel {
       display: grid;
-      gap: 0.8rem;
+      gap: 0.85rem;
       margin-top: 0.2rem;
-      padding-top: 1rem;
-      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 1rem;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 24px;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.015)),
+        rgba(9, 9, 9, 0.7);
+      position: relative;
+      z-index: 1;
     }
 
     .platform-title {
       color: var(--accent-strong);
       font-family: "Roabla", "Oswald", sans-serif;
-      font-size: 1.05rem;
+      font-size: 1.1rem;
       letter-spacing: 0.04em;
       text-transform: uppercase;
     }
 
     .platform-grid {
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 0.75rem;
+      grid-template-columns: 1fr;
+      gap: 0.8rem;
     }
 
     .platform-link {
-      display: inline-flex;
+      display: flex;
       align-items: center;
-      justify-content: center;
-      min-height: 58px;
-      padding: 0.8rem 1rem;
+      justify-content: space-between;
+      gap: 1rem;
+      min-height: 76px;
+      padding: 0.95rem 1rem;
       border-radius: 20px;
       border: 1px solid var(--line);
-      background: rgba(255, 255, 255, 0.04);
+      background:
+        linear-gradient(135deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.02)),
+        rgba(255, 255, 255, 0.015);
       color: var(--text);
-      font-size: 0.96rem;
-      font-weight: 700;
-      text-align: center;
+      text-align: left;
       transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
     }
 
@@ -307,30 +362,95 @@
     .platform-link:focus {
       transform: translateY(-1px);
       border-color: var(--line-strong);
-      background: rgba(255, 255, 255, 0.08);
+      background:
+        linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03)),
+        rgba(255, 255, 255, 0.02);
       color: var(--text);
     }
 
+    .platform-copy {
+      display: grid;
+      gap: 0.15rem;
+      min-width: 0;
+    }
+
+    .platform-eyebrow {
+      color: rgba(245, 239, 232, 0.46);
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .platform-label {
+      color: var(--text);
+      font-size: 1.06rem;
+      font-weight: 700;
+      line-height: 1.15;
+    }
+
+    .platform-action {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 88px;
+      min-height: 44px;
+      padding: 0.65rem 0.95rem;
+      border-radius: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      background: rgba(255, 255, 255, 0.055);
+      color: var(--accent-strong);
+      font-size: 0.9rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      flex-shrink: 0;
+    }
+
+    .platform-link[data-platform="spotify"] .platform-label {
+      color: #41d66c;
+    }
+
+    .platform-link[data-platform="apple-music"] .platform-label {
+      color: #f4eee7;
+    }
+
+    .platform-link[data-platform="youtube"] .platform-label {
+      color: #ff6464;
+    }
+
+    .platform-link[data-platform="bandcamp"] .platform-label {
+      color: #7dd3ee;
+    }
+
     .art-card {
+      order: 1;
       position: relative;
       overflow: hidden;
-      min-height: 560px;
+      min-height: 720px;
       display: grid;
-      align-content: end;
-      padding: 1.25rem;
+      grid-template-rows: 1fr auto;
+      align-content: stretch;
+      padding: 1.2rem;
       background:
-        radial-gradient(circle at 22% 18%, rgba(201, 124, 92, 0.22), transparent 30%),
-        radial-gradient(circle at 82% 14%, rgba(86, 110, 154, 0.2), transparent 28%),
-        linear-gradient(180deg, rgba(12, 12, 12, 0.46) 0%, rgba(8, 8, 8, 0.82) 100%);
+        radial-gradient(circle at 50% 10%, rgba(255, 255, 255, 0.08), transparent 24%),
+        radial-gradient(circle at 22% 18%, rgba(214, 188, 152, 0.18), transparent 28%),
+        radial-gradient(circle at 82% 14%, rgba(86, 110, 154, 0.14), transparent 24%),
+        linear-gradient(180deg, rgba(12, 12, 12, 0.42) 0%, rgba(6, 6, 6, 0.88) 100%);
     }
 
     .art-card img {
       position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
+      top: 3.4rem;
+      left: 50%;
+      width: min(72%, 520px);
+      aspect-ratio: 1 / 1;
+      height: auto;
+      transform: translateX(-50%);
       object-fit: cover;
-      opacity: 0.94;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      box-shadow: 0 28px 60px rgba(0, 0, 0, 0.4);
+      opacity: 0.96;
     }
 
     .art-card::after {
@@ -338,9 +458,24 @@
       position: absolute;
       inset: 0;
       background:
-        linear-gradient(180deg, rgba(5, 5, 5, 0.05) 0%, rgba(5, 5, 5, 0.82) 100%),
-        linear-gradient(115deg, rgba(0, 0, 0, 0.18) 0%, transparent 36%, rgba(0, 0, 0, 0.32) 100%);
+        linear-gradient(180deg, rgba(5, 5, 5, 0.03) 0%, rgba(5, 5, 5, 0.86) 100%),
+        linear-gradient(115deg, rgba(0, 0, 0, 0.1) 0%, transparent 34%, rgba(0, 0, 0, 0.35) 100%);
       pointer-events: none;
+    }
+
+    .art-card::before {
+      content: "";
+      position: absolute;
+      top: 2rem;
+      left: 50%;
+      width: min(78%, 590px);
+      aspect-ratio: 1 / 1.1;
+      transform: translateX(-50%);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 28px;
+      z-index: 1;
+      pointer-events: none;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.015);
     }
 
     .artwork-fallback,
@@ -350,21 +485,33 @@
     }
 
     .artwork-fallback {
+      position: absolute;
+      top: 3.4rem;
+      left: 50%;
+      width: min(72%, 520px);
+      aspect-ratio: 1 / 1;
+      transform: translateX(-50%);
       display: grid;
-      gap: 0.4rem;
+      gap: 0.45rem;
       align-content: center;
-      justify-items: start;
-      height: 100%;
+      justify-items: center;
+      text-align: center;
       color: var(--accent);
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      background:
+        radial-gradient(circle at 50% 40%, rgba(255, 255, 255, 0.05), transparent 28%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(0, 0, 0, 0.28));
+      box-shadow: 0 28px 60px rgba(0, 0, 0, 0.4);
     }
 
     .fallback-brand {
       font-family: "Roabla", "Oswald", sans-serif;
-      font-size: clamp(2.6rem, 6vw, 4.8rem);
+      font-size: clamp(2.8rem, 5.6vw, 5rem);
       line-height: 0.92;
       text-transform: uppercase;
       letter-spacing: 0.03em;
-      max-width: 6ch;
+      max-width: 5ch;
     }
 
     .fallback-copy {
@@ -376,12 +523,14 @@
 
     .art-caption {
       display: grid;
-      gap: 0.2rem;
-      padding: 1rem;
-      border-radius: 20px;
+      gap: 0.28rem;
+      padding: 1rem 1.05rem;
+      border-radius: 22px;
       border: 1px solid rgba(255, 255, 255, 0.08);
-      background: rgba(10, 10, 10, 0.52);
+      background: rgba(10, 10, 10, 0.56);
       backdrop-filter: blur(12px);
+      max-width: 390px;
+      align-self: end;
     }
 
     .art-caption-title {
@@ -438,7 +587,7 @@
       flex-wrap: wrap;
       justify-content: space-between;
       gap: 0.8rem;
-      margin-top: 1rem;
+      margin-top: auto;
       padding: 0.25rem 0 0.5rem;
       color: var(--muted);
       font-size: 0.92rem;
@@ -457,13 +606,30 @@
       display: none !important;
     }
 
-    @media (max-width: 900px) {
+    @media (max-width: 980px) {
       .campaign-layout {
         grid-template-columns: 1fr;
       }
 
       .art-card {
-        min-height: 420px;
+        min-height: 0;
+        aspect-ratio: 1 / 1.08;
+        order: 1;
+      }
+
+      .content-card {
+        order: 2;
+      }
+
+      .art-card img,
+      .artwork-fallback {
+        top: 1.5rem;
+        width: min(72%, 420px);
+      }
+
+      .art-card::before {
+        top: 0.9rem;
+        width: min(80%, 470px);
       }
     }
 
@@ -490,10 +656,6 @@
         border-radius: 22px;
       }
 
-      .platform-grid {
-        grid-template-columns: 1fr;
-      }
-
       .cta-stack {
         flex-direction: column;
       }
@@ -503,7 +665,332 @@
       }
 
       .art-card {
-        min-height: 360px;
+        min-height: 0;
+        aspect-ratio: auto;
+        grid-template-rows: auto auto;
+        gap: 0.9rem;
+        padding: 0.95rem;
       }
+
+      .art-card::before {
+        top: 0.75rem;
+        width: calc(100% - 1.5rem);
+        max-width: none;
+      }
+
+      .art-card img,
+      .artwork-fallback {
+        position: relative;
+        top: auto;
+        left: auto;
+        width: 100%;
+        transform: none;
+      }
+
+      .content-card {
+        gap: 1rem;
+      }
+
+      h1 {
+        font-size: clamp(2.15rem, 12vw, 3rem);
+      }
+
+      .subtitle {
+        font-size: 1.02rem;
+        max-width: none;
+      }
+
+      .description {
+        max-width: none;
+      }
+
+      .platform-panel {
+        padding: 0.9rem;
+        border-radius: 22px;
+      }
+
+      .platform-link {
+        min-height: 74px;
+        padding: 0.9rem;
+        border-radius: 20px;
+      }
+
+      .platform-label {
+        font-size: 1.08rem;
+      }
+
+      .platform-action {
+        min-width: 84px;
+        min-height: 44px;
+        padding-inline: 0.85rem;
+      }
+
+      .art-caption {
+        max-width: none;
+        padding: 0.9rem 0.95rem;
+      }
+    }
+
+    /* Simple smart-link layout */
+    .page {
+      width: min(100% - 1.25rem, 980px);
+      padding-top: 1.25rem;
+    }
+
+    .campaign-layout {
+      grid-template-columns: 1fr;
+      max-width: 430px;
+      margin: 0 auto;
+      gap: 1.1rem;
+      align-items: start;
+      align-content: start;
+      flex: 0 0 auto;
+    }
+
+    .art-card {
+      min-height: 0;
+      padding: 0;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      box-shadow: none;
+      backdrop-filter: none;
+      display: block;
+      overflow: visible;
+    }
+
+    .art-card::before,
+    .art-card::after,
+    .art-caption {
+      display: none;
+    }
+
+    .art-card img,
+    .artwork-fallback {
+      position: relative;
+      top: auto;
+      left: auto;
+      width: 100%;
+      max-width: none;
+      aspect-ratio: 1 / 1;
+      transform: none;
+      border-radius: 12px;
+      box-shadow: 0 22px 52px rgba(0, 0, 0, 0.34);
+    }
+
+    .artwork-fallback {
+      display: grid;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .content-card {
+      padding: 0;
+      gap: 0.95rem;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      box-shadow: none;
+      backdrop-filter: none;
+      align-content: start;
+    }
+
+    .content-card::before,
+    .eyebrow-row,
+    .description,
+    .meta-row {
+      display: none;
+    }
+
+    h1 {
+      max-width: none;
+      font-family: "Source Sans Pro", sans-serif;
+      font-size: clamp(2rem, 5vw, 2.55rem);
+      font-weight: 700;
+      line-height: 1.02;
+      letter-spacing: -0.03em;
+      color: #ffffff;
+      text-align: center;
+      text-wrap: balance;
+    }
+
+    .subtitle {
+      max-width: none;
+      margin-top: -0.3rem;
+      font-size: 1rem;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.82);
+      text-align: center;
+    }
+
+    .cta-stack {
+      order: 3;
+      flex-direction: column;
+      gap: 0.7rem;
+    }
+
+    .cta-button {
+      width: 100%;
+      min-height: 52px;
+      border-radius: 16px;
+    }
+
+    .platform-panel {
+      gap: 0.2rem;
+      padding: 0.95rem;
+      border: 0;
+      border-radius: 24px;
+      background: linear-gradient(180deg, #f7f4ef 0%, #f2eee8 100%);
+      box-shadow:
+        0 22px 48px rgba(0, 0, 0, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.75);
+    }
+
+    .platform-title {
+      display: none;
+    }
+
+    .platform-grid {
+      gap: 0;
+    }
+
+    .platform-link {
+      min-height: 78px;
+      padding: 0.9rem 0.35rem 0.9rem 0.7rem;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      color: #111;
+      box-shadow: none;
+    }
+
+    .platform-link + .platform-link {
+      border-top: 1px solid rgba(17, 17, 17, 0.09);
+    }
+
+    .platform-link:hover,
+    .platform-link:focus {
+      transform: none;
+      border-color: transparent;
+      background: transparent;
+      color: #111;
+    }
+
+    .platform-copy {
+      gap: 0;
+    }
+
+    .platform-eyebrow {
+      display: none;
+    }
+
+    .platform-label {
+      font-size: 1.12rem;
+      font-weight: 700;
+      color: #111;
+    }
+
+    .platform-action {
+      min-width: 134px;
+      min-height: 50px;
+      border-radius: 14px;
+      border: 1px solid rgba(17, 17, 17, 0.1);
+      background: linear-gradient(180deg, #ffffff 0%, #f7f4ef 100%);
+      color: #111;
+      font-size: 0.95rem;
+      font-weight: 800;
+      box-shadow: 0 1px 0 rgba(0, 0, 0, 0.03);
+    }
+
+    .platform-link[data-platform="spotify"] .platform-label {
+      color: #1ed760;
+    }
+
+    .platform-link[data-platform="apple-music"] .platform-label {
+      color: #3f3f3f;
+    }
+
+    .footer {
+      width: min(100%, 430px);
+      margin: auto auto 0;
+      padding-top: 1rem;
+      justify-content: space-between;
+      color: rgba(255, 255, 255, 0.72);
+      font-size: 0.88rem;
+    }
+
+    @media (min-width: 901px) {
+      .page {
+        width: min(100% - 2.5rem, 1180px);
+        padding-top: 2.25rem;
+      }
+
+      .campaign-layout {
+        max-width: none;
+        grid-template-columns: minmax(360px, 430px) minmax(420px, 500px);
+        justify-content: center;
+        align-items: center;
+        gap: 4.5rem;
+        min-height: calc(100vh - 6.5rem);
+      }
+
+      .art-card {
+        align-self: center;
+      }
+
+      .content-card {
+        gap: 1.1rem;
+        align-self: center;
+      }
+
+      h1 {
+        font-size: clamp(3rem, 4vw, 4rem);
+        text-align: left;
+      }
+
+      .subtitle {
+        margin-top: -0.45rem;
+        font-size: 1.12rem;
+        text-align: left;
+      }
+
+      .platform-panel {
+        margin-top: 0.4rem;
+        padding: 1rem;
+        border-radius: 26px;
+      }
+
+      .platform-link {
+        min-height: 86px;
+        padding: 1rem 0.4rem 1rem 0.8rem;
+      }
+
+      .platform-label {
+        font-size: 1.18rem;
+      }
+
+      .platform-action {
+        min-width: 140px;
+        min-height: 54px;
+      }
+
+      .footer {
+        width: 100%;
+        max-width: none;
+        padding-top: 1.5rem;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .topbar,
+      .campaign-layout,
+      .footer {
+        width: 100%;
+        max-width: none;
+      }
+
+      .platform-action {
+        min-width: 118px;
+      }
+
     }
 

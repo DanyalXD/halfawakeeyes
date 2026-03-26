@@ -5,6 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Half Awake Eyes | Smart Link</title>
   <meta name="description" content="Listen to the latest Half Awake Eyes release across all platforms." />
+  <script>
+    (function() {
+      var path = window.location.pathname || "";
+      var isSlugPath = /\/smartlink\/[^/]+\/?$/i.test(path);
+      var needsExtraParent = isSlugPath && /\/$/.test(path);
+      var baseHref = isSlugPath ? (needsExtraParent ? "../../" : "../") : "./";
+      document.write('<base href="' + baseHref + '">');
+    })();
+  </script>
   <link rel="icon" type="image/x-icon" href="assets/images/favicon.ico" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -16,14 +25,6 @@
 </head>
 <body>
   <div class="page">
-    <header class="topbar">
-      <a class="brand" href="index.html">Half Awake Eyes</a>
-      <div class="top-links">
-        <a class="top-link" href="links.html">All Links</a>
-        <a class="top-link" href="privacy.html">Privacy</a>
-      </div>
-    </header>
-
     <main id="campaign-layout" class="campaign-layout">
       <section class="content-card">
         <div class="eyebrow-row">
