@@ -20,7 +20,8 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        const { userId, campaign, source, medium } = getTrackingParams(new URLSearchParams(window.location.search));
+        const pageParams = new URLSearchParams(window.location.search);
+        const { userId, campaign, source, medium } = getTrackingParams(pageParams);
         const pagePath = window.location.pathname || "/links.html";
         const pageName = pagePath.split("/").pop() || "links";
         const socialLinksRoot = document.getElementById("social-links");
@@ -155,6 +156,7 @@
             return {
                 title: String(link?.title || "").trim(),
                 url: normalizePublicUrl(link?.url, { allowMailto: true }),
+                sourceTicketUrl: normalizePublicUrl(link?.sourceTicketUrl),
                 imageUrl: normalizeImageUrl(link?.imageUrl),
                 section: String(link?.section || "").trim(),
                 kicker: String(link?.kicker || "").trim(),
@@ -168,6 +170,8 @@
 
         const isGigHidden = (gig) =>
             gig?.hidden === true || String(gig?.hidden || "").toLowerCase() === "true";
+
+        const hasGigTicketLink = (gig) => Boolean(String(gig?.ticketUrl || "").trim());
 
         const normalizeGigEntry = (gig = {}, id = "") => ({
             id,
@@ -243,10 +247,34 @@
             return details.join(" | ");
         };
 
+        const getGigTicketLandingUrl = (gig) => {
+            const ticketUrl = normalizePublicUrl(gig?.ticketUrl);
+            if (!ticketUrl) {
+                return "";
+            }
+
+            if (!gig?.id) {
+                return ticketUrl;
+            }
+
+            const landingParams = new URLSearchParams();
+            landingParams.set("gig", gig.id);
+
+            ["id", "source", "utm_source", "utm_medium", "campaign", "utm_campaign"].forEach((key) => {
+                const value = pageParams.get(key);
+                if (value) {
+                    landingParams.set(key, value);
+                }
+            });
+
+            return new URL(`tickets.html?${landingParams.toString()}`, window.location.href).href;
+        };
+
         const buildGigTicketLink = (gig, fallbackSortOrder) => normalizeManagedLink({
             group: "main",
             title: String(gig?.event || "Live show").trim() || "Live show",
-            url: normalizePublicUrl(gig?.ticketUrl),
+            url: getGigTicketLandingUrl(gig),
+            sourceTicketUrl: normalizePublicUrl(gig?.ticketUrl),
             imageUrl: normalizeImageUrl(gig?.imageUrl),
             section: "Shows",
             kicker: "Tickets",
@@ -336,7 +364,7 @@
                 today.setHours(0, 0, 0, 0);
 
                 return gigEntries
-                    .filter((gig) => !isGigHidden(gig) && String(gig?.ticketUrl || "").trim())
+                    .filter((gig) => !isGigHidden(gig) && hasGigTicketLink(gig))
                     .map((gig) => ({
                         gig,
                         dateOnly: getGigDateOnly(gig?.date)
@@ -356,7 +384,15 @@
             }
             element.addEventListener("click", () => {
                 const href = element.getAttribute("href") || "";
-                const isOutbound = href.startsWith("http") || href.startsWith("mailto:");
+                let isOutbound = href.startsWith("mailto:");
+                if (!isOutbound && href) {
+                    try {
+                        const parsed = new URL(href, window.location.href);
+                        isOutbound = parsed.origin !== window.location.origin;
+                    } catch (error) {
+                        isOutbound = false;
+                    }
+                }
                 logEvent("click", {
                     label: label || href,
                     target: label || href,
@@ -441,9 +477,17 @@
             anchor.className = `link-card${link.featured || emphasize ? " primary" : ""}${compact ? " compact" : ""}`;
             anchor.href = link.url;
             anchor.dataset.linkLabel = link.title || link.url || "Main link";
-            if (link.url.startsWith("http")) {
-                anchor.target = "_blank";
-                anchor.rel = "noopener noreferrer";
+            try {
+                const parsed = new URL(link.url, window.location.href);
+                if (parsed.origin !== window.location.origin) {
+                    anchor.target = "_blank";
+                    anchor.rel = "noopener noreferrer";
+                }
+            } catch (error) {
+                if (link.url.startsWith("http")) {
+                    anchor.target = "_blank";
+                    anchor.rel = "noopener noreferrer";
+                }
             }
 
             const thumb = document.createElement("div");
@@ -522,12 +566,13 @@
             });
             const existingMainUrls = new Set(
                 mainLinks
-                    .map((link) => String(link.url || "").trim().toLowerCase())
+                    .flatMap((link) => [String(link.url || "").trim().toLowerCase(), String(link.sourceTicketUrl || "").trim().toLowerCase()])
                     .filter(Boolean)
             );
             const autoShowLinks = gigTicketLinks.filter((link) => {
                 const normalizedUrl = String(link?.url || "").trim().toLowerCase();
-                return normalizedUrl && !existingMainUrls.has(normalizedUrl);
+                const normalizedSourceUrl = String(link?.sourceTicketUrl || "").trim().toLowerCase();
+                return normalizedUrl && !existingMainUrls.has(normalizedUrl) && (!normalizedSourceUrl || !existingMainUrls.has(normalizedSourceUrl));
             });
             const mergedMainLinks = sortManagedLinks([...mainLinks, ...autoShowLinks]);
 

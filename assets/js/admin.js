@@ -120,7 +120,9 @@
       gigVenue: document.getElementById("gig-venue"),
       gigCity: document.getElementById("gig-city"),
       gigTicketUrl: document.getElementById("gig-ticket-url"),
+      gigAutoRedirect: document.getElementById("gig-auto-redirect"),
       gigImageUrl: document.getElementById("gig-image-url"),
+      gigMetaPixelId: document.getElementById("gig-meta-pixel-id"),
       saveGig: document.getElementById("save-gig"),
       gigStatus: document.getElementById("gig-status"),
       gigList: document.getElementById("gig-list"),
@@ -214,7 +216,9 @@
       gigEditVenue: document.getElementById("gig-edit-venue"),
       gigEditCity: document.getElementById("gig-edit-city"),
       gigEditTicketUrl: document.getElementById("gig-edit-ticket-url"),
+      gigEditAutoRedirect: document.getElementById("gig-edit-auto-redirect"),
       gigEditImageUrl: document.getElementById("gig-edit-image-url"),
+      gigEditMetaPixelId: document.getElementById("gig-edit-meta-pixel-id"),
       gigEditHidden: document.getElementById("gig-edit-hidden"),
       gigEditError: document.getElementById("gig-edit-error"),
       gigDelete: document.getElementById("gig-delete"),
@@ -459,7 +463,9 @@
         venue: String(gig?.venue || "").trim(),
         city: String(gig?.city || "").trim(),
         ticketUrl: String(gig?.ticketUrl || "").trim(),
+        autoRedirect: gig?.autoRedirect === true || String(gig?.autoRedirect || "").toLowerCase() === "true",
         imageUrl: String(gig?.imageUrl || "").trim(),
+        metaPixelId: normalizeMetaPixelId(gig?.metaPixelId),
         hidden: gig?.hidden === true || String(gig?.hidden || "").toLowerCase() === "true"
       };
     }
@@ -588,8 +594,12 @@
       return "";
     }
 
+    function normalizeMetaPixelId(value = "") {
+      return String(value || "").replace(/\s+/g, "").trim();
+    }
+
     function normalizeCampaignEntry(campaign = {}) {
-      const normalizedMetaPixelId = String(campaign?.metaPixelId || "").replace(/\s+/g, "").trim();
+      const normalizedMetaPixelId = normalizeMetaPixelId(campaign?.metaPixelId);
       return {
         slug: String(campaign?.slug || "").trim(),
         badge: String(campaign?.badge || "").trim(),
@@ -1708,7 +1718,11 @@
     }
 
     function isGigHidden(gig) {
-      return gig?.hidden === true;
+      return gig?.hidden === true || String(gig?.hidden || "").toLowerCase() === "true";
+    }
+
+    function hasGigTicketLink(gig) {
+      return Boolean(String(gig?.ticketUrl || "").trim());
     }
 
     function setLinkStatus(message = "", type = "") {
@@ -2278,6 +2292,7 @@
       state.isUpdatingGig = false;
       elements.gigEditTitle.textContent = "Update gig entry";
       elements.gigEditForm.reset();
+      elements.gigEditAutoRedirect.checked = false;
       elements.gigEditHidden.checked = false;
       elements.gigEditError.textContent = "";
       syncGigEditState();
@@ -2329,7 +2344,9 @@
       elements.gigEditVenue.value = gig.venue || "";
       elements.gigEditCity.value = gig.city || "";
       elements.gigEditTicketUrl.value = gig.ticketUrl || "";
+      elements.gigEditAutoRedirect.checked = gig.autoRedirect === true;
       elements.gigEditImageUrl.value = gig.imageUrl || "";
+      elements.gigEditMetaPixelId.value = normalizeMetaPixelId(gig.metaPixelId);
       elements.gigEditHidden.checked = isGigHidden(gig);
       elements.gigEditError.textContent = "";
       syncGigEditState();
@@ -2433,10 +2450,17 @@
           badges.appendChild(badge);
         }
 
-        if (gig.ticketUrl) {
+        if (hasGigTicketLink(gig)) {
           const badge = document.createElement("span");
           badge.className = "gig-admin-badge";
           badge.textContent = "Tickets";
+          badges.appendChild(badge);
+        }
+
+        if (hasGigTicketLink(gig) && gig.autoRedirect === true) {
+          const badge = document.createElement("span");
+          badge.className = "gig-admin-badge";
+          badge.textContent = "Auto";
           badges.appendChild(badge);
         }
 
@@ -2444,6 +2468,13 @@
           const badge = document.createElement("span");
           badge.className = "gig-admin-badge";
           badge.textContent = "Image";
+          badges.appendChild(badge);
+        }
+
+        if (normalizeMetaPixelId(gig.metaPixelId)) {
+          const badge = document.createElement("span");
+          badge.className = "gig-admin-badge";
+          badge.textContent = "Pixel";
           badges.appendChild(badge);
         }
 
@@ -3017,12 +3048,19 @@
         venue: elements.gigVenue.value.trim(),
         city: elements.gigCity.value.trim(),
         ticketUrl: elements.gigTicketUrl.value.trim(),
+        autoRedirect: elements.gigAutoRedirect.checked,
         imageUrl: elements.gigImageUrl.value.trim(),
+        metaPixelId: normalizeMetaPixelId(elements.gigMetaPixelId.value),
         hidden: false
       };
 
       if (!payload.date || !payload.event || !payload.venue) {
         setGigStatus("Date, event, and venue are required.", "is-error");
+        return;
+      }
+
+      if (payload.metaPixelId && !/^\d+$/.test(payload.metaPixelId)) {
+        setGigStatus("Meta Pixel ID must contain digits only.", "is-error");
         return;
       }
 
@@ -3123,12 +3161,19 @@
         venue: elements.gigEditVenue.value.trim(),
         city: elements.gigEditCity.value.trim(),
         ticketUrl: elements.gigEditTicketUrl.value.trim(),
+        autoRedirect: elements.gigEditAutoRedirect.checked,
         imageUrl: elements.gigEditImageUrl.value.trim(),
+        metaPixelId: normalizeMetaPixelId(elements.gigEditMetaPixelId.value),
         hidden: elements.gigEditHidden.checked
       };
 
       if (!payload.date || !payload.event || !payload.venue) {
         elements.gigEditError.textContent = "Date, event, and venue are required.";
+        return;
+      }
+
+      if (payload.metaPixelId && !/^\d+$/.test(payload.metaPixelId)) {
+        elements.gigEditError.textContent = "Meta Pixel ID must contain digits only.";
         return;
       }
 

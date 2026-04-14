@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Half Awake Eyes | Tickets</title>
+  <meta name="description" content="Official Half Awake Eyes tickets landing page." />
+  <link rel="icon" type="image/x-icon" href="assets/images/favicon.ico" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600&family=Source+Sans+Pro:wght@400;600;700&display=swap"
+    rel="stylesheet"
+  />
+  <link rel="stylesheet" href="assets/css/tickets.css" />
+</head>
+<body>
+  <div class="page">
+    <header class="topbar">
+      <a class="brand" href="index.html">Half Awake Eyes</a>
+    </header>
+
+    <main class="ticket-shell">
+      <section class="artist-card">
+        <div class="artist-image-wrap">
+          <img id="ticket-artwork" alt="" hidden />
+          <div id="ticket-artwork-fallback" class="artwork-fallback">
+            <div class="fallback-brand">Half Awake Eyes</div>
+          </div>
+        </div>
+
+        <div class="artist-copy">
+          <div class="artist-name" id="art-caption-title">Half Awake Eyes</div>
+          <p class="artist-note" id="art-caption-note">Official tickets and live dates.</p>
+          <div class="artist-status">
+            <!-- <span class="eyebrow" id="ticket-badge">Official Tickets</span> -->
+            <span class="state-chip" id="ticket-state" hidden>Loading</span>
+            <span class="meta-chip" id="ticket-redirect-status" hidden></span>
+          </div>
+        </div>
+      </section>
+
+      <section class="show-card">
+        <div class="show-date-block">
+          <span class="summary-label">Date</span>
+          <strong class="summary-value" id="ticket-date-detail">Loading</strong>
+        </div>
+
+        <div class="show-main">
+          <h1 id="ticket-title">Preparing Tickets</h1>
+          <p class="subtitle" id="ticket-subtitle">Official tickets for this show.</p>
+          <p class="show-location" id="ticket-venue-detail">Checking venue</p>
+          <!-- <p class="description" id="ticket-description">Loading the official ticket link.</p> -->
+          <!-- <div class="meta-row">
+            <span class="meta-chip" id="ticket-date" hidden></span>
+            <span class="meta-chip" id="ticket-venue" hidden></span>
+          </div> -->
+        </div>
+
+        <div class="show-actions">
+          <a id="ticket-continue" class="cta-button primary" href="#" hidden>Tickets</a>
+        </div>
+      </section>
+
+      <div class="progress-shell" aria-hidden="true" hidden>
+        <span class="progress-track">
+          <span class="progress-fill" id="ticket-progress-fill"></span>
+        </span>
+      </div>
+
+      <p class="note" id="ticket-note">Secure checkout is handled by the official ticket seller.</p>
+      <div class="footer-links">
+        <a class="top-link" href="links.html">All Links</a>
+        <a class="top-link" href="privacy.html">Privacy</a>
+      </div>
+      <span id="art-overlay-chip" hidden>Ticket Redirect</span>
+    </main>
+  </div>
+
+  <script type="module" src="assets/js/tickets.js"></script>
+</body>
+</html>
