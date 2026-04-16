@@ -10,9 +10,12 @@ import {
 
 const params = new URLSearchParams(window.location.search);
 const gigId = params.get("gig") || "";
-const isFilePreview =
+const isLocalPreview =
   window.location.protocol === "file:" ||
-  window.location.hostname === "";
+  window.location.hostname === "" ||
+  window.location.hostname === "localhost" ||
+  window.location.hostname === "127.0.0.1" ||
+  window.location.hostname === "::1";
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
@@ -22,6 +25,8 @@ const pagePath = window.location.pathname || "/tickets.html";
 const pageName = pagePath.split("/").pop() || "tickets";
 const REDIRECT_DELAY_MS = 1600;
 const DEFAULT_TICKET_ARTWORK = normalizeImageUrl("assets/images/HalfAwakeEyes-annicmrn-07798.jpg");
+// Localhost/file preview should still read gigs from Firestore; this only disables analytics writes.
+const disableFirestoreAnalytics = isLocalPreview;
 
 const { logEvent } = createSiteAnalytics({
   db,
@@ -29,7 +34,7 @@ const { logEvent } = createSiteAnalytics({
   setDoc,
   pagePath,
   pageName,
-  isDisabled: isFilePreview,
+  isDisabled: disableFirestoreAnalytics,
   getContext: () => ({
     userId,
     campaign,
@@ -44,7 +49,7 @@ const elements = {
   ticketState: document.getElementById("ticket-state"),
   ticketTitle: document.getElementById("ticket-title"),
   ticketSubtitle: document.getElementById("ticket-subtitle"),
-  // ticketDescription: document.getElementById("ticket-description"),
+  ticketDescription: document.getElementById("ticket-description"),
   ticketDate: document.getElementById("ticket-date"),
   ticketVenue: document.getElementById("ticket-venue"),
   ticketDateDetail: document.getElementById("ticket-date-detail"),
@@ -65,19 +70,97 @@ let activeMetaPixelId = "";
 let metaPageViewTracked = false;
 let redirectTimer = 0;
 let redirectStarted = false;
+let activeTicketProvider = "";
 
-elements.ticketArtwork.addEventListener("error", () => {
-  const currentSrc = elements.ticketArtwork.getAttribute("src") || "";
-  if (currentSrc.includes("HalfAwakeEyes-annicmrn-07798.jpg")) {
-    elements.ticketArtwork.hidden = true;
-    elements.ticketArtwork.removeAttribute("src");
-    elements.ticketArtwork.alt = "";
-    elements.ticketArtworkFallback.hidden = false;
+if (elements.ticketBadge) {
+  disableBadgeLink();
+}
+
+if (elements.ticketArtwork) {
+  elements.ticketArtwork.addEventListener("error", () => {
+    const currentSrc = elements.ticketArtwork.getAttribute("src") || "";
+    if (currentSrc.includes("HalfAwakeEyes-annicmrn-07798.jpg")) {
+      elements.ticketArtwork.hidden = true;
+      elements.ticketArtwork.removeAttribute("src");
+      elements.ticketArtwork.alt = "";
+      if (elements.ticketArtworkFallback) {
+        elements.ticketArtworkFallback.hidden = false;
+      }
+      return;
+    }
+
+    applyArtwork(DEFAULT_TICKET_ARTWORK, activeGig?.event || "Live show");
+  });
+}
+
+function setText(element, value = "") {
+  if (!element) {
+    return;
+  }
+  element.textContent = value;
+}
+
+function setOptionalText(element, value = "") {
+  if (!element) {
+    return;
+  }
+  const normalized = String(value || "").trim();
+  element.textContent = normalized;
+  element.hidden = !normalized;
+}
+
+function setTicketNote(value = "") {
+  setOptionalText(elements.ticketNote, value);
+}
+
+function disableBadgeLink() {
+  if (!elements.ticketBadge) {
     return;
   }
 
-  applyArtwork(DEFAULT_TICKET_ARTWORK, activeGig?.event || "Live show");
-});
+  elements.ticketBadge.removeAttribute("href");
+  elements.ticketBadge.onclick = null;
+  elements.ticketBadge.setAttribute("aria-disabled", "true");
+  elements.ticketBadge.classList.add("is-disabled");
+}
+
+function enableBadgeLink(ticketUrl) {
+  if (!elements.ticketBadge || !ticketUrl) {
+    return;
+  }
+
+  elements.ticketBadge.href = ticketUrl;
+  elements.ticketBadge.setAttribute("aria-disabled", "false");
+  elements.ticketBadge.classList.remove("is-disabled");
+  elements.ticketBadge.onclick = (event) => {
+    event.preventDefault();
+    redirectToTickets("manual");
+  };
+}
+
+function getTicketButtons() {
+  return elements.ticketContinue ? [elements.ticketContinue] : [];
+}
+
+function hideTicketButtons() {
+  getTicketButtons().forEach((button) => {
+    button.hidden = true;
+    button.onclick = null;
+    button.removeAttribute("href");
+  });
+}
+
+function showTicketButtons(ticketUrl, buttonLabel = "Get Tickets") {
+  getTicketButtons().forEach((button) => {
+    button.hidden = false;
+    button.href = ticketUrl;
+    button.textContent = buttonLabel;
+    button.onclick = (event) => {
+      event.preventDefault();
+      redirectToTickets("manual");
+    };
+  });
+}
 
 function normalizeMetaPixelId(value = "") {
   return String(value || "").replace(/\s+/g, "").trim();
@@ -108,6 +191,53 @@ function isGigHidden(gig) {
 
 function hasGigTicketLink(gig) {
   return Boolean(String(gig?.ticketUrl || "").trim());
+}
+
+function formatProviderName(value = "") {
+  return String(value || "")
+    .split(/[-\s]+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
+function getTicketProviderLabel(ticketUrl) {
+  const normalizedUrl = normalizePublicUrl(ticketUrl);
+  if (!normalizedUrl) {
+    return "Official seller";
+  }
+
+  try {
+    const hostname = new URL(normalizedUrl).hostname.replace(/^www\./i, "").toLowerCase();
+    if (!hostname) {
+      return "Official seller";
+    }
+
+    const knownProviders = [
+      [/ticketmaster\./, "Ticketmaster"],
+      [/eventbrite\./, "Eventbrite"],
+      [/seetickets\./, "See Tickets"],
+      [/songkick\./, "Songkick"],
+      [/bandsintown\./, "Bandsintown"],
+      [/ticketweb\./, "TicketWeb"],
+      [/dice\./, "DICE"],
+      [/universe\./, "Universe"],
+      [/axs\./, "AXS"],
+      [/skiddle\./, "Skiddle"]
+    ];
+
+    const knownMatch = knownProviders.find(([pattern]) => pattern.test(hostname));
+    if (knownMatch) {
+      return knownMatch[1];
+    }
+
+    const segments = hostname.split(".");
+    const root = segments.length >= 2 ? segments[segments.length - 2] : segments[0];
+    const normalizedRoot = formatProviderName(root);
+    return normalizedRoot || "Official seller";
+  } catch (error) {
+    return "Official seller";
+  }
 }
 
 function parseGigDate(value) {
@@ -169,12 +299,19 @@ function isUpcomingGig(gig) {
 }
 
 function setStateChip(text, { warning = false } = {}) {
+  if (!elements.ticketState) {
+    return;
+  }
   elements.ticketState.hidden = !text;
   elements.ticketState.textContent = text;
   elements.ticketState.classList.toggle("is-warning", warning);
 }
 
 function setMetaChip(element, value) {
+  if (!element) {
+    return;
+  }
+
   if (!value) {
     element.hidden = true;
     element.textContent = "";
@@ -186,6 +323,9 @@ function setMetaChip(element, value) {
 }
 
 function setSummaryValue(element, value, fallback = "TBC") {
+  if (!element) {
+    return;
+  }
   element.textContent = value || fallback;
 }
 
@@ -226,6 +366,10 @@ function completeRedirectProgress() {
 }
 
 function applyArtwork(url, title) {
+  if (!elements.ticketArtwork || !elements.ticketArtworkFallback) {
+    return;
+  }
+
   const cleanUrl = normalizeImageUrl(url) || DEFAULT_TICKET_ARTWORK;
   if (!cleanUrl) {
     elements.ticketArtwork.hidden = true;
@@ -300,26 +444,26 @@ function trackMetaEvent(eventName, details = {}) {
 }
 
 function renderUnavailable(title, subtitle, description) {
+  activeTicketProvider = "";
   document.title = "Half Awake Eyes | Tickets Unavailable";
-  // elements.ticketBadge.textContent = "Tickets";
+  setText(elements.ticketBadge, "Official Tickets");
+  disableBadgeLink();
   setStateChip("Not live", { warning: true });
   setRedirectStatus("");
-  elements.ticketTitle.textContent = title;
-  elements.ticketSubtitle.textContent = subtitle;
-  // elements.ticketDescription.textContent = description;
+  setText(elements.ticketTitle, title);
+  setOptionalText(elements.ticketSubtitle, subtitle);
+  setOptionalText(elements.ticketDescription, description);
   setMetaChip(elements.ticketDate, "");
   setMetaChip(elements.ticketVenue, "");
   setSummaryValue(elements.ticketDateDetail, "", "Unavailable");
   setSummaryValue(elements.ticketVenueDetail, "", "Unavailable");
   setRedirectStatus("Offline");
-  elements.ticketContinue.hidden = true;
-  elements.ticketContinue.onclick = null;
-  elements.ticketContinue.removeAttribute("href");
-  elements.ticketNote.textContent = "This page only appears for upcoming gigs with a ticket URL configured.";
-  elements.artOverlayChip.textContent = "Unavailable";
+  hideTicketButtons();
+  setTicketNote("This ticket page is only available for upcoming shows.");
+  setText(elements.artOverlayChip, "Unavailable");
   applyArtwork("", "");
-  elements.artCaptionTitle.textContent = "Half Awake Eyes";
-  elements.artCaptionNote.textContent = "Official tickets and live dates.";
+  setText(elements.artCaptionTitle, "Half Awake Eyes");
+  setText(elements.artCaptionNote, "Official tickets and live dates.");
   resetRedirectProgress();
 }
 
@@ -332,7 +476,7 @@ async function redirectToTickets(type = "auto") {
   window.clearTimeout(redirectTimer);
   setStateChip("Opening Tickets");
   setRedirectStatus("");
-  elements.ticketNote.textContent = "Sending you to the official ticket seller now.";
+  setTicketNote(activeTicketProvider ? `Opening tickets on ${activeTicketProvider}...` : "Opening tickets...");
   completeRedirectProgress();
 
   const ticketUrl = normalizePublicUrl(activeGig.ticketUrl);
@@ -364,40 +508,36 @@ function renderGig(gig) {
   const formattedDate = formatGigDate(gig.date);
   const venueLine = getVenueLine(gig);
   const shouldAutoRedirect = gig.autoRedirect === true;
+  const ticketProvider = getTicketProviderLabel(ticketUrl);
+  activeTicketProvider = ticketProvider;
+  const providerBadgeLabel = ticketProvider && ticketProvider !== "Official seller"
+    ? `Official Tickets - ${ticketProvider}`
+    : "Official Tickets";
 
   document.title = `${gig.event || "Live show"} | Tickets`;
-  // elements.ticketBadge.textContent = "Official Tickets";
+  setText(elements.ticketBadge, providerBadgeLabel);
+  enableBadgeLink(ticketUrl);
   setStateChip(shouldAutoRedirect ? "Redirecting" : "");
   setRedirectStatus("");
-  elements.ticketTitle.textContent = gig.event || "Live show";
-  elements.ticketSubtitle.textContent = "Official tickets for this show.";
-  // elements.ticketDescription.textContent = shouldAutoRedirect
-  //   ? "You will be sent to the official ticket seller shortly. If nothing happens, use the button below."
-  //   : "Use the ticket button below when you are ready to continue to the official seller.";
-  // setMetaChip(elements.ticketDate, formattedDate);
-  // setMetaChip(elements.ticketVenue, venueLine);
+  setText(elements.ticketTitle, gig.event || "Live show");
+  setOptionalText(elements.ticketSubtitle, "");
+  setOptionalText(elements.ticketDescription, "");
+  setMetaChip(elements.ticketDate, formattedDate);
+  setMetaChip(elements.ticketVenue, venueLine);
   setSummaryValue(elements.ticketDateDetail, formattedDate, "Date TBC");
   setSummaryValue(elements.ticketVenueDetail, venueLine, "Venue TBC");
-  elements.ticketContinue.hidden = false;
-  elements.ticketContinue.href = ticketUrl;
-  elements.ticketContinue.textContent = "Get Tickets";
-  elements.ticketNote.textContent = shouldAutoRedirect
-    ? "Taking you to the official ticket seller."
-    : "Secure checkout is handled by the official ticket seller.";
-  elements.artOverlayChip.textContent = "Upcoming";
+  showTicketButtons(ticketUrl, "Get Tickets");
+  setTicketNote(shouldAutoRedirect ? `Opening tickets on ${ticketProvider}...` : "");
+  setText(elements.artOverlayChip, "Upcoming");
   applyArtwork(gig.imageUrl, gig.event || "Live show");
-  elements.artCaptionTitle.textContent = "Half Awake Eyes";
-  elements.artCaptionNote.textContent = "Official tickets and live dates.";
+  setText(elements.artCaptionTitle, "Half Awake Eyes");
+  setText(elements.artCaptionNote, "Official tickets and live dates.");
   if (shouldAutoRedirect) {
     startRedirectProgress();
   } else {
     resetRedirectProgress();
   }
 
-  elements.ticketContinue.onclick = (event) => {
-    event.preventDefault();
-    redirectToTickets("manual");
-  };
 }
 
 async function loadGig() {

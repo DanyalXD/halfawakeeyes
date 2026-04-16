@@ -12,7 +12,7 @@
     href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600&family=Source+Sans+Pro:wght@400;600;700&display=swap"
     rel="stylesheet"
   />
-  <link rel="stylesheet" href="assets/css/tickets.css" />
+  <link rel="stylesheet" href="assets/css/tickets.css?v=20260416d" />
 </head>
 <body>
   <div class="page">
@@ -32,29 +32,17 @@
         <div class="artist-copy">
           <div class="artist-name" id="art-caption-title">Half Awake Eyes</div>
           <p class="artist-note" id="art-caption-note">Official tickets and live dates.</p>
-          <div class="artist-status">
-            <!-- <span class="eyebrow" id="ticket-badge">Official Tickets</span> -->
-            <span class="state-chip" id="ticket-state" hidden>Loading</span>
-            <span class="meta-chip" id="ticket-redirect-status" hidden></span>
-          </div>
+          <a class="eyebrow ticket-badge-link" id="ticket-badge" href="#" aria-label="Open official tickets">Official Tickets</a>
         </div>
       </section>
 
       <section class="show-card">
-        <div class="show-date-block">
-          <span class="summary-label">Date</span>
-          <strong class="summary-value" id="ticket-date-detail">Loading</strong>
-        </div>
-
         <div class="show-main">
           <h1 id="ticket-title">Preparing Tickets</h1>
-          <p class="subtitle" id="ticket-subtitle">Official tickets for this show.</p>
+          <p class="show-date-line" id="ticket-date-detail">Loading date</p>
           <p class="show-location" id="ticket-venue-detail">Checking venue</p>
-          <!-- <p class="description" id="ticket-description">Loading the official ticket link.</p> -->
-          <!-- <div class="meta-row">
-            <span class="meta-chip" id="ticket-date" hidden></span>
-            <span class="meta-chip" id="ticket-venue" hidden></span>
-          </div> -->
+          <p class="subtitle" id="ticket-subtitle">Official tickets</p>
+          <p class="description" id="ticket-description" hidden></p>
         </div>
 
         <div class="show-actions">
@@ -68,7 +56,7 @@
         </span>
       </div>
 
-      <p class="note" id="ticket-note">Secure checkout is handled by the official ticket seller.</p>
+      <p class="note" id="ticket-note" hidden></p>
       <div class="footer-links">
         <a class="top-link" href="links.html">All Links</a>
         <a class="top-link" href="privacy.html">Privacy</a>
