@@ -120,6 +120,8 @@
       gigVenue: document.getElementById("gig-venue"),
       gigCity: document.getElementById("gig-city"),
       gigTicketUrl: document.getElementById("gig-ticket-url"),
+      gigTicketPrice: document.getElementById("gig-ticket-price"),
+      gigTicketPriceIncludesFee: document.getElementById("gig-ticket-price-includes-fee"),
       gigAutoRedirect: document.getElementById("gig-auto-redirect"),
       gigImageUrl: document.getElementById("gig-image-url"),
       gigMetaPixelId: document.getElementById("gig-meta-pixel-id"),
@@ -216,6 +218,8 @@
       gigEditVenue: document.getElementById("gig-edit-venue"),
       gigEditCity: document.getElementById("gig-edit-city"),
       gigEditTicketUrl: document.getElementById("gig-edit-ticket-url"),
+      gigEditTicketPrice: document.getElementById("gig-edit-ticket-price"),
+      gigEditTicketPriceIncludesFee: document.getElementById("gig-edit-ticket-price-includes-fee"),
       gigEditAutoRedirect: document.getElementById("gig-edit-auto-redirect"),
       gigEditImageUrl: document.getElementById("gig-edit-image-url"),
       gigEditMetaPixelId: document.getElementById("gig-edit-meta-pixel-id"),
@@ -463,6 +467,8 @@
         venue: String(gig?.venue || "").trim(),
         city: String(gig?.city || "").trim(),
         ticketUrl: String(gig?.ticketUrl || "").trim(),
+        ticketPrice: normalizeTicketPrice(gig?.ticketPrice),
+        ticketPriceIncludesFee: normalizeTicketPriceIncludesFee(gig?.ticketPriceIncludesFee),
         autoRedirect: gig?.autoRedirect === true || String(gig?.autoRedirect || "").toLowerCase() === "true",
         imageUrl: String(gig?.imageUrl || "").trim(),
         metaPixelId: normalizeMetaPixelId(gig?.metaPixelId),
@@ -596,6 +602,25 @@
 
     function normalizeMetaPixelId(value = "") {
       return String(value || "").replace(/\s+/g, "").trim();
+    }
+
+    function normalizeTicketPrice(value = "") {
+      const raw = String(value || "").trim();
+      if (!raw) {
+        return "";
+      }
+
+      const normalizedSeparators = raw.replace(/,/g, ".");
+      const numericMatch = normalizedSeparators.match(/\d+(?:\.\d{1,2})?/);
+      if (numericMatch) {
+        return numericMatch[0];
+      }
+
+      return raw;
+    }
+
+    function normalizeTicketPriceIncludesFee(value) {
+      return value === true || String(value || "").toLowerCase() === "true";
     }
 
     function normalizeCampaignEntry(campaign = {}) {
@@ -2292,6 +2317,7 @@
       state.isUpdatingGig = false;
       elements.gigEditTitle.textContent = "Update gig entry";
       elements.gigEditForm.reset();
+      elements.gigEditTicketPriceIncludesFee.checked = false;
       elements.gigEditAutoRedirect.checked = false;
       elements.gigEditHidden.checked = false;
       elements.gigEditError.textContent = "";
@@ -2344,6 +2370,8 @@
       elements.gigEditVenue.value = gig.venue || "";
       elements.gigEditCity.value = gig.city || "";
       elements.gigEditTicketUrl.value = gig.ticketUrl || "";
+      elements.gigEditTicketPrice.value = gig.ticketPrice || "";
+      elements.gigEditTicketPriceIncludesFee.checked = gig.ticketPriceIncludesFee === true;
       elements.gigEditAutoRedirect.checked = gig.autoRedirect === true;
       elements.gigEditImageUrl.value = gig.imageUrl || "";
       elements.gigEditMetaPixelId.value = normalizeMetaPixelId(gig.metaPixelId);
@@ -3048,11 +3076,17 @@
         venue: elements.gigVenue.value.trim(),
         city: elements.gigCity.value.trim(),
         ticketUrl: elements.gigTicketUrl.value.trim(),
+        ticketPrice: normalizeTicketPrice(elements.gigTicketPrice.value),
+        ticketPriceIncludesFee: elements.gigTicketPriceIncludesFee.checked,
         autoRedirect: elements.gigAutoRedirect.checked,
         imageUrl: elements.gigImageUrl.value.trim(),
         metaPixelId: normalizeMetaPixelId(elements.gigMetaPixelId.value),
         hidden: false
       };
+
+      if (!payload.ticketPrice) {
+        payload.ticketPriceIncludesFee = false;
+      }
 
       if (!payload.date || !payload.event || !payload.venue) {
         setGigStatus("Date, event, and venue are required.", "is-error");
@@ -3161,11 +3195,17 @@
         venue: elements.gigEditVenue.value.trim(),
         city: elements.gigEditCity.value.trim(),
         ticketUrl: elements.gigEditTicketUrl.value.trim(),
+        ticketPrice: normalizeTicketPrice(elements.gigEditTicketPrice.value),
+        ticketPriceIncludesFee: elements.gigEditTicketPriceIncludesFee.checked,
         autoRedirect: elements.gigEditAutoRedirect.checked,
         imageUrl: elements.gigEditImageUrl.value.trim(),
         metaPixelId: normalizeMetaPixelId(elements.gigEditMetaPixelId.value),
         hidden: elements.gigEditHidden.checked
       };
+
+      if (!payload.ticketPrice) {
+        payload.ticketPriceIncludesFee = false;
+      }
 
       if (!payload.date || !payload.event || !payload.venue) {
         elements.gigEditError.textContent = "Date, event, and venue are required.";

@@ -212,6 +212,15 @@
                 <div class="full-span">
                   <input type="text" id="gig-ticket-url" class="form-control" placeholder="Ticket link (optional)" aria-label="Gig ticket link" />
                 </div>
+                <div>
+                  <input type="text" id="gig-ticket-price" class="form-control" placeholder="Ticket price (optional, e.g. 12.50)" aria-label="Gig ticket price" inputmode="decimal" />
+                </div>
+                <div>
+                  <label class="gig-edit-toggle" for="gig-ticket-price-includes-fee">
+                    <input type="checkbox" id="gig-ticket-price-includes-fee" />
+                    <span>Price includes booking fee.</span>
+                  </label>
+                </div>
                 <div class="full-span">
                   <label class="gig-edit-toggle" for="gig-auto-redirect">
                     <input type="checkbox" id="gig-auto-redirect" />
@@ -692,6 +701,15 @@
           </div>
           <div class="full-span">
             <input type="text" id="gig-edit-ticket-url" class="form-control" placeholder="Ticket link (optional)" aria-label="Edit gig ticket link" />
+          </div>
+          <div>
+            <input type="text" id="gig-edit-ticket-price" class="form-control" placeholder="Ticket price (optional, e.g. 12.50)" aria-label="Edit gig ticket price" inputmode="decimal" />
+          </div>
+          <div>
+            <label class="gig-edit-toggle" for="gig-edit-ticket-price-includes-fee">
+              <input type="checkbox" id="gig-edit-ticket-price-includes-fee" />
+              <span>Price includes booking fee.</span>
+            </label>
           </div>
           <div class="full-span">
             <label class="gig-edit-toggle" for="gig-edit-auto-redirect">

@@ -170,6 +170,25 @@ function normalizeGigAutoRedirect(value) {
   return value === true || String(value || "").toLowerCase() === "true";
 }
 
+function normalizeTicketPrice(value = "") {
+  const raw = String(value || "").trim();
+  if (!raw) {
+    return "";
+  }
+
+  const normalizedSeparators = raw.replace(/,/g, ".");
+  const numericMatch = normalizedSeparators.match(/\d+(?:\.\d{1,2})?/);
+  if (numericMatch) {
+    return numericMatch[0];
+  }
+
+  return raw;
+}
+
+function normalizeTicketPriceIncludesFee(value) {
+  return value === true || String(value || "").toLowerCase() === "true";
+}
+
 function normalizeGigEntry(gig = {}, id = "") {
   return {
     id,
@@ -178,6 +197,8 @@ function normalizeGigEntry(gig = {}, id = "") {
     venue: String(gig?.venue || "").trim(),
     city: String(gig?.city || "").trim(),
     ticketUrl: normalizePublicUrl(gig?.ticketUrl),
+    ticketPrice: normalizeTicketPrice(gig?.ticketPrice),
+    ticketPriceIncludesFee: normalizeTicketPriceIncludesFee(gig?.ticketPriceIncludesFee),
     autoRedirect: normalizeGigAutoRedirect(gig?.autoRedirect),
     imageUrl: normalizeImageUrl(gig?.imageUrl),
     metaPixelId: normalizeMetaPixelId(gig?.metaPixelId),
@@ -238,6 +259,39 @@ function getTicketProviderLabel(ticketUrl) {
   } catch (error) {
     return "Official seller";
   }
+}
+
+function formatTicketPriceValue(value = "") {
+  const raw = String(value || "").trim();
+  if (!raw) {
+    return "";
+  }
+
+  const normalized = normalizeTicketPrice(raw);
+  if (!normalized) {
+    return "";
+  }
+
+  if (/^\d+(?:\.\d{1,2})?$/.test(normalized)) {
+    const numericValue = Number.parseFloat(normalized);
+    if (Number.isFinite(numericValue)) {
+      const decimalPlaces = normalized.includes(".") ? normalized.split(".")[1].length : 0;
+      const fixed = decimalPlaces > 0 ? numericValue.toFixed(Math.min(decimalPlaces, 2)) : numericValue.toFixed(0);
+      return `£${fixed}`;
+    }
+  }
+
+  return normalized;
+}
+
+function getTicketPriceLine(gig = {}) {
+  const formattedPrice = formatTicketPriceValue(gig?.ticketPrice);
+  if (!formattedPrice) {
+    return "";
+  }
+
+  const feeLabel = gig?.ticketPriceIncludesFee === true ? "BF included" : "+ booking fee";
+  return `From ${formattedPrice} ${feeLabel}`;
 }
 
 function parseGigDate(value) {
@@ -509,6 +563,7 @@ function renderGig(gig) {
   const venueLine = getVenueLine(gig);
   const shouldAutoRedirect = gig.autoRedirect === true;
   const ticketProvider = getTicketProviderLabel(ticketUrl);
+  const ticketPriceLine = getTicketPriceLine(gig);
   activeTicketProvider = ticketProvider;
   const providerBadgeLabel = ticketProvider && ticketProvider !== "Official seller"
     ? `Official Tickets - ${ticketProvider}`
@@ -520,7 +575,7 @@ function renderGig(gig) {
   setStateChip(shouldAutoRedirect ? "Redirecting" : "");
   setRedirectStatus("");
   setText(elements.ticketTitle, gig.event || "Live show");
-  setOptionalText(elements.ticketSubtitle, "");
+  setOptionalText(elements.ticketSubtitle, ticketPriceLine || "Official tickets");
   setOptionalText(elements.ticketDescription, "");
   setMetaChip(elements.ticketDate, formattedDate);
   setMetaChip(elements.ticketVenue, venueLine);

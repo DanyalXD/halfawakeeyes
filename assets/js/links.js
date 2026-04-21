@@ -252,22 +252,7 @@
             if (!ticketUrl) {
                 return "";
             }
-
-            if (!gig?.id) {
-                return ticketUrl;
-            }
-
-            const landingParams = new URLSearchParams();
-            landingParams.set("gig", gig.id);
-
-            ["id", "source", "utm_source", "utm_medium", "campaign", "utm_campaign"].forEach((key) => {
-                const value = pageParams.get(key);
-                if (value) {
-                    landingParams.set(key, value);
-                }
-            });
-
-            return new URL(`tickets.html?${landingParams.toString()}`, window.location.href).href;
+            return ticketUrl;
         };
 
         const buildGigTicketLink = (gig, fallbackSortOrder) => normalizeManagedLink({
