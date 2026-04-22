@@ -1,0 +1,24 @@
+﻿  <dialog id="cache-reset-dialog" class="delete-dialog">
+    <div class="delete-dialog-card">
+      <span class="eyebrow">Cache</span>
+      <h2>Reset analytics cache?</h2>
+      <p>This clears the local IndexedDB copy of analytics and then reloads fresh data from Firestore.</p>
+
+      <div class="delete-dialog-meta">
+        <div class="delete-dialog-row">
+          <div class="delete-dialog-label">Scope</div>
+          <div class="delete-dialog-value">Site Actions analytics cache</div>
+        </div>
+        <div class="delete-dialog-row">
+          <div class="delete-dialog-label">Effect</div>
+          <div class="delete-dialog-value">Delete local cache, then force a fresh reload</div>
+        </div>
+      </div>
+
+      <div class="delete-dialog-actions">
+        <button type="button" id="cancel-cache-reset" class="btn ghost-button">Cancel</button>
+        <button type="button" id="confirm-cache-reset" class="btn danger-button">Reset Cache</button>
+      </div>
+    </div>
+  </dialog>
+

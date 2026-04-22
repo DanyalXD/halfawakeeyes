@@ -1,0 +1,28 @@
+﻿  <dialog id="campaign-qr-dialog" class="details-dialog">
+    <div class="details-dialog-card campaign-qr-dialog-card">
+      <span class="eyebrow">Campaign QR</span>
+      <h2 id="campaign-qr-title">Smart-link QR code</h2>
+      <p id="campaign-qr-subtitle" class="details-dialog-subtitle">Generate a poster-ready QR code for this release page.</p>
+
+      <div class="campaign-qr-layout">
+        <div class="campaign-qr-preview">
+          <img id="campaign-qr-image" alt="Campaign QR code" hidden />
+          <div id="campaign-qr-placeholder" class="campaign-qr-placeholder">Select a campaign to generate a QR code.</div>
+        </div>
+        <div class="campaign-qr-meta">
+          <div class="delete-dialog-row">
+            <div class="delete-dialog-label">Campaign URL</div>
+            <div class="delete-dialog-value" id="campaign-qr-url">-</div>
+          </div>
+          <div id="campaign-qr-status" class="status-message" aria-live="polite"></div>
+        </div>
+      </div>
+
+      <div class="details-dialog-actions">
+        <button type="button" id="copy-campaign-qr-url" class="btn ghost-button">Copy URL</button>
+        <a id="download-campaign-qr" class="btn ghost-button" href="#" download="campaign-qr.png">Download QR</a>
+        <button type="button" id="close-campaign-qr" class="btn ghost-button">Close</button>
+      </div>
+    </div>
+  </dialog>
+

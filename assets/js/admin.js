@@ -1548,7 +1548,7 @@
 
     function getVisibleTableFields() {
       const presets = {
-        "site-actions": ["timestamp", "action", "label", "page", "target"]
+        "site-actions": ["timestamp", "action", "page", "target"]
       };
 
       const fallbackPriority = [

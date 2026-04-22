@@ -1,0 +1,89 @@
+﻿      <div id="gigs-page" class="dashboard-page">
+        <div class="summary-panel">
+          <div class="section-title">
+            <h3>Gig Manager</h3>
+            <span>Manage the `gigs` collection</span>
+          </div>
+          <div class="helper-copy">Add and review the shows that appear in the EPK gig history section.</div>
+        </div>
+
+        <div class="manager-panel">
+          <div id="gig-settings-card" class="manager-card gig-settings-card">
+            <div id="gig-settings-scrim" class="campaign-settings-scrim" hidden></div>
+            <div class="campaign-settings-mobile-bar">
+              <button type="button" id="close-gig-settings" class="btn ghost-button">Close</button>
+            </div>
+            <div class="section-title">
+              <h3>Add Gig</h3>
+              <span>Write to Firestore</span>
+            </div>
+            <p class="manager-subcopy">Use the same `date`, `event`, `venue`, and `city` fields the public site already reads. Add a ticket URL to publish a dedicated ticket page in the `Shows` section on `links.html` until the date passes, enable auto redirect only when you want that page to forward straight to the seller, add an image for artwork, and add a Meta Pixel ID if you want redirect tracking on that page.</p>
+            <form id="gig-form">
+              <div class="gig-form-grid">
+                <div>
+                  <input type="date" id="gig-date" class="form-control" aria-label="Gig date" required />
+                </div>
+                <div>
+                  <input type="text" id="gig-event" class="form-control" placeholder="Event or show name" aria-label="Gig event" required />
+                </div>
+                <div>
+                  <input type="text" id="gig-venue" class="form-control" placeholder="Venue" aria-label="Gig venue" required />
+                </div>
+                <div>
+                  <input type="text" id="gig-city" class="form-control" placeholder="City (optional)" aria-label="Gig city" />
+                </div>
+                <div class="full-span">
+                  <input type="text" id="gig-ticket-url" class="form-control" placeholder="Ticket link (optional)" aria-label="Gig ticket link" />
+                </div>
+                <div>
+                  <input type="text" id="gig-ticket-price" class="form-control" placeholder="Ticket price (optional, e.g. 12.50)" aria-label="Gig ticket price" inputmode="decimal" />
+                </div>
+                <div>
+                  <label class="gig-edit-toggle" for="gig-ticket-price-includes-fee">
+                    <input type="checkbox" id="gig-ticket-price-includes-fee" />
+                    <span>Price includes booking fee.</span>
+                  </label>
+                </div>
+                <div class="full-span">
+                  <label class="gig-edit-toggle" for="gig-auto-redirect">
+                    <input type="checkbox" id="gig-auto-redirect" />
+                    <span>Auto redirect to the seller from this gig's ticket page.</span>
+                  </label>
+                </div>
+                <div class="full-span">
+                  <input type="text" id="gig-image-url" class="form-control" placeholder="Show image URL or asset path (optional)" aria-label="Gig image URL" />
+                </div>
+                <div class="full-span">
+                  <input type="text" id="gig-meta-pixel-id" class="form-control" placeholder="Meta Pixel ID (optional)" aria-label="Gig Meta Pixel ID" inputmode="numeric" />
+                </div>
+                <div class="full-span">
+                  <button type="submit" id="save-gig" class="btn btn-accent w-100">Save Gig</button>
+                </div>
+              </div>
+            </form>
+            <div id="gig-status" class="gig-manager-status" aria-live="polite"></div>
+          </div>
+
+          <div class="manager-card">
+            <div class="section-title">
+              <h3>Current Gigs</h3>
+              <span id="gig-count">No gigs loaded</span>
+            </div>
+            <div class="manager-toolbar">
+              <div class="helper-copy">Grouped into upcoming, past, and hidden gigs for quicker scanning.</div>
+              <div class="manager-toolbar-actions">
+                <button type="button" id="open-gig-settings" class="btn ghost-button campaign-settings-launch">Add Gig</button>
+                <select id="gig-sort-mode" class="form-select gig-sort-select" aria-label="Gig sort order">
+                  <option value="upcoming-first" selected>Upcoming first</option>
+                  <option value="newest-first">Newest first</option>
+                  <option value="oldest-first">Oldest first</option>
+                </select>
+              </div>
+            </div>
+            <div id="gig-list" class="gig-admin-list">
+              <div class="gig-admin-empty">No gigs loaded yet.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+

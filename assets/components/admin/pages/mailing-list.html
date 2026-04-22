@@ -1,0 +1,57 @@
+﻿      <div id="mailing-list-page" class="dashboard-page">
+        <div class="summary-panel">
+          <div class="section-title">
+            <h3>Mailing List</h3>
+            <span>Manage the `mailing-list-signups` collection</span>
+          </div>
+          <div class="helper-copy">Review signups collected from the links page and smart-link campaigns, then copy or export them for outreach.</div>
+        </div>
+
+        <div class="manager-panel">
+          <div class="manager-card manager-card-full">
+            <div class="section-title">
+              <h3>Audience Snapshot</h3>
+              <span id="mailing-list-count">No signups loaded</span>
+            </div>
+            <div class="manager-toolbar mailing-list-toolbar">
+              <div class="helper-copy">Use these tools to pull a clean email list or a CSV with source, campaign, and referrer context.</div>
+              <div class="manager-toolbar-actions">
+                <button type="button" id="copy-mailing-list-emails" class="btn ghost-button">Copy Emails</button>
+                <button type="button" id="export-mailing-list-csv" class="btn ghost-button">Export CSV</button>
+              </div>
+            </div>
+            <div id="mailing-list-summary" class="mailing-list-summary-grid">
+              <article class="campaign-analytics-card">
+                <div class="label">Signups</div>
+                <div class="value">0</div>
+                <div class="detail">No mailing list data loaded yet.</div>
+              </article>
+            </div>
+            <div id="mailing-list-status" class="gig-manager-status" aria-live="polite"></div>
+            <div class="table-panel mailing-list-table-panel">
+              <div class="table-responsive">
+                <table class="mailing-list-table">
+                  <thead>
+                    <tr>
+                      <th>Email</th>
+                      <th>Source</th>
+                      <th>Campaign</th>
+                      <th>Referrer</th>
+                      <th>Updated</th>
+                      <th>Entries</th>
+                    </tr>
+                  </thead>
+                  <tbody id="mailing-list-list">
+                    <tr>
+                      <td colspan="6">
+                        <div class="gig-admin-empty">No signups loaded yet.</div>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+

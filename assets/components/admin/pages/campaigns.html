@@ -1,0 +1,117 @@
+﻿      <div id="campaigns-page" class="dashboard-page">
+        <div class="summary-panel">
+          <div class="section-title">
+            <h3>Campaign Manager</h3>
+            <span>Manage smart-link campaign documents</span>
+          </div>
+          <div class="helper-copy">Build a dedicated release or smart-link page without changing the evergreen links page.</div>
+        </div>
+
+        <div class="manager-panel">
+          <div id="campaign-settings-card" class="manager-card campaign-settings-card">
+            <div id="campaign-settings-scrim" class="campaign-settings-scrim" hidden></div>
+            <div class="section-title">
+              <h3>Campaign Settings</h3>
+              <span>Write to Firestore</span>
+            </div>
+            <div class="campaign-settings-mobile-bar">
+              <button type="button" id="close-campaign-settings" class="btn ghost-button">Close</button>
+            </div>
+            <p class="manager-subcopy">Save multiple release pages with their own slugs, artwork, and destination links.</p>
+            <form id="campaign-form">
+              <div class="campaign-form-grid">
+                <div class="full-span">
+                  <input type="text" id="campaign-slug" class="form-control" placeholder="campaign-slug" aria-label="Campaign slug" />
+                </div>
+                <div>
+                  <input type="text" id="campaign-badge" class="form-control" placeholder="Badge or kicker" aria-label="Campaign badge" />
+                </div>
+                <div>
+                  <input type="date" id="campaign-release-date" class="form-control" aria-label="Campaign release date" />
+                </div>
+                <div class="full-span">
+                  <input type="text" id="campaign-title" class="form-control" placeholder="Campaign title" aria-label="Campaign title" required />
+                </div>
+                <div class="full-span">
+                  <input type="text" id="campaign-subtitle" class="form-control" placeholder="Subtitle or release line" aria-label="Campaign subtitle" />
+                </div>
+                <div class="full-span">
+                  <textarea id="campaign-description" class="form-control" rows="4" placeholder="Describe the release, campaign, or call to action" aria-label="Campaign description"></textarea>
+                </div>
+                <div class="full-span">
+                  <input type="url" id="campaign-artwork-url" class="form-control" placeholder="Artwork image URL" aria-label="Campaign artwork URL" />
+                </div>
+                <div class="full-span">
+                  <input type="text" id="campaign-meta-pixel-id" class="form-control" placeholder="Meta Pixel ID (optional)" aria-label="Meta Pixel ID" inputmode="numeric" />
+                </div>
+                <div>
+                  <input type="text" id="campaign-primary-label" class="form-control" placeholder="Primary button label" aria-label="Primary button label" />
+                </div>
+                <div>
+                  <input type="url" id="campaign-primary-url" class="form-control" placeholder="Primary button URL" aria-label="Primary button URL" />
+                </div>
+                <div>
+                  <input type="text" id="campaign-secondary-label" class="form-control" placeholder="Secondary button label" aria-label="Secondary button label" />
+                </div>
+                <div>
+                  <input type="url" id="campaign-secondary-url" class="form-control" placeholder="Secondary button URL" aria-label="Secondary button URL" />
+                </div>
+                <div>
+                  <input type="url" id="campaign-spotify-url" class="form-control" placeholder="Spotify URL" aria-label="Spotify URL" />
+                </div>
+                <div>
+                  <input type="url" id="campaign-apple-url" class="form-control" placeholder="Apple Music URL" aria-label="Apple Music URL" />
+                </div>
+                <div>
+                  <input type="url" id="campaign-youtube-url" class="form-control" placeholder="YouTube URL" aria-label="YouTube URL" />
+                </div>
+                <div>
+                  <input type="url" id="campaign-bandcamp-url" class="form-control" placeholder="Bandcamp URL" aria-label="Bandcamp URL" />
+                </div>
+                <div class="full-span">
+                  <label class="link-edit-toggle" for="campaign-live">
+                    <input type="checkbox" id="campaign-live" />
+                    <span>Make this campaign live at its slug URL.</span>
+                  </label>
+                </div>
+                <div class="full-span">
+                  <button type="button" id="campaign-delete" class="btn danger-button w-100">Delete Campaign</button>
+                </div>
+                <div class="full-span">
+                  <button type="submit" id="save-campaign" class="btn btn-accent w-100">Save Campaign</button>
+                </div>
+              </div>
+            </form>
+            <div id="campaign-status" class="gig-manager-status" aria-live="polite"></div>
+          </div>
+
+          <div class="manager-card">
+            <div class="section-title">
+              <h3>Public Page Preview</h3>
+              <span id="campaign-count">Not loaded</span>
+            </div>
+            <div class="manager-toolbar">
+              <div class="helper-copy">Open the public page to confirm layout, copy, and destination URLs.</div>
+              <div class="manager-toolbar-actions">
+                <button type="button" id="open-campaign-settings" class="btn ghost-button campaign-settings-launch">Campaign Settings</button>
+                <button type="button" id="new-campaign" class="btn ghost-button">New Campaign</button>
+                <button type="button" id="open-campaign-qr" class="btn ghost-button">QR Code</button>
+                <a id="campaign-open-link" class="btn ghost-button" href="smartlink.html" target="_blank" rel="noopener noreferrer">Open Public Page</a>
+              </div>
+            </div>
+            <div id="campaign-preview" class="campaign-preview">
+              <div class="campaign-preview-empty">No campaign loaded yet. Save a title and at least one destination URL to publish a first release page.</div>
+            </div>
+            <div class="campaign-library">
+              <div class="section-title">
+                <h3>Saved Campaigns</h3>
+                <span id="campaign-list-count">No campaigns</span>
+              </div>
+              <div id="campaign-list" class="gig-admin-list">
+                <div class="gig-admin-empty">No campaigns saved yet.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+

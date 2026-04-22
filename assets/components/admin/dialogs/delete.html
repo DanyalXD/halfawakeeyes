@@ -1,0 +1,26 @@
+﻿  <dialog id="delete-dialog" class="delete-dialog">
+    <div class="delete-dialog-card">
+      <span class="eyebrow">Delete Entry</span>
+      <h2 id="delete-dialog-title">Remove this analytics entry?</h2>
+      <p id="delete-dialog-description">This action will permanently delete the selected record from the current collection.</p>
+
+      <div class="delete-dialog-meta">
+        <div class="delete-dialog-row">
+          <div class="delete-dialog-label">Event</div>
+          <div class="delete-dialog-value" id="delete-dialog-event">-</div>
+        </div>
+        <div class="delete-dialog-row">
+          <div class="delete-dialog-label">Timestamp</div>
+          <div class="delete-dialog-value" id="delete-dialog-timestamp">-</div>
+        </div>
+      </div>
+
+      <div id="delete-dialog-error" class="status-message" aria-live="polite"></div>
+
+      <div class="delete-dialog-actions">
+        <button type="button" id="cancel-delete" class="btn ghost-button">Cancel</button>
+        <button type="button" id="confirm-delete" class="btn danger-button">Delete Entry</button>
+      </div>
+    </div>
+  </dialog>
+

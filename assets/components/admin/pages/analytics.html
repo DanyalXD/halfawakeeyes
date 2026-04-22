@@ -1,0 +1,73 @@
+﻿      <div id="analytics-page" class="dashboard-page active">
+        <div class="stats-grid" id="stats-grid">
+          <article class="stat-card">
+            <div class="label">Total Events</div>
+            <div class="value">0</div>
+            <div class="detail">Nothing loaded yet</div>
+          </article>
+        </div>
+
+        <div class="control-stack">
+          <div class="controls">
+            <div class="search-wrap">
+              <input type="search" id="search-input" class="form-control" placeholder="Search by action, page, campaign, ID, or any field..." />
+            </div>
+            <div>
+              <select id="page-size" class="form-select" aria-label="Rows per page">
+                <option value="10">10 rows</option>
+                <option value="25" selected>25 rows</option>
+                <option value="50">50 rows</option>
+                <option value="100">100 rows</option>
+              </select>
+            </div>
+            <div>
+              <div id="field-count" class="meta-pill">0 fields detected</div>
+            </div>
+          </div>
+
+          <div class="view-toggle" role="tablist" aria-label="Analytics view">
+            <button type="button" class="view-toggle-button active" data-view-mode="events">Events</button>
+            <button type="button" class="view-toggle-button" data-view-mode="sessions">Sessions</button>
+          </div>
+
+          <div class="controls-secondary">
+            <div>
+              <input type="date" id="date-from" class="form-control" aria-label="Filter from date" />
+            </div>
+            <div>
+              <input type="date" id="date-to" class="form-control" aria-label="Filter to date" />
+            </div>
+            <div class="export-wrap">
+              <button type="button" id="export-csv" class="btn ghost-button w-100">Export CSV</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="summary-panel">
+          <div class="section-title">
+            <h3>Event Breakdown</h3>
+            <span id="summary-caption">No data loaded</span>
+          </div>
+          <div class="helper-copy" id="filter-caption">Search, date range, and collection filters apply to the table and export.</div>
+          <div class="chip-list" id="summary"></div>
+        </div>
+
+        <div class="table-panel">
+          <div class="table-responsive">
+            <table>
+              <thead id="log-head"></thead>
+              <tbody id="log-rows"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="mobile-card-list" id="mobile-log-cards"></div>
+
+        <div class="pagination-bar">
+          <div class="pagination-meta" id="pagination-meta">0 results</div>
+          <nav aria-label="Analytics pagination">
+            <ul class="pagination" id="pagination"></ul>
+          </nav>
+        </div>
+      </div>
+

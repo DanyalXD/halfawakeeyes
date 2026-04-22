@@ -1,0 +1,20 @@
+﻿    <section id="auth-boot" class="surface login-card auth-boot-card">
+      <h2>Loading Admin</h2>
+      <p>Checking your sign-in session...</p>
+    </section>
+
+    <section id="login" class="surface login-card">
+      <h2>Sign In</h2>
+      <p>Sign in with the Firebase Auth admin account to review site activity and manage the public pages.</p>
+      <form id="login-form">
+        <div class="mb-3">
+          <input type="email" id="email" class="form-control" placeholder="Admin email" autocomplete="email" required />
+        </div>
+        <div class="mb-3">
+          <input type="password" id="password" class="form-control" placeholder="Password" autocomplete="current-password" required />
+        </div>
+        <button type="submit" id="login-submit" class="btn btn-accent w-100">Sign In</button>
+      </form>
+      <div id="login-error" class="status-message" aria-live="polite"></div>
+    </section>
+

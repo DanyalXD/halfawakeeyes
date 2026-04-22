@@ -1,0 +1,98 @@
+﻿      <div id="links-page" class="dashboard-page">
+        <div class="summary-panel">
+          <div class="section-title">
+            <h3>Links Manager</h3>
+            <span>Manage the `links` collection</span>
+          </div>
+          <div class="helper-copy">Control the public link-in-bio page, including socials, sections, featured links, ordering, and hidden entries.</div>
+        </div>
+
+        <div class="manager-panel">
+          <div class="manager-card">
+            <div class="section-title">
+              <h3>Add Link</h3>
+              <span>Write to Firestore</span>
+            </div>
+            <p class="manager-subcopy">Create either a top social icon or a main section card for the public `links.html` page. If you leave the image blank, the links page will try to use the destination site's icon automatically.</p>
+            <form id="link-form">
+              <div class="link-form-grid">
+                <div>
+                  <select id="link-group" class="form-select" aria-label="Link group">
+                    <option value="social">Social Row</option>
+                    <option value="main" selected>Main Link Stack</option>
+                  </select>
+                </div>
+                <div>
+                  <input type="number" id="link-sort-order" class="form-control" placeholder="Sort order (optional)" aria-label="Sort order" min="0" step="1" />
+                </div>
+                <div class="full-span">
+                  <input type="text" id="link-title" class="form-control" placeholder="Link title" aria-label="Link title" required />
+                </div>
+                <div class="full-span">
+                  <input type="text" id="link-url" class="form-control" placeholder="https://example.com or mailto:..." aria-label="Link URL" required />
+                </div>
+                <div class="full-span">
+                  <input type="text" id="link-image-url" class="form-control" placeholder="Image URL or asset path (optional, otherwise auto)" aria-label="Link image URL" />
+                </div>
+                <div>
+                  <input type="text" id="link-section" class="form-control" placeholder="Section (for main links)" aria-label="Link section" />
+                </div>
+                <div>
+                  <input type="text" id="link-kicker" class="form-control" placeholder="Kicker (optional)" aria-label="Link kicker" />
+                </div>
+                <div>
+                  <label class="link-edit-toggle" for="link-featured">
+                    <input type="checkbox" id="link-featured" />
+                    <span>Mark as featured.</span>
+                  </label>
+                </div>
+                <div class="full-span">
+                  <textarea id="link-description" class="form-control" rows="3" placeholder="Description or handle (optional)" aria-label="Link description"></textarea>
+                </div>
+                <div class="full-span">
+                  <button type="submit" id="save-link" class="btn btn-accent w-100">Save Link</button>
+                </div>
+              </div>
+            </form>
+            <div id="link-status" class="gig-manager-status" aria-live="polite"></div>
+          </div>
+
+          <div class="manager-card">
+            <div class="section-title">
+              <h3>Current Links</h3>
+              <span id="link-count">No links loaded</span>
+            </div>
+            <div class="manager-toolbar">
+              <div class="helper-copy">Edit, hide, drag to reorder, or move links between the `Social` row and the `Main` stack.</div>
+              <button type="button" id="seed-links" class="btn ghost-button">Import Current Defaults</button>
+            </div>
+            <div class="link-admin-groups">
+              <section class="link-admin-group">
+                <div class="link-admin-group-header">
+                  <div>
+                    <h4 class="link-admin-group-title">Social Row</h4>
+                    <p class="link-admin-group-copy">These render as icon buttons at the top of `links.html`.</p>
+                  </div>
+                  <span id="social-link-count" class="link-admin-group-meta">No social links</span>
+                </div>
+                <div id="social-link-list" class="link-admin-list has-group-shell" data-link-group="social">
+                  <div class="gig-admin-empty">No social links loaded yet.</div>
+                </div>
+              </section>
+              <section class="link-admin-group">
+                <div class="link-admin-group-header">
+                  <div>
+                    <h4 class="link-admin-group-title">Main Links</h4>
+                    <p class="link-admin-group-copy">These render as the main grouped cards, using sections like `Releases` or `Resources`.</p>
+                  </div>
+                  <span id="main-link-count" class="link-admin-group-meta">No main links</span>
+                </div>
+                <div id="main-link-list" class="link-admin-list has-group-shell" data-link-group="main">
+                  <div class="gig-admin-empty">No main links loaded yet.</div>
+                </div>
+              </section>
+            </div>
+          </div>
+        </div>
+      </div>
+

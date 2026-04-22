@@ -1,0 +1,60 @@
+﻿  <dialog id="link-edit-dialog" class="details-dialog">
+    <div class="details-dialog-card">
+      <span class="eyebrow">Edit Link</span>
+      <h2 id="link-edit-title">Update link entry</h2>
+      <p class="details-dialog-subtitle">Change the public link, move it between social and main groups, hide it, or remove it entirely.</p>
+
+      <form id="link-edit-form" class="link-edit-form">
+        <div class="link-edit-grid">
+          <div>
+            <select id="link-edit-group" class="form-select" aria-label="Edit link group">
+              <option value="social">Social Row</option>
+              <option value="main">Main Link Stack</option>
+            </select>
+          </div>
+          <div>
+            <input type="number" id="link-edit-sort-order" class="form-control" placeholder="Sort order" aria-label="Edit link sort order" min="0" step="1" />
+          </div>
+          <div class="full-span">
+            <input type="text" id="link-edit-title-input" class="form-control" placeholder="Link title" aria-label="Edit link title" required />
+          </div>
+          <div class="full-span">
+            <input type="text" id="link-edit-url" class="form-control" placeholder="https://example.com or mailto:..." aria-label="Edit link URL" required />
+          </div>
+          <div class="full-span">
+            <input type="text" id="link-edit-image-url" class="form-control" placeholder="Image URL or asset path (optional, otherwise auto)" aria-label="Edit link image URL" />
+          </div>
+          <div>
+            <input type="text" id="link-edit-section" class="form-control" placeholder="Section (for main links)" aria-label="Edit link section" />
+          </div>
+          <div>
+            <input type="text" id="link-edit-kicker" class="form-control" placeholder="Kicker (optional)" aria-label="Edit link kicker" />
+          </div>
+          <div class="full-span">
+            <textarea id="link-edit-description" class="form-control" rows="3" placeholder="Description or handle (optional)" aria-label="Edit link description"></textarea>
+          </div>
+          <div>
+            <label class="link-edit-toggle" for="link-edit-featured">
+              <input type="checkbox" id="link-edit-featured" />
+              <span>Feature this link on the public page.</span>
+            </label>
+          </div>
+          <div>
+            <label class="link-edit-toggle" for="link-edit-hidden">
+              <input type="checkbox" id="link-edit-hidden" />
+              <span>Hide this link from the public page.</span>
+            </label>
+          </div>
+        </div>
+      </form>
+
+      <div id="link-edit-error" class="status-message" aria-live="polite"></div>
+
+      <div class="details-dialog-actions">
+        <button type="button" id="link-delete" class="btn danger-button">Delete Link</button>
+        <button type="button" id="close-link-edit" class="btn ghost-button">Close</button>
+        <button type="submit" form="link-edit-form" id="save-link-edit" class="btn btn-accent">Save Changes</button>
+      </div>
+    </div>
+  </dialog>
+

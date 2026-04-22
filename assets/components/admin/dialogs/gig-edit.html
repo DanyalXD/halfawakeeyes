@@ -1,0 +1,64 @@
+﻿  <dialog id="gig-edit-dialog" class="details-dialog">
+    <div class="details-dialog-card">
+      <span class="eyebrow">Edit Gig</span>
+      <h2 id="gig-edit-title">Update gig entry</h2>
+      <p class="details-dialog-subtitle">Change the gig details, hide it from the public site, or remove it entirely.</p>
+
+      <form id="gig-edit-form" class="gig-edit-form">
+        <div class="gig-edit-grid">
+          <div>
+            <input type="date" id="gig-edit-date" class="form-control" aria-label="Edit gig date" required />
+          </div>
+          <div>
+            <input type="text" id="gig-edit-event" class="form-control" placeholder="Event or show name" aria-label="Edit gig event" required />
+          </div>
+          <div>
+            <input type="text" id="gig-edit-venue" class="form-control" placeholder="Venue" aria-label="Edit gig venue" required />
+          </div>
+          <div>
+            <input type="text" id="gig-edit-city" class="form-control" placeholder="City (optional)" aria-label="Edit gig city" />
+          </div>
+          <div class="full-span">
+            <input type="text" id="gig-edit-ticket-url" class="form-control" placeholder="Ticket link (optional)" aria-label="Edit gig ticket link" />
+          </div>
+          <div>
+            <input type="text" id="gig-edit-ticket-price" class="form-control" placeholder="Ticket price (optional, e.g. 12.50)" aria-label="Edit gig ticket price" inputmode="decimal" />
+          </div>
+          <div>
+            <label class="gig-edit-toggle" for="gig-edit-ticket-price-includes-fee">
+              <input type="checkbox" id="gig-edit-ticket-price-includes-fee" />
+              <span>Price includes booking fee.</span>
+            </label>
+          </div>
+          <div class="full-span">
+            <label class="gig-edit-toggle" for="gig-edit-auto-redirect">
+              <input type="checkbox" id="gig-edit-auto-redirect" />
+              <span>Auto redirect to the seller from this gig's ticket page.</span>
+            </label>
+          </div>
+          <div class="full-span">
+            <input type="text" id="gig-edit-image-url" class="form-control" placeholder="Show image URL or asset path (optional)" aria-label="Edit gig image URL" />
+          </div>
+          <div class="full-span">
+            <input type="text" id="gig-edit-meta-pixel-id" class="form-control" placeholder="Meta Pixel ID (optional)" aria-label="Edit gig Meta Pixel ID" inputmode="numeric" />
+          </div>
+          <div class="full-span">
+            <label class="gig-edit-toggle" for="gig-edit-hidden">
+              <input type="checkbox" id="gig-edit-hidden" />
+              <span>Hide this gig from the public EPK gig history.</span>
+            </label>
+          </div>
+        </div>
+        <div class="gig-edit-helper">Hidden gigs stay in Firestore and remain manageable here, but they no longer show on the public site. Ticket pages only appear when a gig has a ticket URL, they stop showing on `links.html` once the gig date is in the past, and auto redirect is now controlled per gig.</div>
+      </form>
+
+      <div id="gig-edit-error" class="status-message" aria-live="polite"></div>
+
+      <div class="details-dialog-actions">
+        <button type="button" id="gig-delete" class="btn danger-button">Delete Gig</button>
+        <button type="button" id="close-gig-edit" class="btn ghost-button">Close</button>
+        <button type="submit" form="gig-edit-form" id="save-gig-edit" class="btn btn-accent">Save Changes</button>
+      </div>
+    </div>
+  </dialog>
+
