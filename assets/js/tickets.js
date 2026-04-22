@@ -25,6 +25,7 @@ const pagePath = window.location.pathname || "/tickets.html";
 const pageName = pagePath.split("/").pop() || "tickets";
 const REDIRECT_DELAY_MS = 1600;
 const DEFAULT_TICKET_ARTWORK = normalizeImageUrl("assets/images/HalfAwakeEyes-annicmrn-07798.jpg");
+const LOAD_ERROR_FALLBACK_TICKET_URL = normalizePublicUrl("https://www.skiddle.com/e/42284196");
 // Localhost/file preview should still read gigs from Firestore; this only disables analytics writes.
 const disableFirestoreAnalytics = isLocalPreview;
 
@@ -556,6 +557,39 @@ async function redirectToTickets(type = "auto") {
   window.location.replace(ticketUrl);
 }
 
+async function redirectToLoadErrorFallback() {
+  if (redirectStarted || !LOAD_ERROR_FALLBACK_TICKET_URL) {
+    return false;
+  }
+
+  redirectStarted = true;
+  window.clearTimeout(redirectTimer);
+  setStateChip("Opening Tickets");
+  setRedirectStatus("");
+  setTicketNote("Opening tickets on Skiddle...");
+  completeRedirectProgress();
+  showTicketButtons(LOAD_ERROR_FALLBACK_TICKET_URL, "Open Tickets");
+  getTicketButtons().forEach((button) => {
+    button.onclick = null;
+  });
+
+  await Promise.race([
+    logEvent("ticket_redirect_unavailable", {
+      label: "Load failure",
+      target: gigId,
+      href: LOAD_ERROR_FALLBACK_TICKET_URL,
+      elementType: "link",
+      actionSubtype: "load_error",
+      section: "tickets",
+      outbound: true
+    }),
+    new Promise((resolve) => window.setTimeout(resolve, 220))
+  ]);
+
+  window.location.replace(LOAD_ERROR_FALLBACK_TICKET_URL);
+  return true;
+}
+
 function renderGig(gig) {
   activeGig = gig;
   const ticketUrl = normalizePublicUrl(gig.ticketUrl);
@@ -682,12 +716,7 @@ async function loadGig() {
       "There was a problem fetching the gig details just now.",
       "Please try again in a moment."
     );
-    await logEvent("ticket_redirect_unavailable", {
-      label: "Load failure",
-      target: gigId,
-      actionSubtype: "load_error",
-      section: "tickets"
-    });
+    await redirectToLoadErrorFallback();
   }
 }
 
