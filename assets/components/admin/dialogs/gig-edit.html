@@ -25,9 +25,12 @@
             <input type="text" id="gig-edit-ticket-price" class="form-control" placeholder="Ticket price (optional, e.g. 12.50)" aria-label="Edit gig ticket price" inputmode="decimal" />
           </div>
           <div>
+            <input type="text" id="gig-edit-door-price" class="form-control" placeholder="Door price (optional, e.g. 12.00)" aria-label="Edit gig door price" inputmode="decimal" />
+          </div>
+          <div class="full-span">
             <label class="gig-edit-toggle" for="gig-edit-ticket-price-includes-fee">
               <input type="checkbox" id="gig-edit-ticket-price-includes-fee" />
-              <span>Price includes booking fee.</span>
+              <span>Ticket price includes booking fee.</span>
             </label>
           </div>
           <div class="full-span">
@@ -49,7 +52,7 @@
             </label>
           </div>
         </div>
-        <div class="gig-edit-helper">Hidden gigs stay in Firestore and remain manageable here, but they no longer show on the public site. Ticket pages only appear when a gig has a ticket URL, they stop showing on `links.html` once the gig date is in the past, and auto redirect is now controlled per gig.</div>
+        <div class="gig-edit-helper">Hidden gigs stay in Firestore and remain manageable here, but they no longer show on the public site. Ticket pages only appear when a gig has a ticket URL, they stop showing on `links.html` once the gig date is in the past, and auto redirect is now controlled per gig. Use door price only when it is confirmed.</div>
       </form>
 
       <div id="gig-edit-error" class="status-message" aria-live="polite"></div>

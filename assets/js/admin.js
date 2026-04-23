@@ -121,6 +121,7 @@
       gigCity: document.getElementById("gig-city"),
       gigTicketUrl: document.getElementById("gig-ticket-url"),
       gigTicketPrice: document.getElementById("gig-ticket-price"),
+      gigDoorPrice: document.getElementById("gig-door-price"),
       gigTicketPriceIncludesFee: document.getElementById("gig-ticket-price-includes-fee"),
       gigAutoRedirect: document.getElementById("gig-auto-redirect"),
       gigImageUrl: document.getElementById("gig-image-url"),
@@ -219,6 +220,7 @@
       gigEditCity: document.getElementById("gig-edit-city"),
       gigEditTicketUrl: document.getElementById("gig-edit-ticket-url"),
       gigEditTicketPrice: document.getElementById("gig-edit-ticket-price"),
+      gigEditDoorPrice: document.getElementById("gig-edit-door-price"),
       gigEditTicketPriceIncludesFee: document.getElementById("gig-edit-ticket-price-includes-fee"),
       gigEditAutoRedirect: document.getElementById("gig-edit-auto-redirect"),
       gigEditImageUrl: document.getElementById("gig-edit-image-url"),
@@ -468,6 +470,7 @@
         city: String(gig?.city || "").trim(),
         ticketUrl: String(gig?.ticketUrl || "").trim(),
         ticketPrice: normalizeTicketPrice(gig?.ticketPrice),
+        doorPrice: normalizeTicketPrice(gig?.doorPrice),
         ticketPriceIncludesFee: normalizeTicketPriceIncludesFee(gig?.ticketPriceIncludesFee),
         autoRedirect: gig?.autoRedirect === true || String(gig?.autoRedirect || "").toLowerCase() === "true",
         imageUrl: String(gig?.imageUrl || "").trim(),
@@ -2371,6 +2374,7 @@
       elements.gigEditCity.value = gig.city || "";
       elements.gigEditTicketUrl.value = gig.ticketUrl || "";
       elements.gigEditTicketPrice.value = gig.ticketPrice || "";
+      elements.gigEditDoorPrice.value = gig.doorPrice || "";
       elements.gigEditTicketPriceIncludesFee.checked = gig.ticketPriceIncludesFee === true;
       elements.gigEditAutoRedirect.checked = gig.autoRedirect === true;
       elements.gigEditImageUrl.value = gig.imageUrl || "";
@@ -3077,6 +3081,7 @@
         city: elements.gigCity.value.trim(),
         ticketUrl: elements.gigTicketUrl.value.trim(),
         ticketPrice: normalizeTicketPrice(elements.gigTicketPrice.value),
+        doorPrice: normalizeTicketPrice(elements.gigDoorPrice.value),
         ticketPriceIncludesFee: elements.gigTicketPriceIncludesFee.checked,
         autoRedirect: elements.gigAutoRedirect.checked,
         imageUrl: elements.gigImageUrl.value.trim(),
@@ -3196,6 +3201,7 @@
         city: elements.gigEditCity.value.trim(),
         ticketUrl: elements.gigEditTicketUrl.value.trim(),
         ticketPrice: normalizeTicketPrice(elements.gigEditTicketPrice.value),
+        doorPrice: normalizeTicketPrice(elements.gigEditDoorPrice.value),
         ticketPriceIncludesFee: elements.gigEditTicketPriceIncludesFee.checked,
         autoRedirect: elements.gigEditAutoRedirect.checked,
         imageUrl: elements.gigEditImageUrl.value.trim(),

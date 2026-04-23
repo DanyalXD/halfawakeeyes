@@ -24,6 +24,8 @@ const { userId, campaign, source, medium } = getTrackingParams(params);
 const pagePath = window.location.pathname || "/tickets.html";
 const pageName = pagePath.split("/").pop() || "tickets";
 const REDIRECT_DELAY_MS = 1600;
+const GBP_SYMBOL = String.fromCharCode(163);
+const DOOR_PRICE_MIN_SAVING_TO_SHOW_GBP = 2;
 const DEFAULT_TICKET_ARTWORK = normalizeImageUrl("assets/images/HalfAwakeEyes-annicmrn-07798.jpg");
 const LOAD_ERROR_FALLBACK_TICKET_URL = normalizePublicUrl("https://www.skiddle.com/e/42284196");
 // Localhost/file preview should still read gigs from Firestore; this only disables analytics writes.
@@ -55,8 +57,14 @@ const elements = {
   ticketVenue: document.getElementById("ticket-venue"),
   ticketDateDetail: document.getElementById("ticket-date-detail"),
   ticketVenueDetail: document.getElementById("ticket-venue-detail"),
+  ticketPriceRail: document.getElementById("ticket-price-rail"),
+  ticketPriceChip: document.getElementById("ticket-price-chip"),
+  ticketDoorPriceChip: document.getElementById("ticket-door-price-chip"),
   ticketRedirectStatus: document.getElementById("ticket-redirect-status"),
   ticketContinue: document.getElementById("ticket-continue"),
+  ticketContinueSticky: document.getElementById("ticket-continue-sticky"),
+  stickyCtaShell: document.getElementById("sticky-cta-shell"),
+  ticketTrustCopy: document.getElementById("ticket-trust-copy"),
   ticketNote: document.getElementById("ticket-note"),
   ticketProgressFill: document.getElementById("ticket-progress-fill"),
   ticketArtwork: document.getElementById("ticket-artwork"),
@@ -114,6 +122,34 @@ function setTicketNote(value = "") {
   setOptionalText(elements.ticketNote, value);
 }
 
+function setTrustCopy(providerLabel = "") {
+  if (!elements.ticketTrustCopy) {
+    return;
+  }
+  elements.ticketTrustCopy.textContent = "";
+  elements.ticketTrustCopy.hidden = true;
+}
+
+function setPriceChip(element, value = "") {
+  if (!element) {
+    return;
+  }
+  const normalized = String(value || "").trim();
+  element.textContent = normalized;
+  element.hidden = !normalized;
+}
+
+function setPriceRail({ ticket = "", door = "" } = {}) {
+  setPriceChip(elements.ticketPriceChip, "");
+  setPriceChip(elements.ticketDoorPriceChip, "");
+
+  if (!elements.ticketPriceRail) {
+    return;
+  }
+
+  elements.ticketPriceRail.hidden = true;
+}
+
 function disableBadgeLink() {
   if (!elements.ticketBadge) {
     return;
@@ -140,18 +176,25 @@ function enableBadgeLink(ticketUrl) {
 }
 
 function getTicketButtons() {
-  return elements.ticketContinue ? [elements.ticketContinue] : [];
+  return [elements.ticketContinue, elements.ticketContinueSticky].filter(Boolean);
 }
 
 function hideTicketButtons() {
+  if (elements.stickyCtaShell) {
+    elements.stickyCtaShell.hidden = true;
+  }
   getTicketButtons().forEach((button) => {
     button.hidden = true;
     button.onclick = null;
     button.removeAttribute("href");
   });
+  setTrustCopy("");
 }
 
 function showTicketButtons(ticketUrl, buttonLabel = "Get Tickets") {
+  if (elements.stickyCtaShell) {
+    elements.stickyCtaShell.hidden = false;
+  }
   getTicketButtons().forEach((button) => {
     button.hidden = false;
     button.href = ticketUrl;
@@ -199,6 +242,7 @@ function normalizeGigEntry(gig = {}, id = "") {
     city: String(gig?.city || "").trim(),
     ticketUrl: normalizePublicUrl(gig?.ticketUrl),
     ticketPrice: normalizeTicketPrice(gig?.ticketPrice),
+    doorPrice: normalizeTicketPrice(gig?.doorPrice),
     ticketPriceIncludesFee: normalizeTicketPriceIncludesFee(gig?.ticketPriceIncludesFee),
     autoRedirect: normalizeGigAutoRedirect(gig?.autoRedirect),
     imageUrl: normalizeImageUrl(gig?.imageUrl),
@@ -263,36 +307,73 @@ function getTicketProviderLabel(ticketUrl) {
 }
 
 function formatTicketPriceValue(value = "") {
-  const raw = String(value || "").trim();
-  if (!raw) {
-    return "";
-  }
+  return formatDisplayPrice(value);
+}
 
-  const normalized = normalizeTicketPrice(raw);
+function getTicketPriceLine(gig = {}) {
+  return getTicketPriceContextLine(gig);
+}
+
+function getPrimaryCtaLabel(providerLabel = "") {
+  if (providerLabel && providerLabel !== "Official seller") {
+    return `Get Tickets on ${providerLabel}`;
+  }
+  return "Get Tickets";
+}
+
+function formatDisplayPrice(value = "") {
+  const normalized = normalizeTicketPrice(value);
   if (!normalized) {
     return "";
   }
 
   if (/^\d+(?:\.\d{1,2})?$/.test(normalized)) {
     const numericValue = Number.parseFloat(normalized);
-    if (Number.isFinite(numericValue)) {
-      const decimalPlaces = normalized.includes(".") ? normalized.split(".")[1].length : 0;
-      const fixed = decimalPlaces > 0 ? numericValue.toFixed(Math.min(decimalPlaces, 2)) : numericValue.toFixed(0);
-      return `£${fixed}`;
+    if (!Number.isFinite(numericValue)) {
+      return "";
     }
+    const decimalPlaces = normalized.includes(".") ? normalized.split(".")[1].length : 0;
+    const fixed = decimalPlaces > 0 ? numericValue.toFixed(Math.min(decimalPlaces, 2)) : numericValue.toFixed(0);
+    return `${GBP_SYMBOL}${fixed}`;
   }
 
   return normalized;
 }
 
-function getTicketPriceLine(gig = {}) {
-  const formattedPrice = formatTicketPriceValue(gig?.ticketPrice);
-  if (!formattedPrice) {
-    return "";
+function getTicketPriceContextLine(gig = {}) {
+  const advancePrice = formatDisplayPrice(gig?.ticketPrice);
+  const doorPrice = formatDisplayPrice(gig?.doorPrice);
+  if (!advancePrice && !doorPrice) {
+    return "Official tickets";
   }
 
-  const feeLabel = gig?.ticketPriceIncludesFee === true ? "BF included" : "+ booking fee";
-  return `From ${formattedPrice} ${feeLabel}`;
+  const advanceNumeric = Number.parseFloat(normalizeTicketPrice(gig?.ticketPrice));
+  const doorNumeric = Number.parseFloat(normalizeTicketPrice(gig?.doorPrice));
+  const hasNumericPrices = Number.isFinite(advanceNumeric) && Number.isFinite(doorNumeric);
+  const hasMeaningfulDoorGap = !hasNumericPrices || (doorNumeric - advanceNumeric) >= DOOR_PRICE_MIN_SAVING_TO_SHOW_GBP;
+
+  const lineParts = [];
+  if (advancePrice) {
+    const bookingFeeLabel = gig?.ticketPriceIncludesFee === true ? "(BF included)" : "+ BF";
+    lineParts.push(`Advance ${advancePrice} ${bookingFeeLabel}`);
+  }
+  if (doorPrice && (!advancePrice || hasMeaningfulDoorGap)) {
+    lineParts.push(`Door ${doorPrice}`);
+  }
+
+  return lineParts.join(" | ");
+}
+
+function getTicketPriceChipLabels(gig = {}) {
+  const advancePrice = formatDisplayPrice(gig?.ticketPrice);
+  const doorPrice = formatDisplayPrice(gig?.doorPrice);
+
+  return {
+    ticket: advancePrice
+      ? `Advance ${advancePrice}${gig?.ticketPriceIncludesFee === true ? " BF included" : " + BF"}`
+      : "",
+    door: doorPrice ? `Door ${doorPrice}` : ""
+  };
 }
 
 function parseGigDate(value) {
@@ -512,9 +593,11 @@ function renderUnavailable(title, subtitle, description) {
   setMetaChip(elements.ticketVenue, "");
   setSummaryValue(elements.ticketDateDetail, "", "Unavailable");
   setSummaryValue(elements.ticketVenueDetail, "", "Unavailable");
+  setPriceRail({});
   setRedirectStatus("Offline");
   hideTicketButtons();
   setTicketNote("This ticket page is only available for upcoming shows.");
+  setTrustCopy("");
   setText(elements.artOverlayChip, "Unavailable");
   applyArtwork("", "");
   setText(elements.artCaptionTitle, "Half Awake Eyes");
@@ -568,7 +651,9 @@ async function redirectToLoadErrorFallback() {
   setRedirectStatus("");
   setTicketNote("Opening tickets on Skiddle...");
   completeRedirectProgress();
-  showTicketButtons(LOAD_ERROR_FALLBACK_TICKET_URL, "Open Tickets");
+  setPriceRail({});
+  showTicketButtons(LOAD_ERROR_FALLBACK_TICKET_URL, "Get Tickets on Skiddle");
+  setTrustCopy("Skiddle");
   getTicketButtons().forEach((button) => {
     button.onclick = null;
   });
@@ -597,7 +682,9 @@ function renderGig(gig) {
   const venueLine = getVenueLine(gig);
   const shouldAutoRedirect = gig.autoRedirect === true;
   const ticketProvider = getTicketProviderLabel(ticketUrl);
-  const ticketPriceLine = getTicketPriceLine(gig);
+  const ticketPriceLine = getTicketPriceContextLine(gig);
+  const priceChips = getTicketPriceChipLabels(gig);
+  const ctaLabel = getPrimaryCtaLabel(ticketProvider);
   activeTicketProvider = ticketProvider;
   const providerBadgeLabel = ticketProvider && ticketProvider !== "Official seller"
     ? `Official Tickets - ${ticketProvider}`
@@ -605,17 +692,19 @@ function renderGig(gig) {
 
   document.title = `${gig.event || "Live show"} | Tickets`;
   setText(elements.ticketBadge, providerBadgeLabel);
-  enableBadgeLink(ticketUrl);
+  disableBadgeLink();
   setStateChip(shouldAutoRedirect ? "Redirecting" : "");
   setRedirectStatus("");
   setText(elements.ticketTitle, gig.event || "Live show");
-  setOptionalText(elements.ticketSubtitle, ticketPriceLine || "Official tickets");
+  setPriceRail(priceChips);
+  setOptionalText(elements.ticketSubtitle, ticketPriceLine);
   setOptionalText(elements.ticketDescription, "");
   setMetaChip(elements.ticketDate, formattedDate);
   setMetaChip(elements.ticketVenue, venueLine);
   setSummaryValue(elements.ticketDateDetail, formattedDate, "Date TBC");
   setSummaryValue(elements.ticketVenueDetail, venueLine, "Venue TBC");
-  showTicketButtons(ticketUrl, "Get Tickets");
+  showTicketButtons(ticketUrl, ctaLabel);
+  setTrustCopy("");
   setTicketNote(shouldAutoRedirect ? `Opening tickets on ${ticketProvider}...` : "");
   setText(elements.artOverlayChip, "Upcoming");
   applyArtwork(gig.imageUrl, gig.event || "Live show");

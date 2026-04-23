@@ -12,18 +12,18 @@
     href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600&family=Source+Sans+Pro:wght@400;600;700&display=swap"
     rel="stylesheet"
   />
-  <link rel="stylesheet" href="assets/css/tickets.css?v=20260416d" />
+  <link rel="stylesheet" href="assets/css/tickets.css?v=20260423-door-price" />
 </head>
 <body>
   <div class="page">
     <header class="topbar">
-      <a class="brand" href="index.html">Half Awake Eyes</a>
+      <span class="brand">Half Awake Eyes</span>
     </header>
 
     <main class="ticket-shell">
       <section class="artist-card">
         <div class="artist-image-wrap">
-          <img id="ticket-artwork" alt="" hidden />
+          <img id="ticket-artwork" alt="" decoding="async" fetchpriority="high" hidden />
           <div id="ticket-artwork-fallback" class="artwork-fallback">
             <div class="fallback-brand">Half Awake Eyes</div>
           </div>
@@ -31,7 +31,7 @@
 
         <div class="artist-copy">
           <div class="artist-name" id="art-caption-title">Half Awake Eyes</div>
-          <!-- <p class="artist-note" id="art-caption-note">Official tickets and live dates.</p> -->
+          <p class="artist-note" id="art-caption-note">Official tickets and live dates.</p>
           <a class="eyebrow ticket-badge-link" id="ticket-badge" href="#" aria-label="Open official tickets">Official Tickets</a>
         </div>
       </section>
@@ -41,12 +41,17 @@
           <h1 id="ticket-title">Preparing Tickets</h1>
           <p class="show-date-line" id="ticket-date-detail">Loading date</p>
           <p class="show-location" id="ticket-venue-detail">Checking venue</p>
+          <div class="price-rail" id="ticket-price-rail" hidden>
+            <span class="price-chip is-primary" id="ticket-price-chip" hidden>Advance</span>
+            <span class="price-chip" id="ticket-door-price-chip" hidden>Door</span>
+          </div>
           <p class="subtitle" id="ticket-subtitle">Official tickets</p>
           <p class="description" id="ticket-description" hidden></p>
         </div>
 
         <div class="show-actions">
           <a id="ticket-continue" class="cta-button primary" href="#" hidden>Tickets</a>
+          <p class="trust-copy" id="ticket-trust-copy" hidden>Official artist ticket link.</p>
         </div>
       </section>
 
@@ -58,13 +63,16 @@
 
       <p class="note" id="ticket-note" hidden></p>
       <div class="footer-links">
-        <a class="top-link" href="links.html">All Links</a>
         <a class="top-link" href="privacy.html">Privacy</a>
       </div>
       <span id="art-overlay-chip" hidden>Ticket Redirect</span>
     </main>
   </div>
 
-  <script type="module" src="assets/js/tickets.js?v=20260422-skiddle-fallback"></script>
+  <div class="sticky-cta-shell" id="sticky-cta-shell" hidden>
+    <a id="ticket-continue-sticky" class="cta-button primary sticky-cta-button" href="#" hidden>Get Tickets</a>
+  </div>
+
+  <script type="module" src="assets/js/tickets.js?v=20260423-door-price"></script>
 </body>
 </html>

@@ -17,7 +17,7 @@
               <h3>Add Gig</h3>
               <span>Write to Firestore</span>
             </div>
-            <p class="manager-subcopy">Use the same `date`, `event`, `venue`, and `city` fields the public site already reads. Add a ticket URL to publish a dedicated ticket page in the `Shows` section on `links.html` until the date passes, enable auto redirect only when you want that page to forward straight to the seller, add an image for artwork, and add a Meta Pixel ID if you want redirect tracking on that page.</p>
+            <p class="manager-subcopy">Use the same `date`, `event`, `venue`, and `city` fields the public site already reads. Add a ticket URL to publish a dedicated ticket page in the `Shows` section on `links.html` until the date passes, set advance and optional door prices for paid traffic, enable auto redirect only when you want that page to forward straight to the seller, add an image for artwork, and add a Meta Pixel ID if you want redirect tracking on that page.</p>
             <form id="gig-form">
               <div class="gig-form-grid">
                 <div>
@@ -39,9 +39,12 @@
                   <input type="text" id="gig-ticket-price" class="form-control" placeholder="Ticket price (optional, e.g. 12.50)" aria-label="Gig ticket price" inputmode="decimal" />
                 </div>
                 <div>
+                  <input type="text" id="gig-door-price" class="form-control" placeholder="Door price (optional, e.g. 12.00)" aria-label="Gig door price" inputmode="decimal" />
+                </div>
+                <div class="full-span">
                   <label class="gig-edit-toggle" for="gig-ticket-price-includes-fee">
                     <input type="checkbox" id="gig-ticket-price-includes-fee" />
-                    <span>Price includes booking fee.</span>
+                    <span>Ticket price includes booking fee.</span>
                   </label>
                 </div>
                 <div class="full-span">
