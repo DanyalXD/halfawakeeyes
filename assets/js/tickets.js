@@ -174,7 +174,7 @@ function enableBadgeLink(ticketUrl) {
     redirectToTickets("manual");
   };
 }
-
+//Get Ticket
 function getTicketButtons() {
   return [elements.ticketContinue, elements.ticketContinueSticky].filter(Boolean);
 }
