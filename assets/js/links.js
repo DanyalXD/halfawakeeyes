@@ -1,5 +1,5 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-        import { collection, doc, getDoc, getDocs, getFirestore, orderBy, query, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import { collection, doc, getDoc, getDocs, getFirestore, limit, orderBy, query, setDoc, startAfter, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
         import {
             createEmailSignupService,
             createSiteAnalytics,
@@ -111,6 +111,10 @@
         ]);
 
         const AUTO_SHOW_SORT_BASE = 105;
+        const PUBLIC_FIRESTORE_PAGE_SIZE = 40;
+        const PUBLIC_LINKS_MAX_DOCS = 240;
+        const PUBLIC_GIGS_MAX_DOCS = 160;
+        const PUBLIC_GIG_TICKET_LINK_LIMIT = 24;
 
         const { logEvent, logPageViewOnce } = createSiteAnalytics({
             db,
@@ -252,7 +256,22 @@
             if (!ticketUrl) {
                 return "";
             }
-            return ticketUrl;
+
+            if (!gig?.id) {
+                return ticketUrl;
+            }
+
+            const landingParams = new URLSearchParams();
+            landingParams.set("gig", gig.id);
+
+            ["id", "source", "utm_source", "utm_medium", "campaign", "utm_campaign"].forEach((key) => {
+                const value = pageParams.get(key);
+                if (value) {
+                    landingParams.set(key, value);
+                }
+            });
+
+            return new URL(`tickets.html?${landingParams.toString()}`, window.location.href).href;
         };
 
         const buildGigTicketLink = (gig, fallbackSortOrder) => normalizeManagedLink({
@@ -324,6 +343,64 @@
             }
         };
 
+        const formatIsoDateOnly = (value = new Date()) => {
+            const date = value instanceof Date ? new Date(value) : new Date(value);
+            if (Number.isNaN(date.getTime())) {
+                return "";
+            }
+
+            date.setHours(0, 0, 0, 0);
+            const year = String(date.getFullYear());
+            const month = String(date.getMonth() + 1).padStart(2, "0");
+            const day = String(date.getDate()).padStart(2, "0");
+            return `${year}-${month}-${day}`;
+        };
+
+        const fetchCollectionPages = async ({
+            collectionName,
+            maxDocs,
+            buildQuery,
+            buildFallbackQuery
+        }) => {
+            const loadedDocs = [];
+            let lastDoc = null;
+            let useFallback = false;
+
+            while (loadedDocs.length < maxDocs) {
+                const pageSize = Math.min(PUBLIC_FIRESTORE_PAGE_SIZE, maxDocs - loadedDocs.length);
+                const queryBuilder = useFallback ? buildFallbackQuery : buildQuery;
+                const activeQuery = queryBuilder({ lastDoc, pageSize });
+                let snapshot;
+
+                try {
+                    snapshot = await getDocs(activeQuery);
+                } catch (error) {
+                    if (useFallback || typeof buildFallbackQuery !== "function") {
+                        throw error;
+                    }
+
+                    useFallback = true;
+                    console.warn(`Falling back to simpler ${collectionName} query for public page.`, error);
+                    continue;
+                }
+
+                if (snapshot.empty) {
+                    break;
+                }
+
+                const visibleDocs = snapshot.docs.filter((item) => item.id !== PUBLIC_MIRROR_DOC_ID);
+                loadedDocs.push(...visibleDocs);
+
+                if (snapshot.docs.length < pageSize) {
+                    break;
+                }
+
+                lastDoc = snapshot.docs[snapshot.docs.length - 1];
+            }
+
+            return loadedDocs;
+        };
+
         const loadUpcomingGigTicketLinks = async () => {
             try {
                 const mirroredGigs = await loadPublicMirrorItems("gigs", (gig, index) =>
@@ -332,17 +409,26 @@
                 let gigEntries = mirroredGigs.items;
 
                 if (!mirroredGigs.found) {
-                    let snapshot;
-                    try {
-                        snapshot = await getDocs(query(collection(db, "gigs"), orderBy("date", "asc")));
-                    } catch (error) {
-                        console.warn("Falling back to unordered gig load for links page.", error);
-                        snapshot = await getDocs(collection(db, "gigs"));
-                    }
+                    const todayIso = formatIsoDateOnly(new Date());
+                    const collectionDocs = await fetchCollectionPages({
+                        collectionName: "gigs",
+                        maxDocs: PUBLIC_GIGS_MAX_DOCS,
+                        buildQuery: ({ lastDoc, pageSize }) => query(
+                            collection(db, "gigs"),
+                            where("date", ">=", todayIso),
+                            orderBy("date", "asc"),
+                            ...(lastDoc ? [startAfter(lastDoc)] : []),
+                            limit(pageSize)
+                        ),
+                        buildFallbackQuery: ({ lastDoc, pageSize }) => query(
+                            collection(db, "gigs"),
+                            orderBy("date", "asc"),
+                            ...(lastDoc ? [startAfter(lastDoc)] : []),
+                            limit(pageSize)
+                        )
+                    });
 
-                    gigEntries = snapshot.docs
-                        .filter((gigDoc) => gigDoc.id !== PUBLIC_MIRROR_DOC_ID)
-                        .map((gigDoc) => normalizeGigEntry(gigDoc.data(), gigDoc.id));
+                    gigEntries = collectionDocs.map((gigDoc) => normalizeGigEntry(gigDoc.data(), gigDoc.id));
                 }
 
                 const today = new Date();
@@ -356,6 +442,7 @@
                     }))
                     .filter(({ dateOnly }) => dateOnly && dateOnly >= today)
                     .sort((a, b) => a.dateOnly.getTime() - b.dateOnly.getTime())
+                    .slice(0, PUBLIC_GIG_TICKET_LINK_LIMIT)
                     .map(({ gig }, index) => buildGigTicketLink(gig, AUTO_SHOW_SORT_BASE + index));
             } catch (error) {
                 console.error("Could not load gig ticket links.", error);
@@ -638,15 +725,23 @@
                     return;
                 }
 
-                let snapshot;
-                try {
-                    snapshot = await getDocs(query(collection(db, "links"), orderBy("sortOrder", "asc")));
-                } catch (error) {
-                    console.warn("Falling back to unordered link load.", error);
-                    snapshot = await getDocs(collection(db, "links"));
-                }
+                const collectionDocs = await fetchCollectionPages({
+                    collectionName: "links",
+                    maxDocs: PUBLIC_LINKS_MAX_DOCS,
+                    buildQuery: ({ lastDoc, pageSize }) => query(
+                        collection(db, "links"),
+                        orderBy("sortOrder", "asc"),
+                        ...(lastDoc ? [startAfter(lastDoc)] : []),
+                        limit(pageSize)
+                    ),
+                    buildFallbackQuery: ({ lastDoc, pageSize }) => query(
+                        collection(db, "links"),
+                        orderBy("__name__", "asc"),
+                        ...(lastDoc ? [startAfter(lastDoc)] : []),
+                        limit(pageSize)
+                    )
+                });
 
-                const collectionDocs = snapshot.docs.filter((linkDoc) => linkDoc.id !== PUBLIC_MIRROR_DOC_ID);
                 if (!collectionDocs.length) {
                     renderManagedLinks(getDefaultLinks(), await gigTicketLinksPromise);
                     return;
