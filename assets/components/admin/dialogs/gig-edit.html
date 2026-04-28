@@ -2,7 +2,7 @@
     <div class="details-dialog-card">
       <span class="eyebrow">Edit Gig</span>
       <h2 id="gig-edit-title">Update gig entry</h2>
-      <p class="details-dialog-subtitle">Change the gig details, hide it from the public site, or remove it entirely.</p>
+      <p class="details-dialog-subtitle">Change the gig details, control where it appears, or remove it entirely.</p>
 
       <form id="gig-edit-form" class="gig-edit-form">
         <div class="gig-edit-grid">
@@ -51,8 +51,14 @@
               <span>Hide this gig from the public EPK gig history.</span>
             </label>
           </div>
+          <div class="full-span">
+            <label class="gig-edit-toggle" for="gig-edit-hide-from-links">
+              <input type="checkbox" id="gig-edit-hide-from-links" />
+              <span>Hide this gig from the links page and ticket page.</span>
+            </label>
+          </div>
         </div>
-        <div class="gig-edit-helper">Hidden gigs stay in Firestore and remain manageable here, but they no longer show on the public site. Ticket pages only appear when a gig has a ticket URL, they stop showing on `links.html` once the gig date is in the past, and auto redirect is now controlled per gig. Use door price only when it is confirmed.</div>
+        <div class="gig-edit-helper">Hidden gigs stay in Firestore and remain manageable here. EPK visibility controls the public gig history, while links visibility controls `links.html` ticket cards and the dedicated ticket page. Ticket links still stop showing once the gig date is in the past.</div>
       </form>
 
       <div id="gig-edit-error" class="status-message" aria-live="polite"></div>

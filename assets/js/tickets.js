@@ -233,7 +233,16 @@ function normalizeTicketPriceIncludesFee(value) {
   return value === true || String(value || "").toLowerCase() === "true";
 }
 
+function normalizeBooleanFlag(value) {
+  return value === true || String(value || "").toLowerCase() === "true";
+}
+
 function normalizeGigEntry(gig = {}, id = "") {
+  const legacyHidden = normalizeBooleanFlag(gig?.hidden);
+  const hideFromLinks = Object.prototype.hasOwnProperty.call(gig, "hideFromLinks")
+    ? normalizeBooleanFlag(gig?.hideFromLinks)
+    : legacyHidden;
+
   return {
     id,
     date: String(gig?.date || "").trim(),
@@ -247,12 +256,12 @@ function normalizeGigEntry(gig = {}, id = "") {
     autoRedirect: normalizeGigAutoRedirect(gig?.autoRedirect),
     imageUrl: normalizeImageUrl(gig?.imageUrl),
     metaPixelId: normalizeMetaPixelId(gig?.metaPixelId),
-    hidden: gig?.hidden === true || String(gig?.hidden || "").toLowerCase() === "true"
+    hideFromLinks
   };
 }
 
-function isGigHidden(gig) {
-  return gig?.hidden === true || String(gig?.hidden || "").toLowerCase() === "true";
+function isGigHiddenFromLinks(gig) {
+  return gig?.hideFromLinks === true || String(gig?.hideFromLinks || "").toLowerCase() === "true";
 }
 
 function hasGigTicketLink(gig) {
@@ -754,10 +763,10 @@ async function loadGig() {
 
     const gig = normalizeGigEntry(snapshot.data(), snapshot.id);
 
-    if (isGigHidden(gig) || !hasGigTicketLink(gig) || !isUpcomingGig(gig)) {
+    if (isGigHiddenFromLinks(gig) || !hasGigTicketLink(gig) || !isUpcomingGig(gig)) {
       renderUnavailable(
         "Tickets not live right now",
-        "This show is hidden, missing a ticket URL, or no longer upcoming.",
+        "This show is hidden from links, missing a ticket URL, or no longer upcoming.",
         "Only upcoming gigs with a ticket URL stay available on this page."
       );
       await logEvent("ticket_redirect_unavailable", {

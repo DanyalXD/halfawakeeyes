@@ -226,6 +226,7 @@
       gigEditImageUrl: document.getElementById("gig-edit-image-url"),
       gigEditMetaPixelId: document.getElementById("gig-edit-meta-pixel-id"),
       gigEditHidden: document.getElementById("gig-edit-hidden"),
+      gigEditHideFromLinks: document.getElementById("gig-edit-hide-from-links"),
       gigEditError: document.getElementById("gig-edit-error"),
       gigDelete: document.getElementById("gig-delete"),
       closeGigEdit: document.getElementById("close-gig-edit"),
@@ -461,7 +462,19 @@
       ];
     }
 
+    function normalizeBooleanFlag(value) {
+      return value === true || String(value || "").toLowerCase() === "true";
+    }
+
     function normalizeGigEntry(gig = {}, id = "") {
+      const legacyHidden = normalizeBooleanFlag(gig?.hidden);
+      const hideFromEpk = Object.prototype.hasOwnProperty.call(gig, "hideFromEpk")
+        ? normalizeBooleanFlag(gig?.hideFromEpk)
+        : legacyHidden;
+      const hideFromLinks = Object.prototype.hasOwnProperty.call(gig, "hideFromLinks")
+        ? normalizeBooleanFlag(gig?.hideFromLinks)
+        : legacyHidden;
+
       return {
         id,
         date: String(gig?.date || "").trim(),
@@ -475,7 +488,9 @@
         autoRedirect: gig?.autoRedirect === true || String(gig?.autoRedirect || "").toLowerCase() === "true",
         imageUrl: String(gig?.imageUrl || "").trim(),
         metaPixelId: normalizeMetaPixelId(gig?.metaPixelId),
-        hidden: gig?.hidden === true || String(gig?.hidden || "").toLowerCase() === "true"
+        hidden: hideFromEpk,
+        hideFromEpk,
+        hideFromLinks
       };
     }
 
@@ -1746,7 +1761,11 @@
     }
 
     function isGigHidden(gig) {
-      return gig?.hidden === true || String(gig?.hidden || "").toLowerCase() === "true";
+      return gig?.hideFromEpk === true || gig?.hidden === true || String(gig?.hidden || "").toLowerCase() === "true";
+    }
+
+    function isGigHiddenFromLinks(gig) {
+      return gig?.hideFromLinks === true || String(gig?.hideFromLinks || "").toLowerCase() === "true";
     }
 
     function hasGigTicketLink(gig) {
@@ -2323,6 +2342,7 @@
       elements.gigEditTicketPriceIncludesFee.checked = false;
       elements.gigEditAutoRedirect.checked = false;
       elements.gigEditHidden.checked = false;
+      elements.gigEditHideFromLinks.checked = false;
       elements.gigEditError.textContent = "";
       syncGigEditState();
     }
@@ -2380,6 +2400,7 @@
       elements.gigEditImageUrl.value = gig.imageUrl || "";
       elements.gigEditMetaPixelId.value = normalizeMetaPixelId(gig.metaPixelId);
       elements.gigEditHidden.checked = isGigHidden(gig);
+      elements.gigEditHideFromLinks.checked = isGigHiddenFromLinks(gig);
       elements.gigEditError.textContent = "";
       syncGigEditState();
 
@@ -2418,12 +2439,13 @@
     function renderGigs() {
       const sortedGigs = getSortedGigsForAdmin();
       const hiddenCount = state.gigs.filter((gig) => isGigHidden(gig)).length;
+      const linkHiddenCount = state.gigs.filter((gig) => isGigHiddenFromLinks(gig)).length;
       elements.gigCount.textContent = state.gigs.length
-        ? `${state.gigs.length} gig${state.gigs.length === 1 ? "" : "s"} loaded${hiddenCount ? ` - ${hiddenCount} hidden` : ""}`
+        ? `${state.gigs.length} gig${state.gigs.length === 1 ? "" : "s"} loaded${hiddenCount ? ` - ${hiddenCount} EPK hidden` : ""}${linkHiddenCount ? ` - ${linkHiddenCount} links hidden` : ""}`
         : "No gigs loaded";
 
       if (state.gigs.length) {
-        elements.gigCount.textContent = `${state.gigs.length} gig${state.gigs.length === 1 ? "" : "s"} loaded${hiddenCount ? ` | ${hiddenCount} hidden` : ""}`;
+        elements.gigCount.textContent = `${state.gigs.length} gig${state.gigs.length === 1 ? "" : "s"} loaded${hiddenCount ? ` | ${hiddenCount} EPK hidden` : ""}${linkHiddenCount ? ` | ${linkHiddenCount} links hidden` : ""}`;
       }
 
       if (!state.gigs.length) {
@@ -2478,7 +2500,14 @@
         if (isGigHidden(gig)) {
           const badge = document.createElement("span");
           badge.className = "gig-admin-badge hidden";
-          badge.textContent = "Hidden";
+          badge.textContent = "EPK hidden";
+          badges.appendChild(badge);
+        }
+
+        if (isGigHiddenFromLinks(gig)) {
+          const badge = document.createElement("span");
+          badge.className = "gig-admin-badge hidden";
+          badge.textContent = "Links hidden";
           badges.appendChild(badge);
         }
 
@@ -3086,7 +3115,9 @@
         autoRedirect: elements.gigAutoRedirect.checked,
         imageUrl: elements.gigImageUrl.value.trim(),
         metaPixelId: normalizeMetaPixelId(elements.gigMetaPixelId.value),
-        hidden: false
+        hidden: false,
+        hideFromEpk: false,
+        hideFromLinks: false
       };
 
       if (!payload.ticketPrice) {
@@ -3194,6 +3225,8 @@
         return;
       }
 
+      const hideFromEpk = elements.gigEditHidden.checked;
+      const hideFromLinks = elements.gigEditHideFromLinks.checked;
       const payload = {
         date: elements.gigEditDate.value,
         event: elements.gigEditEvent.value.trim(),
@@ -3206,7 +3239,9 @@
         autoRedirect: elements.gigEditAutoRedirect.checked,
         imageUrl: elements.gigEditImageUrl.value.trim(),
         metaPixelId: normalizeMetaPixelId(elements.gigEditMetaPixelId.value),
-        hidden: elements.gigEditHidden.checked
+        hidden: hideFromEpk,
+        hideFromEpk,
+        hideFromLinks
       };
 
       if (!payload.ticketPrice) {

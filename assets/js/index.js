@@ -95,18 +95,28 @@
             });
         }
 
-        const normalizeGigEntry = (gig = {}, id = "") => ({
-            id,
-            date: String(gig?.date || "").trim(),
-            event: String(gig?.event || "").trim(),
-            venue: String(gig?.venue || "").trim(),
-            city: String(gig?.city || "").trim(),
-            ticketUrl: normalizePublicUrl(gig?.ticketUrl),
-            imageUrl: normalizeImageUrl(gig?.imageUrl),
-            hidden: gig?.hidden === true || String(gig?.hidden || "").toLowerCase() === "true"
-        });
+        const normalizeBooleanFlag = (value) =>
+            value === true || String(value || "").toLowerCase() === "true";
 
-        const isGigHidden = (gig) => gig?.hidden === true;
+        const normalizeGigEntry = (gig = {}, id = "") => {
+            const legacyHidden = normalizeBooleanFlag(gig?.hidden);
+            const hideFromEpk = Object.prototype.hasOwnProperty.call(gig, "hideFromEpk")
+                ? normalizeBooleanFlag(gig?.hideFromEpk)
+                : legacyHidden;
+
+            return {
+                id,
+                date: String(gig?.date || "").trim(),
+                event: String(gig?.event || "").trim(),
+                venue: String(gig?.venue || "").trim(),
+                city: String(gig?.city || "").trim(),
+                ticketUrl: normalizePublicUrl(gig?.ticketUrl),
+                imageUrl: normalizeImageUrl(gig?.imageUrl),
+                hideFromEpk
+            };
+        };
+
+        const isGigHiddenFromEpk = (gig) => gig?.hideFromEpk === true;
         const parseGigDate = (value) => {
             if (!value) {
                 return null;
@@ -211,7 +221,7 @@
             const pastEl = document.getElementById("past-gigs");
             const upcomingEl = document.getElementById("upcoming-gigs");
             const visibleGigs = gigEntries
-                .filter(gig => !isGigHidden(gig))
+                .filter(gig => !isGigHiddenFromEpk(gig))
                 .sort((a, b) => {
                     const dateA = parseGigDate(a.date);
                     const dateB = parseGigDate(b.date);

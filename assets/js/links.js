@@ -172,21 +172,31 @@
             };
         };
 
-        const isGigHidden = (gig) =>
-            gig?.hidden === true || String(gig?.hidden || "").toLowerCase() === "true";
+        const normalizeBooleanFlag = (value) =>
+            value === true || String(value || "").toLowerCase() === "true";
+
+        const isGigHiddenFromLinks = (gig) =>
+            gig?.hideFromLinks === true || String(gig?.hideFromLinks || "").toLowerCase() === "true";
 
         const hasGigTicketLink = (gig) => Boolean(String(gig?.ticketUrl || "").trim());
 
-        const normalizeGigEntry = (gig = {}, id = "") => ({
-            id,
-            date: String(gig?.date || "").trim(),
-            event: String(gig?.event || "").trim(),
-            venue: String(gig?.venue || "").trim(),
-            city: String(gig?.city || "").trim(),
-            ticketUrl: normalizePublicUrl(gig?.ticketUrl),
-            imageUrl: normalizeImageUrl(gig?.imageUrl),
-            hidden: gig?.hidden === true || String(gig?.hidden || "").toLowerCase() === "true"
-        });
+        const normalizeGigEntry = (gig = {}, id = "") => {
+            const legacyHidden = normalizeBooleanFlag(gig?.hidden);
+            const hideFromLinks = Object.prototype.hasOwnProperty.call(gig, "hideFromLinks")
+                ? normalizeBooleanFlag(gig?.hideFromLinks)
+                : legacyHidden;
+
+            return {
+                id,
+                date: String(gig?.date || "").trim(),
+                event: String(gig?.event || "").trim(),
+                venue: String(gig?.venue || "").trim(),
+                city: String(gig?.city || "").trim(),
+                ticketUrl: normalizePublicUrl(gig?.ticketUrl),
+                imageUrl: normalizeImageUrl(gig?.imageUrl),
+                hideFromLinks
+            };
+        };
 
         const parseGigDate = (value) => {
             if (!value) {
@@ -420,7 +430,7 @@
                 today.setHours(0, 0, 0, 0);
 
                 return gigEntries
-                    .filter((gig) => !isGigHidden(gig) && hasGigTicketLink(gig))
+                    .filter((gig) => !isGigHiddenFromLinks(gig) && hasGigTicketLink(gig))
                     .map((gig) => ({
                         gig,
                         dateOnly: getGigDateOnly(gig?.date)
