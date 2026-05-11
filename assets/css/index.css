@@ -496,6 +496,16 @@
             text-align: right;
         }
 
+        .info-members {
+            display: grid;
+            gap: 0.25rem;
+            max-width: 320px;
+        }
+
+        .info-members strong {
+            max-width: none;
+        }
+
         .side-note {
             padding: 1.2rem 0 0;
             border-top: 1px solid rgba(255, 255, 255, 0.08);
@@ -1398,6 +1408,10 @@
 
             .info-row strong {
                 text-align: left;
+                max-width: none;
+            }
+
+            .info-members {
                 max-width: none;
             }
 
