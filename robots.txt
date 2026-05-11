@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /admin.html
+Disallow: /assets/components/admin/
+
+Sitemap: https://halfawakeeyes.co.uk/sitemap.xml

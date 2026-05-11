@@ -325,6 +325,22 @@ document.getElementById("footer-year").textContent = new Date().getFullYear();
         const videoTitle = document.getElementById('video-title');
         const videoVenue = document.getElementById('video-venue');
 
+        videos.forEach(video => {
+            video.addEventListener('play', () => {
+                video.classList.add('is-video-playing');
+            });
+
+            video.addEventListener('pause', () => {
+                if (video.currentTime === 0 || video.ended) {
+                    video.classList.remove('is-video-playing');
+                }
+            });
+
+            video.addEventListener('ended', () => {
+                video.classList.remove('is-video-playing');
+            });
+        });
+
         const updateVideoMeta = () => {
             const activeItem = carousel.querySelector('.carousel-item.active');
             if (!activeItem) {
