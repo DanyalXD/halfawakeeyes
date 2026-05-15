@@ -220,20 +220,36 @@
 
             const pastEl = document.getElementById("past-gigs");
             const upcomingEl = document.getElementById("upcoming-gigs");
-            const visibleGigs = gigEntries
-                .filter(gig => !isGigHiddenFromEpk(gig))
-                .sort((a, b) => {
-                    const dateA = parseGigDate(a.date);
-                    const dateB = parseGigDate(b.date);
-                    const timeA = dateA ? dateA.getTime() : Number.MAX_SAFE_INTEGER;
-                    const timeB = dateB ? dateB.getTime() : Number.MAX_SAFE_INTEGER;
-                    return timeA - timeB;
-                });
+            const getGigSortTime = (gig, fallback = Number.MAX_SAFE_INTEGER) => {
+                const date = parseGigDate(gig.date);
+                return date ? date.getTime() : fallback;
+            };
+            const appendGigToList = (gig, listEl) => {
+                const gigDate = parseGigDate(gig.date);
+                const gigDateOnly = gigDate ? new Date(gigDate) : null;
+                if (gigDateOnly) {
+                    gigDateOnly.setHours(0, 0, 0, 0);
+                }
+
+                const formattedDate = gigDateOnly
+                    ? gigDateOnly.toLocaleDateString("en-US", {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric"
+                    })
+                    : (gig.date || "Date TBC");
+
+                listEl.appendChild(renderGigItem(gig, formattedDate));
+            };
+            const visibleGigs = gigEntries.filter(gig => !isGigHiddenFromEpk(gig));
 
             if (!visibleGigs.length) {
                 pastEl.innerHTML = `<li class="gig-empty">No past gigs.</li>`;
                 upcomingEl.innerHTML = `<li class="gig-empty">No upcoming gigs.</li>`;
             } else {
+                const pastGigs = [];
+                const upcomingGigs = [];
+
                 visibleGigs.forEach(gig => {
                     const gigDate = parseGigDate(gig.date);
                     const gigDateOnly = gigDate ? new Date(gigDate) : null;
@@ -241,21 +257,20 @@
                         gigDateOnly.setHours(0, 0, 0, 0);
                     }
 
-                    const formattedDate = gigDateOnly
-                        ? gigDateOnly.toLocaleDateString("en-US", {
-                            year: "numeric",
-                            month: "long",
-                            day: "numeric"
-                        })
-                        : (gig.date || "Date TBC");
-                    const li = renderGigItem(gig, formattedDate);
-
                     if (gigDateOnly && gigDateOnly < today) {
-                        pastEl.appendChild(li);
+                        pastGigs.push(gig);
                     } else {
-                        upcomingEl.appendChild(li);
+                        upcomingGigs.push(gig);
                     }
                 });
+
+                pastGigs
+                    .sort((a, b) => getGigSortTime(b, Number.MIN_SAFE_INTEGER) - getGigSortTime(a, Number.MIN_SAFE_INTEGER))
+                    .forEach(gig => appendGigToList(gig, pastEl));
+
+                upcomingGigs
+                    .sort((a, b) => getGigSortTime(a) - getGigSortTime(b))
+                    .forEach(gig => appendGigToList(gig, upcomingEl));
 
                 if (!pastEl.children.length) {
                     pastEl.innerHTML = `<li class="gig-empty">No past gigs.</li>`;
@@ -277,8 +292,6 @@
                 upcomingEl.innerHTML = `<li class="gig-empty">${message}</li>`;
             }
         }
-
-document.getElementById("footer-year").textContent = new Date().getFullYear();
 
         const siteNavWrap = document.getElementById("site-nav-wrap");
         const siteNavToggle = document.getElementById("site-nav-toggle");

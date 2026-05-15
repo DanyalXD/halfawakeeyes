@@ -15,43 +15,62 @@
 <body>
     <div class="shell">
         <header class="hero">
-            <span class="eyebrow">Privacy</span>
-            <h1>Privacy Policy</h1>
-            <p>This page explains what limited analytics data Half Awake Eyes collects through the website, why it is collected, and how to get in touch if you have any questions.</p>
+            <div>
+                <span class="eyebrow">Privacy</span>
+                <h1>Privacy Policy</h1>
+            </div>
+            <div class="hero-copy">
+                <p>This page explains what data Half Awake Eyes collects through the website, why it is collected, and how to get in touch if you have any questions.</p>
+                <span class="updated-pill">Updated May 2026</span>
+            </div>
         </header>
 
         <div class="policy-grid">
             <main>
                 <section class="panel">
                     <h2>What We Collect</h2>
-                    <p>Half Awake Eyes operates this website and uses Firebase, a Google service, to collect limited analytics data such as page views, link clicks, video interactions, and redirects. This helps us understand general engagement with our music and content.</p>
-                    <p>The data stored may include a timestamp, page path, non-personal link or interaction details, and a random or campaign ID if one is supplied in a URL.</p>
+                    <p>Half Awake Eyes operates this website and uses Firebase, a Google service, to collect limited analytics data such as page views, link clicks, video interactions, ticket redirects, and smart-link activity. This helps us understand general engagement with our music, shows, and content.</p>
+                    <p>The data stored may include a timestamp, page path, anonymous session ID, viewport size, referrer, campaign or UTM details, and non-personal interaction details such as the link or button used.</p>
+                </section>
+
+                <section class="panel">
+                    <h2>Mailing List Signups</h2>
+                    <p>If you join the mailing list, we collect the email address you submit. We may also store basic signup context, such as the page you signed up from, campaign details, referrer, and signup date, so we can understand where signups came from and manage the list.</p>
+                    <p>We use mailing list data only for Half Awake Eyes updates and related admin. You can ask for your email address to be removed at any time using the contact details below.</p>
                 </section>
 
                 <section class="panel">
                     <h2>What We Do Not Collect</h2>
                     <ul>
-                        <li>No names or contact details through analytics logging</li>
+                        <li>No names through public analytics logging</li>
+                        <li>No email addresses unless you submit one through a mailing list form</li>
                         <li>No sign-up accounts for public visitors</li>
-                        <li>No advertising profile data</li>
                         <li>No sale of visitor data to third parties</li>
                     </ul>
                 </section>
 
                 <section class="panel">
+                    <h2>Cookies and Browser Storage</h2>
+                    <p>The site uses session storage in your browser to keep an anonymous session ID, avoid duplicate page-view logs, and limit repeated analytics events during a visit. This storage is temporary and is normally cleared when your browser session ends.</p>
+                    <p>The site does not set its own advertising cookies by default. Some ticket or smart-link pages may use Meta Pixel tracking if a campaign has been configured with a Pixel ID.</p>
+                </section>
+
+                <section class="panel">
                     <h2>Why We Process This Data</h2>
-                    <p>We rely on our legitimate interest in understanding how visitors interact with our website, music, videos, and promotional materials. The purpose is internal insight only, such as seeing what content gets attention and which links are being used.</p>
+                    <p>We rely on our legitimate interest in understanding how visitors interact with our website, music, videos, shows, and promotional materials. For mailing list signups, we process the email address you provide so we can send band updates and manage the list.</p>
                 </section>
 
                 <section class="panel">
                     <h2>Third-Party Processing</h2>
                     <p>Firebase may process technical information, such as IP addresses, as part of providing its infrastructure and security services. That processing is handled by Google under its own service terms and data processing arrangements.</p>
+                    <p>Where Meta Pixel is enabled for a ticket or smart-link campaign, Meta may receive event information such as page views or outbound ticket clicks. This is used only for campaign measurement connected to that page.</p>
                 </section>
 
                 <section class="panel">
                     <h2>Contact</h2>
-                    <p>If you have questions about this policy or want to request deletion of any logged data associated with a campaign or identifier, contact <a href="mailto:halfawakeeyes@gmail.com">halfawakeeyes@gmail.com</a>.</p>
-                    <p class="footer-note">Updated October 2025.</p>
+                    <p>If you have questions about this policy, want to request deletion of mailing list data, or want to request deletion of logged data associated with a campaign or identifier, contact <a href="mailto:halfawakeeyes@gmail.com">halfawakeeyes@gmail.com</a>.</p>
+                    <p class="footer-note">Updated May 2026.</p>
+                    <p class="footer-note">&copy; <span data-current-year></span> Half Awake Eyes. All rights reserved.</p>
                     <a class="back-link" href="/">Back to EPK</a>
                 </section>
             </main>
@@ -61,15 +80,19 @@
                 <div class="summary-list">
                     <div class="summary-item">
                         <strong>Purpose</strong>
-                        Understand general website engagement
+                        Understand site engagement and manage signups
                     </div>
                     <div class="summary-item">
                         <strong>Collected</strong>
-                        Anonymous event data like views, clicks, and timestamps
+                        Event data, session IDs, campaign details, and submitted emails
                     </div>
                     <div class="summary-item">
                         <strong>Not Collected</strong>
-                        Names, emails, cookies for marketing, or ad profiles
+                        Names, public accounts, or data for sale
+                    </div>
+                    <div class="summary-item">
+                        <strong>Storage</strong>
+                        Firebase plus temporary browser session storage
                     </div>
                     <div class="summary-item">
                         <strong>Contact</strong>
@@ -79,5 +102,6 @@
             </aside>
         </div>
     </div>
+    <script src="assets/js/current-year.js"></script>
 </body>
 </html>
