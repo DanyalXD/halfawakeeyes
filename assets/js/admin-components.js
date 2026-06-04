@@ -8,7 +8,7 @@
     { name: "analytics-page", path: "assets/components/admin/pages/analytics.html" },
     { name: "gigs-page", path: "assets/components/admin/pages/gigs.html" },
     { name: "links-page", path: "assets/components/admin/pages/links.html" },
-    { name: "mailing-list-page", path: "assets/components/admin/pages/mailing-list.html" },
+    { name: "email-page", path: "assets/components/admin/pages/email.html" },
     { name: "campaigns-page", path: "assets/components/admin/pages/campaigns.html" },
     { name: "delete-dialog", path: "assets/components/admin/dialogs/delete.html" },
     { name: "cache-reset-dialog", path: "assets/components/admin/dialogs/cache-reset.html" },

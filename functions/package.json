@@ -1,0 +1,21 @@
+{
+  "name": "hae-admin-functions",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Firebase callable functions for the Half Awake Eyes admin dashboard.",
+  "main": "index.js",
+  "engines": {
+    "node": "20"
+  },
+  "scripts": {
+    "lint": "node --check index.js"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.7.0",
+    "firebase-functions": "^6.4.0",
+    "imapflow": "^1.0.187",
+    "mailparser": "^3.7.4",
+    "nodemailer": "^6.9.16"
+  },
+  "devDependencies": {}
+}

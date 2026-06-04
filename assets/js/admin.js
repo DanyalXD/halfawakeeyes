@@ -1,6 +1,7 @@
 ﻿import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
     import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, getFirestore, orderBy, query, setDoc, updateDoc, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-functions.js";
     import QRCode from "https://cdn.jsdelivr.net/npm/qrcode@1.5.4/+esm";
 
     const firebaseConfig = {
@@ -12,6 +13,7 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
+    const functions = getFunctions(app);
 
     const state = {
       allLogs: [],
@@ -20,6 +22,11 @@
       gigs: [],
       links: [],
       mailingListSignups: [],
+      activeMailingListContactId: "",
+      emailMessages: [],
+      activeEmailMessage: null,
+      activeEmailFolder: "inbox",
+      activeEmailView: "mail",
       campaign: null,
       campaigns: [],
       activeCampaignId: "",
@@ -41,11 +48,15 @@
       isLoadingGigs: false,
       isLoadingLinks: false,
       isLoadingMailingList: false,
+      isLoadingEmail: false,
+      isLoadingEmailMessage: false,
       isLoadingCampaign: false,
+      isTrashingEmail: false,
       gigSortMode: "upcoming-first",
       isSavingGig: false,
       isSavingLink: false,
       isSavingCampaign: false,
+      isSendingEmail: false,
       isSeedingLinks: false,
       isUpdatingGig: false,
       isUpdatingLink: false,
@@ -69,7 +80,7 @@
     };
 
     const ADMIN_ACTIVE_PAGE_STORAGE_KEY = "hae-admin-active-page";
-    const VALID_ADMIN_PAGES = new Set(["analytics", "gigs", "links", "mailing-list", "campaigns"]);
+    const VALID_ADMIN_PAGES = new Set(["analytics", "gigs", "links", "email", "campaigns"]);
     const ADMIN_EMAIL_ALLOWLIST = new Set([
       "danyal1995@hotmail.co.uk",
       "danyalc95@gmail.com"
@@ -94,9 +105,10 @@
       analyticsPage: document.getElementById("analytics-page"),
       gigsPage: document.getElementById("gigs-page"),
       linksPage: document.getElementById("links-page"),
-      mailingListPage: document.getElementById("mailing-list-page"),
+      emailPage: document.getElementById("email-page"),
       campaignsPage: document.getElementById("campaigns-page"),
       pageTabs: Array.from(document.querySelectorAll("[data-page]")),
+      emailFolderButtons: Array.from(document.querySelectorAll("[data-email-folder]")),
       summary: document.getElementById("summary"),
       summaryCaption: document.getElementById("summary-caption"),
       statsGrid: document.getElementById("stats-grid"),
@@ -156,9 +168,44 @@
       mailingListCount: document.getElementById("mailing-list-count"),
       mailingListSummary: document.getElementById("mailing-list-summary"),
       mailingListList: document.getElementById("mailing-list-list"),
+      mailingListAlphabet: document.getElementById("mailing-list-alphabet"),
+      mailingListDetail: document.getElementById("mailing-list-detail"),
       mailingListStatus: document.getElementById("mailing-list-status"),
+      sendMailingListEmails: document.getElementById("send-mailing-list-emails"),
       copyMailingListEmails: document.getElementById("copy-mailing-list-emails"),
       exportMailingListCsv: document.getElementById("export-mailing-list-csv"),
+      emailCount: document.getElementById("email-count"),
+      emailWorkspace: document.querySelector(".email-workspace"),
+      emailViewButtons: Array.from(document.querySelectorAll("[data-email-view]")),
+      emailNew: document.getElementById("email-new"),
+      emailComposeOpenButtons: Array.from(document.querySelectorAll("[data-email-compose-open]")),
+      emailMobileMenu: document.getElementById("email-mobile-menu"),
+      emailMobileTitle: document.querySelector(".email-mobile-title"),
+      emailMobileDashboardMenu: document.getElementById("email-mobile-dashboard-menu"),
+      emailMobileRefresh: document.getElementById("email-mobile-refresh"),
+      emailRefresh: document.getElementById("email-refresh"),
+      emailStatus: document.getElementById("email-status"),
+      emailFolderTitle: document.getElementById("email-folder-title"),
+      emailMessageList: document.getElementById("email-message-list"),
+      emailReaderTitle: document.getElementById("email-reader-title"),
+      emailReaderMeta: document.getElementById("email-reader-meta"),
+      emailReaderClose: document.getElementById("email-reader-close"),
+      emailReader: document.getElementById("email-reader"),
+      emailComposeOverlay: document.getElementById("email-compose-overlay"),
+      emailComposeClose: document.getElementById("email-compose-close"),
+      emailComposeForm: document.getElementById("email-compose-form"),
+      emailTo: document.getElementById("email-to"),
+      emailBccRow: document.getElementById("email-bcc-row"),
+      emailBcc: document.getElementById("email-bcc"),
+      emailSubject: document.getElementById("email-subject"),
+      emailBody: document.getElementById("email-body"),
+      emailLinkPanel: document.getElementById("email-link-panel"),
+      emailLinkUrl: document.getElementById("email-link-url"),
+      emailLinkApply: document.getElementById("email-link-apply"),
+      emailLinkCancel: document.getElementById("email-link-cancel"),
+      emailFormatButtons: Array.from(document.querySelectorAll("[data-email-format]")),
+      emailSend: document.getElementById("email-send"),
+      emailComposeStatus: document.getElementById("email-compose-status"),
       campaignForm: document.getElementById("campaign-form"),
       campaignSlug: document.getElementById("campaign-slug"),
       campaignBadge: document.getElementById("campaign-badge"),
@@ -279,6 +326,9 @@
     function getStoredActivePage() {
       try {
         const storedValue = window.localStorage.getItem(ADMIN_ACTIVE_PAGE_STORAGE_KEY);
+        if (storedValue === "mailing-list") {
+          return "email";
+        }
         return VALID_ADMIN_PAGES.has(storedValue) ? storedValue : "analytics";
       } catch (error) {
         return "analytics";
@@ -1672,8 +1722,8 @@
       if (state.activePage === "links") {
         return "links";
       }
-      if (state.activePage === "mailing-list") {
-        return "mailing-list-signups";
+      if (state.activePage === "email") {
+        return state.activeEmailView === "address-book" ? "mailing-list-signups" : "ionos-mailbox";
       }
       if (state.activePage === "campaigns") {
         return "campaigns";
@@ -1789,6 +1839,30 @@
       elements.mailingListStatus.classList.remove("is-success", "is-error");
       if (type) {
         elements.mailingListStatus.classList.add(type);
+      }
+    }
+
+    function setEmailStatus(message = "", type = "") {
+      if (!elements.emailStatus) {
+        return;
+      }
+
+      elements.emailStatus.textContent = message;
+      elements.emailStatus.classList.remove("is-success", "is-error");
+      if (type) {
+        elements.emailStatus.classList.add(type);
+      }
+    }
+
+    function setEmailComposeStatus(message = "", type = "") {
+      if (!elements.emailComposeStatus) {
+        return;
+      }
+
+      elements.emailComposeStatus.textContent = message;
+      elements.emailComposeStatus.classList.remove("is-success", "is-error");
+      if (type) {
+        elements.emailComposeStatus.classList.add(type);
       }
     }
 
@@ -2769,100 +2843,206 @@
       }
 
       const signups = [...state.mailingListSignups].sort((a, b) => {
-        const timeA = getDateForFilter(a?.updatedAt)?.getTime() || 0;
-        const timeB = getDateForFilter(b?.updatedAt)?.getTime() || 0;
-        return timeB - timeA || String(a?.email || "").localeCompare(String(b?.email || ""));
+        return getMailingContactName(a).localeCompare(getMailingContactName(b))
+          || String(a?.email || "").localeCompare(String(b?.email || ""));
       });
 
       elements.mailingListCount.textContent = signups.length
-        ? `${signups.length} signup${signups.length === 1 ? "" : "s"}`
-        : "No signups yet";
+        ? `${signups.length} contact${signups.length === 1 ? "" : "s"}`
+        : "No contacts yet";
       elements.mailingListList.innerHTML = "";
       const summary = getMailingListSummary(signups);
-      const latestSignupLabel = summary.latestSignup?.updatedAt
-        ? (formatTimestamp(summary.latestSignup.updatedAt) || "Recently")
-        : "No recent signup";
 
       elements.mailingListSummary.innerHTML = `
-        <article class="campaign-analytics-card">
-          <div class="label">Signups</div>
-          <div class="value">${summary.total}</div>
-          <div class="detail">Collected across links and smart-link pages</div>
-        </article>
-        <article class="campaign-analytics-card">
-          <div class="label">Latest Signup</div>
-          <div class="value">${summary.latestSignup ? "Recent" : "None"}</div>
-          <div class="detail">${latestSignupLabel}</div>
-        </article>
-        <article class="campaign-analytics-card">
-          <div class="label">Top Source</div>
-          <div class="value">${summary.topSource.count || 0}</div>
-          <div class="detail">${summary.topSource.label || "No source data yet"}</div>
-        </article>
-        <article class="campaign-analytics-card">
-          <div class="label">Top Campaign</div>
-          <div class="value">${summary.topCampaign.count || 0}</div>
-          <div class="detail">${summary.topCampaign.label || "No campaign signups yet"}</div>
-        </article>
+        <div class="mailing-list-topline">
+          <strong>Contacts</strong>
+          <span>${summary.total} saved from your site mailing list</span>
+        </div>
+        <button type="button" class="mailing-list-select-button">Select</button>
       `;
 
       if (!signups.length) {
         elements.mailingListList.innerHTML = `
           <tr>
-            <td colspan="6">
-              <div class="gig-admin-empty">No mailing list signups yet.</div>
+            <td>
+              <div class="gig-admin-empty">No mailing list contacts yet.</div>
             </td>
           </tr>
         `;
+        renderMailingListAlphabet([]);
+        renderMailingListDetail(null);
         return;
+      }
+
+      if (!signups.some((signup) => signup.id === state.activeMailingListContactId)) {
+        state.activeMailingListContactId = signups[0].id;
       }
 
       signups.forEach((signup) => {
         const row = document.createElement("tr");
+        row.className = "mailing-contact-row";
 
-        const emailCell = document.createElement("td");
-        emailCell.dataset.label = "Email";
-        const emailValue = document.createElement("div");
-        emailValue.className = "mailing-list-email";
-        emailValue.textContent = signup.email || "Unknown email";
-        emailCell.appendChild(emailValue);
+        const cell = document.createElement("td");
 
-        const sourceCell = document.createElement("td");
-        sourceCell.className = "mailing-list-cell";
-        sourceCell.dataset.label = "Source";
-        sourceCell.textContent = [
-          signup.sourcePage ? `Page: ${signup.sourcePage}` : "",
-          signup.source ? `Source: ${signup.source}` : "",
-          signup.medium ? `Medium: ${signup.medium}` : ""
-        ].filter(Boolean).join(" | ") || "No source details";
+        const contactButton = document.createElement("button");
+        contactButton.type = "button";
+        contactButton.className = "mailing-contact-button";
+        contactButton.classList.toggle("is-active", signup.id === state.activeMailingListContactId);
+        contactButton.innerHTML = `
+          <span class="mailing-contact-name">${escapeHtml(getMailingContactName(signup))}</span>
+          <span class="mailing-contact-email">${escapeHtml(String(signup.email || ""))}</span>
+        `;
+        contactButton.addEventListener("click", () => {
+          state.activeMailingListContactId = signup.id;
+          renderMailingListSignups();
+          document.body.classList.add("mailing-contact-detail-open");
+        });
 
-        const campaignCell = document.createElement("td");
-        campaignCell.className = "mailing-list-cell";
-        campaignCell.dataset.label = "Campaign";
-        campaignCell.textContent = signup.campaignSlug || "-";
-
-        const referrerCell = document.createElement("td");
-        referrerCell.className = "mailing-list-cell";
-        referrerCell.dataset.label = "Referrer";
-        referrerCell.textContent = signup.referrer ? getReferrerLabel(signup.referrer) : "Direct / unknown";
-
-        const updatedCell = document.createElement("td");
-        updatedCell.className = "mailing-list-cell";
-        updatedCell.dataset.label = "Updated";
-        updatedCell.textContent = signup.updatedAt ? (formatTimestamp(signup.updatedAt) || "-") : "-";
-
-        const entriesCell = document.createElement("td");
-        entriesCell.className = "mailing-list-cell mailing-list-count-cell";
-        entriesCell.dataset.label = "Entries";
-        entriesCell.textContent = Number.isFinite(Number(signup.signupCount)) ? String(signup.signupCount) : "1";
-
-        row.append(emailCell, sourceCell, campaignCell, referrerCell, updatedCell, entriesCell);
+        cell.appendChild(contactButton);
+        row.appendChild(cell);
         elements.mailingListList.appendChild(row);
       });
 
-      if (state.activePage === "mailing-list") {
+      renderMailingListAlphabet(signups);
+      renderMailingListDetail(signups.find((signup) => signup.id === state.activeMailingListContactId) || signups[0]);
+
+      if (state.activePage === "email" && state.activeEmailView === "address-book") {
         syncActivePageUI();
       }
+    }
+
+    function escapeHtml(value = "") {
+      return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+
+    function getMailingContactName(signup = {}) {
+      const explicitName = String(signup.name || signup.fullName || signup.displayName || "").trim();
+      if (explicitName) {
+        return explicitName;
+      }
+
+      const email = String(signup.email || "").trim();
+      const localPart = email.split("@")[0] || "Contact";
+      return localPart
+        .split(/[._+\-\s]+/)
+        .filter(Boolean)
+        .map((part) => `${part.charAt(0).toUpperCase()}${part.slice(1)}`)
+        .join(" ") || email || "Contact";
+    }
+
+    function getMailingContactLetter(signup = {}) {
+      const letter = getMailingContactName(signup).trim().charAt(0).toUpperCase();
+      return /^[A-Z]$/.test(letter) ? letter : "#";
+    }
+
+    function renderMailingListAlphabet(signups = []) {
+      if (!elements.mailingListAlphabet) {
+        return;
+      }
+
+      const availableLetters = new Set(signups.map(getMailingContactLetter));
+      const letters = ["#", ..."ABCDEFGHIJKLMNOPQRSTUVWXYZ"];
+      elements.mailingListAlphabet.innerHTML = "";
+
+      letters.forEach((letter) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.textContent = letter;
+        button.disabled = !availableLetters.has(letter);
+        button.addEventListener("click", () => {
+          const target = signups.find((signup) => getMailingContactLetter(signup) === letter);
+          if (!target) {
+            return;
+          }
+
+          state.activeMailingListContactId = target.id;
+          renderMailingListSignups();
+        });
+        elements.mailingListAlphabet.appendChild(button);
+      });
+    }
+
+    function renderMailingListDetail(signup) {
+      if (!elements.mailingListDetail) {
+        return;
+      }
+
+      if (!signup) {
+        elements.mailingListDetail.innerHTML = `<div class="gig-admin-empty">Select a contact to view details.</div>`;
+        return;
+      }
+
+      const email = String(signup.email || "").trim();
+      const name = getMailingContactName(signup);
+      const updatedLabel = signup.updatedAt ? (formatTimestamp(signup.updatedAt) || "-") : "-";
+      const entryCount = Number.isFinite(Number(signup.signupCount)) ? String(signup.signupCount) : "1";
+      const source = [
+        signup.sourcePage ? `Page: ${signup.sourcePage}` : "",
+        signup.source ? `Source: ${signup.source}` : "",
+        signup.medium ? `Medium: ${signup.medium}` : ""
+      ].filter(Boolean).join(" / ") || "No source details";
+      const referrer = signup.referrer ? getReferrerLabel(signup.referrer) : "Direct / unknown";
+
+      elements.mailingListDetail.innerHTML = `
+        <div class="mailing-contact-detail-bar">
+          <button type="button" id="mailing-contact-back" class="email-compose-icon-button" aria-label="Back to mailing list">‹</button>
+          <span>Mailing List</span>
+        </div>
+        <div class="mailing-contact-profile">
+          <div class="mailing-contact-profile-avatar">${escapeHtml(getEmailSenderInitials(email || name))}</div>
+          <div class="mailing-contact-profile-main">
+            <h4>${escapeHtml(name)}</h4>
+            <div class="mailing-contact-profile-actions">
+              <button type="button" id="mailing-contact-email-action" class="mailing-contact-round-action">Email</button>
+              <button type="button" class="mailing-contact-round-action" disabled>Invite</button>
+            </div>
+          </div>
+        </div>
+        <div class="mailing-contact-fields">
+          <div>
+            <span>Email</span>
+            <strong>${escapeHtml(email || "-")}</strong>
+          </div>
+          <div>
+            <span>Source</span>
+            <strong>${escapeHtml(source)}</strong>
+          </div>
+          <div>
+            <span>Campaign</span>
+            <strong>${escapeHtml(signup.campaignSlug || "-")}</strong>
+          </div>
+          <div>
+            <span>Referrer</span>
+            <strong>${escapeHtml(referrer)}</strong>
+          </div>
+          <div>
+            <span>Updated</span>
+            <strong>${escapeHtml(updatedLabel)}</strong>
+          </div>
+          <div>
+            <span>Entries</span>
+            <strong>${escapeHtml(entryCount)}</strong>
+          </div>
+        </div>
+      `;
+
+      elements.mailingListDetail.querySelector("#mailing-contact-back")?.addEventListener("click", () => {
+        document.body.classList.remove("mailing-contact-detail-open");
+      });
+
+      elements.mailingListDetail.querySelector("#mailing-contact-email-action")?.addEventListener("click", () => {
+        setEmailComposeStatus("");
+        openEmailCompose();
+        if (elements.emailTo) {
+          elements.emailTo.value = extractEmailAddress(email);
+          elements.emailSubject?.focus();
+        }
+      });
     }
 
     function getMailingListEmails() {
@@ -2887,6 +3067,33 @@
         console.error("Could not copy mailing list emails:", error);
         setMailingListStatus("Could not copy the email list. Check clipboard permissions.", "is-error");
       }
+    }
+
+    function sendMailingListEmails() {
+      const emails = getMailingListEmails().map(extractEmailAddress).filter(Boolean);
+      if (!emails.length) {
+        setMailingListStatus("No signup emails available to send.", "is-error");
+        return;
+      }
+
+      setEmailComposeStatus("");
+      openEmailCompose();
+
+      if (elements.emailTo) {
+        elements.emailTo.value = "contact@halfawakeeyes.co.uk";
+      }
+
+      if (elements.emailBcc) {
+        elements.emailBcc.value = emails.join(", ");
+      }
+
+      if (elements.emailBccRow) {
+        elements.emailBccRow.hidden = false;
+      }
+
+      elements.emailSubject?.focus();
+      setMailingListStatus(`Compose opened with ${emails.length} hidden recipient${emails.length === 1 ? "" : "s"} in BCC.`, "is-success");
+      setEmailComposeStatus("Mailing list recipients added as BCC so addresses stay private.", "is-success");
     }
 
     function exportMailingListCsv() {
@@ -2945,8 +3152,8 @@
           </td>
         </tr>
       `;
-      if (state.activePage === "mailing-list") {
-        elements.collectionNote.textContent = "Loading mailing list signups from Firestore...";
+      if (state.activePage === "email" && state.activeEmailView === "address-book") {
+        elements.collectionNote.textContent = "Loading address book from Firestore...";
         updateHeroMeta("Loading...");
       }
 
@@ -2954,7 +3161,7 @@
         const snapshot = await getDocs(collection(db, "mailing-list-signups"));
         state.mailingListSignups = snapshot.docs.map((signupDoc) => ({ id: signupDoc.id, ...signupDoc.data() }));
         renderMailingListSignups();
-        if (state.activePage === "mailing-list") {
+        if (state.activePage === "email" && state.activeEmailView === "address-book") {
           updateHeroMeta(new Date().toLocaleString());
         }
       } catch (error) {
@@ -2976,15 +3183,732 @@
           </tr>
         `;
         setMailingListStatus("Could not load mailing list signups.", "is-error");
-        if (state.activePage === "mailing-list") {
+        if (state.activePage === "email" && state.activeEmailView === "address-book") {
           updateHeroMeta("Load failed");
         }
       } finally {
         state.isLoadingMailingList = false;
         syncRefreshButton();
-        if (state.activePage === "mailing-list") {
+        if (state.activePage === "email" && state.activeEmailView === "address-book") {
           syncActivePageUI();
         }
+      }
+    }
+
+    function normalizeEmailMessage(message = {}) {
+      const id = String(message.id || message.uid || message.messageId || "");
+      return {
+        id,
+        folder: String(message.folder || state.activeEmailFolder || "inbox"),
+        from: String(message.from || ""),
+        to: String(message.to || ""),
+        subject: String(message.subject || "(No subject)"),
+        date: message.date || message.timestamp || "",
+        preview: String(message.preview || message.snippet || ""),
+        text: String(message.text || message.body || ""),
+        html: String(message.html || ""),
+        unread: Boolean(message.unread || message.isUnread),
+        raw: message
+      };
+    }
+
+    function getEmailMessageById(messageId) {
+      return state.emailMessages.find((message) => message.id === messageId) || null;
+    }
+
+    function getEmailFolderLabel(folder = state.activeEmailFolder) {
+      const labels = {
+        inbox: "Inbox",
+        drafts: "Drafts",
+        sent: "Sent",
+        spam: "Spam",
+        trash: "Trash"
+      };
+
+      return labels[folder] || "Inbox";
+    }
+
+    function syncEmailFolderUI() {
+      elements.emailFolderButtons.forEach((button) => {
+        button.classList.toggle("is-active", button.dataset.emailFolder === state.activeEmailFolder);
+      });
+
+      if (elements.emailFolderTitle) {
+        elements.emailFolderTitle.textContent = getEmailFolderLabel();
+      }
+    }
+
+    function syncEmailViewUI() {
+      const activeView = state.activeEmailView === "address-book" ? "address-book" : "mail";
+
+      elements.emailViewButtons.forEach((button) => {
+        button.classList.toggle("is-active", button.dataset.emailView === activeView);
+      });
+
+      elements.emailWorkspace?.querySelectorAll("[data-email-panel]").forEach((panel) => {
+        panel.hidden = panel.dataset.emailPanel !== activeView;
+      });
+
+      if (elements.emailMobileRefresh) {
+        elements.emailMobileRefresh.setAttribute(
+          "aria-label",
+          activeView === "address-book" ? "Refresh mailing list" : "Refresh folder"
+        );
+      }
+
+      if (elements.emailMobileTitle) {
+        elements.emailMobileTitle.textContent = activeView === "address-book" ? "Mailing List" : "Folders";
+      }
+
+      document.body.classList.toggle("email-address-book-open", activeView === "address-book");
+      if (activeView !== "address-book") {
+        document.body.classList.remove("mailing-contact-detail-open");
+      }
+      updateHeroMeta(elements.heroUpdated.textContent.replace(/^Updated:\s*/, "") || "Not loaded");
+      syncRefreshButton();
+    }
+
+    function setActiveEmailView(view) {
+      const nextView = view === "address-book" ? "address-book" : "mail";
+
+      if (state.activePage !== "email") {
+        state.activePage = "email";
+        persistActivePage(state.activePage);
+      }
+
+      if (state.activeEmailView === nextView) {
+        syncEmailViewUI();
+        return;
+      }
+
+      state.activeEmailView = nextView;
+      closeMobileEmailReader();
+      closeMobileEmailFolders();
+      document.body.classList.remove("mailing-contact-detail-open");
+      syncEmailViewUI();
+      syncActivePageUI();
+
+      if (nextView === "address-book" && !state.mailingListSignups.length) {
+        loadMailingListSignups();
+      }
+
+      if (nextView === "mail" && !state.emailMessages.length) {
+        loadEmailInbox();
+      }
+    }
+
+    function setActiveEmailFolder(folder) {
+      if (!folder || state.isLoadingEmail) {
+        return;
+      }
+
+      if (folder === state.activeEmailFolder) {
+        state.activeEmailView = "mail";
+        closeMobileEmailFolders();
+        closeMobileEmailReader();
+        syncEmailViewUI();
+        syncEmailFolderUI();
+        renderEmailInbox();
+        renderEmailReader();
+        return;
+      }
+
+      state.activeEmailView = "mail";
+      state.activeEmailFolder = folder;
+      state.emailMessages = [];
+      state.activeEmailMessage = null;
+      closeMobileEmailFolders();
+      syncEmailViewUI();
+      syncEmailFolderUI();
+      renderEmailReader();
+      loadEmailInbox();
+    }
+
+    function getEmailSenderInitials(value = "") {
+      const namePart = String(value).split("<")[0].replace(/"/g, "").trim();
+      const fallback = String(value).split("@")[0].trim();
+      const source = namePart || fallback || "Email";
+      const words = source.split(/\s+/).filter(Boolean);
+
+      if (words.length >= 2) {
+        return `${words[0][0]}${words[1][0]}`.toUpperCase();
+      }
+
+      return source.slice(0, 2).toUpperCase();
+    }
+
+    function extractEmailAddress(value = "") {
+      const source = String(value || "").trim();
+      const angleMatch = source.match(/<([^<>@\s]+@[^<>\s]+)>/);
+      if (angleMatch) {
+        return angleMatch[1].trim();
+      }
+
+      const emailMatch = source.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
+      return emailMatch ? emailMatch[0].trim() : source;
+    }
+
+    function formatEmailListDate(value) {
+      const formatted = formatTimestamp(value);
+
+      if (!formatted) {
+        return "";
+      }
+
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) {
+        return formatted;
+      }
+
+      const now = new Date();
+      const isToday = date.toDateString() === now.toDateString();
+      if (isToday) {
+        return date.toLocaleTimeString("en-GB", {
+          hour: "2-digit",
+          minute: "2-digit"
+        });
+      }
+
+      return date.toLocaleDateString("en-GB", {
+        day: "numeric",
+        month: "short"
+      });
+    }
+
+    function renderEmailInbox() {
+      if (!elements.emailMessageList || !elements.emailCount) {
+        return;
+      }
+
+      const messages = state.emailMessages;
+      elements.emailCount.textContent = state.isLoadingEmail
+        ? "Loading messages..."
+        : messages.length
+          ? `${messages.length} message${messages.length === 1 ? "" : "s"}`
+          : "No messages loaded";
+      elements.emailMessageList.innerHTML = "";
+      syncEmailFolderUI();
+
+      if (!messages.length) {
+        const empty = document.createElement("div");
+        empty.className = "gig-admin-empty";
+        empty.textContent = state.isLoadingEmail ? `Loading ${getEmailFolderLabel().toLowerCase()}...` : `No messages in ${getEmailFolderLabel().toLowerCase()}.`;
+        elements.emailMessageList.appendChild(empty);
+        return;
+      }
+
+      messages.forEach((message) => {
+        const item = document.createElement("button");
+        item.type = "button";
+        item.className = "email-message-item";
+        item.classList.toggle("is-active", state.activeEmailMessage?.id === message.id);
+        item.classList.toggle("is-unread", message.unread);
+
+        const avatar = document.createElement("div");
+        avatar.className = "email-message-avatar";
+        avatar.textContent = getEmailSenderInitials(message.from);
+
+        const body = document.createElement("div");
+        body.className = "email-message-summary";
+
+        const top = document.createElement("div");
+        top.className = "email-message-top";
+
+        const from = document.createElement("div");
+        from.className = "email-message-from";
+        from.textContent = message.from || "Unknown sender";
+
+        const date = document.createElement("div");
+        date.className = "email-message-date";
+        date.textContent = formatEmailListDate(message.date);
+
+        const subject = document.createElement("div");
+        subject.className = "email-message-subject";
+        subject.textContent = message.subject || "(No subject)";
+
+        const preview = document.createElement("div");
+        preview.className = "email-message-preview";
+        preview.textContent = message.preview || message.text || "Open to read this message.";
+
+        top.append(from, date);
+        body.append(top, subject, preview);
+        item.append(avatar, body);
+        item.addEventListener("click", () => {
+          openEmailMessage(message.id);
+        });
+
+        elements.emailMessageList.appendChild(item);
+      });
+    }
+
+    function renderEmailReader() {
+      if (!elements.emailReader || !elements.emailReaderTitle || !elements.emailReaderMeta) {
+        return;
+      }
+
+      const message = state.activeEmailMessage;
+      elements.emailReader.innerHTML = "";
+
+      if (!message) {
+        elements.emailReaderTitle.textContent = "Message";
+        elements.emailReaderMeta.textContent = "Select a message";
+        const empty = document.createElement("div");
+        empty.className = "gig-admin-empty";
+        empty.textContent = "Choose an inbox message to view its contents.";
+        elements.emailReader.appendChild(empty);
+        return;
+      }
+
+      elements.emailReaderTitle.textContent = message.subject || "(No subject)";
+      elements.emailReaderMeta.textContent = formatTimestamp(message.date) || "No date";
+
+      const header = document.createElement("div");
+      header.className = "email-reader-message-header";
+
+      const avatar = document.createElement("div");
+      avatar.className = "email-message-avatar email-reader-avatar";
+      avatar.textContent = getEmailSenderInitials(message.from);
+
+      const headerCopy = document.createElement("div");
+      headerCopy.className = "email-reader-message-copy";
+
+      const sender = document.createElement("div");
+      sender.className = "email-reader-sender";
+      sender.textContent = message.from || "Unknown sender";
+
+      const subject = document.createElement("div");
+      subject.className = "email-reader-subject";
+      subject.textContent = message.subject || "(No subject)";
+
+      const sentAt = document.createElement("div");
+      sentAt.className = "email-reader-sent-at";
+      sentAt.textContent = formatTimestamp(message.date) || "";
+
+      headerCopy.append(sender, subject, sentAt);
+      header.append(avatar, headerCopy);
+
+      const meta = document.createElement("div");
+      meta.className = "email-reader-meta-grid";
+
+      [
+        ["To", message.to || "-"],
+      ].forEach(([label, value]) => {
+        const row = document.createElement("div");
+        const labelEl = document.createElement("span");
+        const valueEl = document.createElement("strong");
+        labelEl.textContent = label;
+        valueEl.textContent = value;
+        row.append(labelEl, valueEl);
+        meta.appendChild(row);
+      });
+
+      const body = document.createElement("pre");
+      body.className = "email-reader-body";
+      if (state.isLoadingEmailMessage && !message.text && !message.html) {
+        body.classList.add("is-loading");
+        body.innerHTML = `<span class="email-reader-loading-spinner" aria-hidden="true"></span><span>Loading message...</span>`;
+      } else {
+        body.textContent = message.text || "Message body unavailable.";
+      }
+
+      const actions = document.createElement("div");
+      actions.className = "email-reader-actions";
+
+      const replyButton = document.createElement("button");
+      replyButton.type = "button";
+      replyButton.className = "btn ghost-button";
+      replyButton.textContent = "Reply";
+      replyButton.addEventListener("click", () => {
+        prefillEmailReply(message);
+      });
+
+      const trashButton = document.createElement("button");
+      trashButton.type = "button";
+      trashButton.className = "btn ghost-button email-trash-button";
+      trashButton.textContent = state.isTrashingEmail ? "Moving..." : "Trash";
+      trashButton.disabled = state.isTrashingEmail || message.folder === "trash";
+      trashButton.addEventListener("click", () => {
+        trashEmailMessage(message);
+      });
+
+      actions.append(replyButton, trashButton);
+      elements.emailReader.append(header, meta, body, actions);
+    }
+
+    function syncEmailFormState() {
+      if (elements.emailSend) {
+        elements.emailSend.disabled = state.isSendingEmail;
+        elements.emailSend.textContent = state.isSendingEmail ? "Sending..." : "Send Email";
+      }
+
+      if (elements.emailRefresh) {
+        elements.emailRefresh.disabled = state.isLoadingEmail || state.isLoadingEmailMessage;
+        elements.emailRefresh.classList.toggle("is-loading", state.isLoadingEmail);
+        elements.emailRefresh.setAttribute("aria-label", state.isLoadingEmail ? "Refreshing folder" : "Refresh folder");
+        elements.emailRefresh.setAttribute("title", state.isLoadingEmail ? "Refreshing folder" : "Refresh folder");
+      }
+
+      if (elements.emailMobileRefresh) {
+        const isMailingListView = state.activeEmailView === "address-book";
+        elements.emailMobileRefresh.disabled = isMailingListView
+          ? state.isLoadingMailingList
+          : state.isLoadingEmail || state.isLoadingEmailMessage;
+        elements.emailMobileRefresh.classList.toggle("is-loading", isMailingListView ? state.isLoadingMailingList : state.isLoadingEmail);
+      }
+    }
+
+    function openEmailCompose() {
+      if (!elements.emailComposeOverlay) {
+        return;
+      }
+
+      elements.emailComposeOverlay.hidden = false;
+      document.body.classList.add("email-compose-open");
+      window.setTimeout(() => {
+        elements.emailTo?.focus();
+      }, 0);
+    }
+
+    function closeEmailCompose() {
+      if (!elements.emailComposeOverlay) {
+        return;
+      }
+
+      elements.emailComposeOverlay.hidden = true;
+      document.body.classList.remove("email-compose-open");
+    }
+
+    function clearEmailBcc() {
+      if (elements.emailBcc) {
+        elements.emailBcc.value = "";
+      }
+
+      if (elements.emailBccRow) {
+        elements.emailBccRow.hidden = true;
+      }
+    }
+
+    function closeMobileEmailReader() {
+      document.body.classList.remove("email-reader-mobile-open");
+    }
+
+    function openMobileEmailFolders() {
+      if (!isMobileNavViewport()) {
+        return;
+      }
+
+      document.body.classList.add("email-folders-mobile-open");
+    }
+
+    function closeMobileEmailFolders() {
+      document.body.classList.remove("email-folders-mobile-open");
+    }
+
+    async function callAdminEmailFunction(name, payload = {}) {
+      const callable = httpsCallable(functions, name);
+      const result = await callable(payload);
+      return result.data || {};
+    }
+
+    function getEmailFunctionErrorMessage(error, fallbackMessage) {
+      const code = String(error?.code || "").replace(/^functions\//, "");
+      const message = String(error?.message || "").trim();
+
+      if (code || message) {
+        return [code ? `Firebase: ${code}` : "", message].filter(Boolean).join(" - ");
+      }
+
+      return fallbackMessage;
+    }
+
+    async function loadEmailInbox() {
+      if (!elements.emailMessageList || !elements.emailCount) {
+        return;
+      }
+
+      state.isLoadingEmail = true;
+      let didFail = false;
+      syncRefreshButton();
+      syncEmailFormState();
+      setEmailStatus("");
+      renderEmailInbox();
+      if (state.activePage === "email") {
+        elements.collectionNote.textContent = `Loading ${getEmailFolderLabel().toLowerCase()} through Firebase Functions...`;
+        updateHeroMeta("Loading...");
+      }
+
+      try {
+        const data = await callAdminEmailFunction("listInboxMessages", {
+          limit: 25,
+          folder: state.activeEmailFolder
+        });
+        const messages = Array.isArray(data.messages) ? data.messages : [];
+        state.emailMessages = messages.map(normalizeEmailMessage).filter((message) => message.id);
+        if (state.activeEmailMessage && !getEmailMessageById(state.activeEmailMessage.id)) {
+          state.activeEmailMessage = null;
+        }
+        renderEmailInbox();
+        renderEmailReader();
+        setEmailStatus("");
+        if (state.activePage === "email") {
+          updateHeroMeta(new Date().toLocaleString());
+        }
+      } catch (error) {
+        didFail = true;
+        console.error("Error loading email inbox:", error);
+        state.emailMessages = [];
+        state.activeEmailMessage = null;
+        const errorMessage = getEmailFunctionErrorMessage(error, "Could not load IONOS email.");
+        elements.emailCount.textContent = "Load failed";
+        elements.emailMessageList.innerHTML = "";
+        const errorState = document.createElement("div");
+        errorState.className = "gig-admin-empty";
+        errorState.textContent = errorMessage;
+        elements.emailMessageList.appendChild(errorState);
+        renderEmailReader();
+        setEmailStatus(errorMessage, "is-error");
+        if (state.activePage === "email") {
+          updateHeroMeta("Load failed");
+        }
+      } finally {
+        state.isLoadingEmail = false;
+        syncRefreshButton();
+        syncEmailFormState();
+        if (!didFail) {
+          renderEmailInbox();
+        }
+        if (state.activePage === "email") {
+          syncActivePageUI();
+        }
+      }
+    }
+
+    async function openEmailMessage(messageId) {
+      const summary = getEmailMessageById(messageId);
+      if (!summary) {
+        return;
+      }
+
+      if (summary.text || summary.html) {
+        state.activeEmailMessage = summary;
+        renderEmailInbox();
+        renderEmailReader();
+        document.body.classList.add("email-reader-mobile-open");
+        return;
+      }
+
+      state.isLoadingEmailMessage = true;
+      state.activeEmailMessage = summary;
+      renderEmailInbox();
+      renderEmailReader();
+      document.body.classList.add("email-reader-mobile-open");
+      syncEmailFormState();
+      setEmailStatus("");
+
+      try {
+        const data = await callAdminEmailFunction("getEmailMessage", {
+          id: messageId,
+          folder: summary.folder || state.activeEmailFolder
+        });
+        const fullMessage = normalizeEmailMessage({ ...summary.raw, ...summary, ...(data.message || data) });
+        state.isLoadingEmailMessage = false;
+        state.emailMessages = state.emailMessages.map((message) => message.id === messageId ? fullMessage : message);
+        state.activeEmailMessage = fullMessage;
+        renderEmailInbox();
+        renderEmailReader();
+        setEmailStatus("");
+      } catch (error) {
+        console.error("Error loading email message:", error);
+        state.isLoadingEmailMessage = false;
+        renderEmailReader();
+        setEmailStatus(getEmailFunctionErrorMessage(error, "Could not load the full message body."), "is-error");
+      } finally {
+        state.isLoadingEmailMessage = false;
+        syncEmailFormState();
+      }
+    }
+
+    async function trashEmailMessage(message) {
+      if (!message?.id || state.isTrashingEmail) {
+        return;
+      }
+
+      state.isTrashingEmail = true;
+      renderEmailReader();
+      syncEmailFormState();
+      setEmailStatus("Moving message to Trash...");
+
+      try {
+        await callAdminEmailFunction("trashEmailMessage", {
+          id: message.id,
+          folder: message.folder || state.activeEmailFolder
+        });
+
+        state.emailMessages = state.emailMessages.filter((item) => item.id !== message.id);
+        state.activeEmailMessage = null;
+        closeMobileEmailReader();
+        renderEmailInbox();
+        renderEmailReader();
+        setEmailStatus("Message moved to Trash.", "is-success");
+        loadEmailInbox();
+      } catch (error) {
+        console.error("Error moving email to Trash:", error);
+        setEmailStatus(getEmailFunctionErrorMessage(error, "Could not move this message to Trash."), "is-error");
+      } finally {
+        state.isTrashingEmail = false;
+        renderEmailReader();
+        syncEmailFormState();
+      }
+    }
+
+    function prefillEmailReply(message) {
+      if (!elements.emailTo || !elements.emailSubject || !elements.emailBody) {
+        return;
+      }
+
+      elements.emailTo.value = extractEmailAddress(message.from);
+      elements.emailSubject.value = /^re:/i.test(message.subject) ? message.subject : `Re: ${message.subject || ""}`.trim();
+      elements.emailBody.innerHTML = "";
+      clearEmailBcc();
+      openEmailCompose();
+      elements.emailBody.focus();
+      setEmailComposeStatus("Reply fields filled from the selected message.");
+    }
+
+    function getEmailBodyText() {
+      return String(elements.emailBody?.innerText || "").trim();
+    }
+
+    function getEmailBodyHtml() {
+      return String(elements.emailBody?.innerHTML || "").trim();
+    }
+
+    function resetEmailComposeForm() {
+      elements.emailComposeForm?.reset();
+      if (elements.emailBody) {
+        elements.emailBody.innerHTML = "";
+      }
+      clearEmailBcc();
+      closeEmailLinkPanel();
+    }
+
+    let savedEmailSelection = null;
+
+    function saveEmailSelection() {
+      const selection = window.getSelection();
+      if (!selection || !selection.rangeCount || !elements.emailBody?.contains(selection.anchorNode)) {
+        return;
+      }
+
+      savedEmailSelection = selection.getRangeAt(0).cloneRange();
+    }
+
+    function restoreEmailSelection() {
+      if (!savedEmailSelection) {
+        return false;
+      }
+
+      const selection = window.getSelection();
+      if (!selection) {
+        return false;
+      }
+
+      selection.removeAllRanges();
+      selection.addRange(savedEmailSelection);
+      return true;
+    }
+
+    function openEmailLinkPanel() {
+      if (!elements.emailLinkPanel || !elements.emailLinkUrl) {
+        return;
+      }
+
+      saveEmailSelection();
+      elements.emailLinkPanel.hidden = false;
+      elements.emailLinkUrl.value = "";
+      elements.emailLinkUrl.focus();
+    }
+
+    function closeEmailLinkPanel() {
+      if (elements.emailLinkPanel) {
+        elements.emailLinkPanel.hidden = true;
+      }
+
+      if (elements.emailLinkUrl) {
+        elements.emailLinkUrl.value = "";
+      }
+    }
+
+    function applyEmailLink() {
+      const url = elements.emailLinkUrl?.value.trim();
+      if (!url) {
+        closeEmailLinkPanel();
+        return;
+      }
+
+      const href = /^[a-z][a-z0-9+.-]*:/i.test(url) ? url : `https://${url}`;
+      elements.emailBody?.focus();
+      restoreEmailSelection();
+      document.execCommand("createLink", false, href);
+      closeEmailLinkPanel();
+      elements.emailBody?.focus();
+    }
+
+    function runEmailFormatCommand(command) {
+      if (!elements.emailBody) {
+        return;
+      }
+
+      if (command === "createLink") {
+        openEmailLinkPanel();
+        return;
+      }
+
+      elements.emailBody.focus();
+      document.execCommand(command, false, null);
+    }
+
+    async function sendEmail(event) {
+      event.preventDefault();
+
+      const to = elements.emailTo?.value.trim();
+      const bcc = elements.emailBcc?.value.trim() || "";
+      const subject = elements.emailSubject?.value.trim();
+      const body = getEmailBodyText();
+      const html = getEmailBodyHtml();
+
+      if (!to && !bcc) {
+        setEmailComposeStatus("At least one recipient is required.", "is-error");
+        return;
+      }
+
+      if (!subject || !body) {
+        setEmailComposeStatus("Recipient, subject, and message are required.", "is-error");
+        return;
+      }
+
+      state.isSendingEmail = true;
+      syncEmailFormState();
+      setEmailComposeStatus("Sending email...");
+
+      try {
+        await callAdminEmailFunction("sendAdminEmail", {
+          to,
+          bcc,
+          subject,
+          text: body,
+          html,
+          replyToMessageId: state.activeEmailMessage?.id || ""
+        });
+        resetEmailComposeForm();
+        setEmailComposeStatus("Email sent.", "is-success");
+        window.setTimeout(closeEmailCompose, 700);
+      } catch (error) {
+        console.error("Error sending email:", error);
+        setEmailComposeStatus(getEmailFunctionErrorMessage(error, "Could not send email. Check the sendAdminEmail function and IONOS SMTP secrets."), "is-error");
+      } finally {
+        state.isSendingEmail = false;
+        syncEmailFormState();
       }
     }
 
@@ -4358,12 +5282,12 @@
       const isAnalyticsPage = state.activePage === "analytics";
       const isGigsPage = state.activePage === "gigs";
       const isLinksPage = state.activePage === "links";
-      const isMailingListPage = state.activePage === "mailing-list";
+      const isEmailPage = state.activePage === "email";
       const isCampaignsPage = state.activePage === "campaigns";
       elements.analyticsPage.classList.toggle("active", isAnalyticsPage);
       elements.gigsPage.classList.toggle("active", isGigsPage);
       elements.linksPage.classList.toggle("active", isLinksPage);
-      elements.mailingListPage.classList.toggle("active", isMailingListPage);
+      elements.emailPage?.classList.toggle("active", isEmailPage);
       elements.campaignsPage.classList.toggle("active", isCampaignsPage);
 
       elements.pageTabs.forEach((link) => {
@@ -4387,10 +5311,14 @@
         elements.collectionNote.textContent = state.isLoadingLinks
           ? "Loading links from Firestore..."
           : `Managing ${state.links.length} link${state.links.length === 1 ? "" : "s"} in the links collection.`;
-      } else if (isMailingListPage) {
-        elements.collectionNote.textContent = state.isLoadingMailingList
-          ? "Loading mailing list signups from Firestore..."
-          : `Managing ${state.mailingListSignups.length} signup${state.mailingListSignups.length === 1 ? "" : "s"} in the mailing-list-signups collection.`;
+      } else if (isEmailPage) {
+        elements.collectionNote.textContent = state.activeEmailView === "address-book"
+          ? state.isLoadingMailingList
+            ? "Loading mailing list from Firestore..."
+            : `Mailing list ready for ${state.mailingListSignups.length} contact${state.mailingListSignups.length === 1 ? "" : "s"}.`
+          : state.isLoadingEmail
+            ? `Loading ${getEmailFolderLabel().toLowerCase()} through Firebase Functions...`
+            : `${getEmailFolderLabel()} ready for ${state.emailMessages.length} loaded message${state.emailMessages.length === 1 ? "" : "s"}.`;
       } else {
         const destinationCount = getCampaignDestinations().length;
         elements.collectionNote.textContent = state.isLoadingCampaign
@@ -4478,9 +5406,14 @@
         return;
       }
 
-      if (state.activePage === "mailing-list") {
-        elements.refreshButton.disabled = state.isLoadingMailingList;
-        elements.refreshButton.textContent = state.isLoadingMailingList ? "Refreshing..." : "Refresh";
+      if (state.activePage === "email") {
+        const isAddressBook = state.activeEmailView === "address-book";
+        elements.refreshButton.disabled = isAddressBook
+          ? state.isLoadingMailingList
+          : state.isLoadingEmail || state.isLoadingEmailMessage;
+        elements.refreshButton.textContent = (isAddressBook ? state.isLoadingMailingList : state.isLoadingEmail)
+          ? "Refreshing..."
+          : "Refresh";
         return;
       }
 
@@ -4958,8 +5891,8 @@
         return;
       }
 
-      if (page === "mailing-list") {
-        state.activePage = "mailing-list";
+      if (page === "email") {
+        state.activePage = "email";
         persistActivePage(state.activePage);
         syncActivePageUI();
         loadActivePageData();
@@ -4991,8 +5924,22 @@
         return loadLinks();
       }
 
-      if (state.activePage === "mailing-list") {
-        return loadMailingListSignups();
+      if (state.activePage === "email") {
+        syncEmailViewUI();
+        if (state.activeEmailView === "address-book") {
+          if (!state.mailingListSignups.length) {
+            return loadMailingListSignups();
+          }
+          renderMailingListSignups();
+          return Promise.resolve();
+        }
+        renderEmailInbox();
+        renderEmailReader();
+        syncEmailFormState();
+        if (!state.emailMessages.length) {
+          return loadEmailInbox();
+        }
+        return Promise.resolve();
       }
 
       if (state.activePage === "campaigns") {
@@ -5042,6 +5989,9 @@
       syncLinkFormState();
       syncLinkEditState();
       syncCampaignFormState();
+      syncEmailFormState();
+      syncEmailFolderUI();
+      syncEmailViewUI();
       syncCampaignSettingsPanel();
       resetLinkFormDefaults();
       setAuthStatus(null);
@@ -5224,8 +6174,6 @@
             loadGigs();
           } else if (state.activePage === "links") {
             loadLinks();
-          } else if (state.activePage === "mailing-list") {
-            loadMailingListSignups();
           } else if (state.activePage === "campaigns") {
             loadCampaign();
           } else {
@@ -5236,8 +6184,6 @@
             renderGigs();
           } else if (state.activePage === "links") {
             renderLinks();
-          } else if (state.activePage === "mailing-list") {
-            renderMailingListSignups();
           } else if (state.activePage === "campaigns") {
             syncCampaignFormState();
             renderCampaign();
@@ -5359,8 +6305,119 @@
         copyMailingListEmails();
       });
 
+      elements.sendMailingListEmails?.addEventListener("click", () => {
+        sendMailingListEmails();
+      });
+
       elements.exportMailingListCsv?.addEventListener("click", () => {
         exportMailingListCsv();
+      });
+
+      elements.emailRefresh?.addEventListener("click", () => {
+        loadEmailInbox();
+      });
+
+      elements.emailMobileRefresh?.addEventListener("click", () => {
+        if (state.activeEmailView === "address-book") {
+          loadMailingListSignups();
+          return;
+        }
+
+        loadEmailInbox();
+      });
+
+      elements.emailFolderButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+          setActiveEmailFolder(button.dataset.emailFolder);
+        });
+      });
+
+      elements.emailViewButtons.forEach((button) => {
+        button.addEventListener("click", (event) => {
+          event.preventDefault();
+          setActiveEmailView(button.dataset.emailView);
+        });
+      });
+
+      elements.emailNew?.addEventListener("click", () => {
+        setEmailComposeStatus("");
+        openEmailCompose();
+      });
+
+      elements.emailComposeOpenButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+          setEmailComposeStatus("");
+          openEmailCompose();
+        });
+      });
+
+      elements.emailMobileMenu?.addEventListener("click", () => {
+        if (document.body.classList.contains("email-folders-mobile-open")) {
+          closeMobileEmailFolders();
+          return;
+        }
+
+        openMobileEmailFolders();
+      });
+
+      elements.emailMobileDashboardMenu?.addEventListener("click", () => {
+        toggleMobileNav();
+      });
+
+      elements.emailComposeClose?.addEventListener("click", () => {
+        closeEmailCompose();
+      });
+
+      elements.emailReaderClose?.addEventListener("click", () => {
+        closeMobileEmailReader();
+      });
+
+      document.addEventListener("click", (event) => {
+        if (
+          document.body.classList.contains("email-reader-mobile-open")
+          && isMobileNavViewport()
+          && elements.emailReader
+          && !event.target.closest(".email-reader-card")
+          && !event.target.closest(".email-message-item")
+        ) {
+          closeMobileEmailReader();
+        }
+      });
+
+      elements.emailComposeOverlay?.addEventListener("click", (event) => {
+        if (event.target === elements.emailComposeOverlay) {
+          closeEmailCompose();
+        }
+      });
+
+      elements.emailComposeForm?.addEventListener("submit", sendEmail);
+
+      elements.emailFormatButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+          runEmailFormatCommand(button.dataset.emailFormat);
+        });
+      });
+
+      elements.emailLinkApply?.addEventListener("click", () => {
+        applyEmailLink();
+      });
+
+      elements.emailLinkCancel?.addEventListener("click", () => {
+        closeEmailLinkPanel();
+        elements.emailBody?.focus();
+      });
+
+      elements.emailLinkUrl?.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          applyEmailLink();
+        }
+
+        if (event.key === "Escape") {
+          event.preventDefault();
+          closeEmailLinkPanel();
+          elements.emailBody?.focus();
+        }
       });
 
       elements.refreshButton.addEventListener("click", () => {
@@ -5374,8 +6431,13 @@
           return;
         }
 
-        if (state.activePage === "mailing-list") {
-          loadMailingListSignups();
+        if (state.activePage === "email") {
+          if (state.activeEmailView === "address-book") {
+            loadMailingListSignups();
+            return;
+          }
+
+          loadEmailInbox();
           return;
         }
 
@@ -5418,6 +6480,9 @@
 
       window.addEventListener("keydown", (event) => {
         if (event.key === "Escape") {
+          closeEmailCompose();
+          closeMobileEmailReader();
+          closeMobileEmailFolders();
           closeMobileNav();
           closeGigSettingsPanel();
           closeCampaignSettingsPanel();

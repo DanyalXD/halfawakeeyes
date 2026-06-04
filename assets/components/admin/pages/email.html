@@ -1,0 +1,183 @@
+      <div id="email-page" class="dashboard-page">
+        <div class="summary-panel">
+          <div class="section-title">
+            <h3>Email</h3>
+            <span>IONOS mailbox via Firebase Functions</span>
+          </div>
+          <div class="helper-copy">Read and send domain email from the admin panel while keeping mailbox credentials server-side.</div>
+        </div>
+
+        <div class="email-workspace">
+          <div class="email-mobile-topbar">
+            <button type="button" id="email-mobile-menu" class="email-mobile-icon-button" aria-label="Open folders">‹</button>
+            <div class="email-mobile-title">Folders</div>
+            <div class="email-mobile-actions">
+              <button type="button" id="email-mobile-refresh" class="email-mobile-icon-button" aria-label="Refresh folder">↻</button>
+              <button type="button" class="email-mobile-compose" data-email-compose-open aria-label="Compose email">✎</button>
+            </div>
+          </div>
+
+          <aside class="email-folder-rail" aria-label="Mailbox folders">
+            <button type="button" id="email-new" class="btn btn-accent email-new-button">New Email</button>
+            <div class="email-account-name">halfawakeeyes.co.uk</div>
+            <div class="email-view-tabs" role="tablist" aria-label="Email views">
+              <button type="button" class="email-view-tab is-active" data-email-view="mail">Mail</button>
+              <button type="button" class="email-view-tab" data-email-view="address-book">Mailing List</button>
+            </div>
+            <nav class="email-folder-list">
+              <button type="button" class="email-folder-item is-active" data-email-folder="inbox">
+                <span>Inbox</span>
+              </button>
+              <button type="button" class="email-folder-item" data-email-folder="drafts">
+                <span>Drafts</span>
+              </button>
+              <button type="button" class="email-folder-item" data-email-folder="sent">
+                <span>Sent</span>
+              </button>
+              <button type="button" class="email-folder-item" data-email-folder="spam">
+                <span>Spam</span>
+              </button>
+              <button type="button" class="email-folder-item" data-email-folder="trash">
+                <span>Trash</span>
+              </button>
+            </nav>
+          </aside>
+
+          <section class="manager-card email-inbox-card" data-email-panel="mail">
+            <div class="section-title">
+              <h3 id="email-folder-title">Inbox</h3>
+              <span id="email-count">No messages loaded</span>
+            </div>
+            <div class="manager-toolbar email-toolbar">
+              <div class="helper-copy">Latest messages from your domain mailbox.</div>
+              <div class="manager-toolbar-actions">
+                <button type="button" id="email-refresh" class="email-refresh-button" aria-label="Refresh folder" title="Refresh folder">
+                  <span class="visually-hidden">Refresh</span>
+                </button>
+              </div>
+            </div>
+            <div id="email-status" class="gig-manager-status" aria-live="polite"></div>
+            <div id="email-message-list" class="email-message-list">
+              <div class="gig-admin-empty">No messages loaded yet.</div>
+            </div>
+          </section>
+
+          <section class="manager-card email-reader-card" data-email-panel="mail">
+            <div class="section-title">
+              <h3 id="email-reader-title">Message</h3>
+              <div class="email-reader-title-actions">
+                <span id="email-reader-meta">Select a message</span>
+                <button type="button" id="email-reader-close" class="email-compose-icon-button email-reader-close" aria-label="Close message">x</button>
+              </div>
+            </div>
+            <div id="email-reader" class="email-reader">
+              <div class="gig-admin-empty">Choose an inbox message to view its contents.</div>
+            </div>
+          </section>
+
+          <section id="email-address-book" class="manager-card email-address-book-card" data-email-panel="address-book">
+            <div class="section-title">
+              <h3>Mailing List</h3>
+              <span id="mailing-list-count">No signups loaded</span>
+            </div>
+            <div class="manager-toolbar mailing-list-toolbar">
+              <div class="helper-copy">Mailing list contacts collected from the site, ready to copy or export.</div>
+              <div class="manager-toolbar-actions">
+                <button type="button" id="send-mailing-list-emails" class="btn btn-accent">Send All</button>
+                <button type="button" id="copy-mailing-list-emails" class="btn ghost-button">Copy Emails</button>
+                <button type="button" id="export-mailing-list-csv" class="btn ghost-button">Export CSV</button>
+              </div>
+            </div>
+            <div id="mailing-list-summary" class="mailing-list-summary-grid">
+              <article class="campaign-analytics-card">
+                <div class="label">Signups</div>
+                <div class="value">0</div>
+                <div class="detail">No mailing list data loaded yet.</div>
+              </article>
+            </div>
+            <div id="mailing-list-status" class="gig-manager-status" aria-live="polite"></div>
+            <div class="mailing-contacts-layout">
+              <div class="mailing-contacts-list-panel">
+                <div class="table-panel mailing-list-table-panel">
+                  <div class="table-responsive">
+                    <table class="mailing-list-table">
+                      <thead>
+                        <tr>
+                          <th>Contact</th>
+                        </tr>
+                      </thead>
+                      <tbody id="mailing-list-list">
+                        <tr>
+                          <td>
+                            <div class="gig-admin-empty">No signups loaded yet.</div>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+                <div id="mailing-list-alphabet" class="mailing-list-alphabet" aria-label="Contact alphabet"></div>
+              </div>
+              <div id="mailing-list-detail" class="mailing-list-detail">
+                <div class="gig-admin-empty">Select a contact to view details.</div>
+              </div>
+            </div>
+          </section>
+
+          <div id="email-compose-overlay" class="email-compose-overlay" hidden>
+            <section class="email-compose-card" role="dialog" aria-modal="true" aria-labelledby="email-compose-title">
+              <div class="email-compose-header">
+                <h3 id="email-compose-title">New Email</h3>
+                <button type="button" id="email-compose-close" class="email-compose-icon-button" aria-label="Close compose">x</button>
+              </div>
+              <form id="email-compose-form" class="email-compose-form">
+                <label class="email-compose-row">
+                  <span>To</span>
+                  <input type="email" id="email-to" placeholder="Recipient email address" aria-label="Recipient email address" multiple required />
+                </label>
+                <label class="email-compose-row" id="email-bcc-row" hidden>
+                  <span>Bcc</span>
+                  <input type="email" id="email-bcc" placeholder="Hidden recipients" aria-label="Hidden recipients" multiple />
+                </label>
+                <label class="email-compose-row">
+                  <span>Subject</span>
+                  <input type="text" id="email-subject" placeholder="Subject" aria-label="Email subject" required />
+                </label>
+                <div class="email-compose-toolbar" aria-label="Message formatting">
+                  <button type="button" class="email-format-button" data-email-format="bold" aria-label="Bold">B</button>
+                  <button type="button" class="email-format-button is-italic" data-email-format="italic" aria-label="Italic">I</button>
+                  <button type="button" class="email-format-button is-underline" data-email-format="underline" aria-label="Underline">U</button>
+                  <button type="button" class="email-format-button" data-email-format="insertUnorderedList" aria-label="Bulleted list">List</button>
+                  <button type="button" class="email-format-button" data-email-format="createLink" aria-label="Insert link">Link</button>
+                  <button type="button" class="email-format-button" data-email-format="removeFormat" aria-label="Clear formatting">Clear</button>
+                </div>
+                <div id="email-link-panel" class="email-link-panel" hidden>
+                  <input type="url" id="email-link-url" placeholder="https://example.com" aria-label="Link URL" />
+                  <button type="button" id="email-link-apply" class="email-link-button">Apply</button>
+                  <button type="button" id="email-link-cancel" class="email-link-button">Cancel</button>
+                </div>
+                <div id="email-body" class="email-compose-body" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Email message" data-placeholder="Write your message..."></div>
+                <div class="email-compose-footer">
+                  <button type="submit" id="email-send" class="btn btn-accent email-compose-send">Send</button>
+                  <div id="email-compose-status" class="email-compose-status" aria-live="polite"></div>
+                </div>
+              </form>
+            </section>
+          </div>
+
+          <nav class="email-mobile-bottom-nav" aria-label="Email shortcuts">
+            <button type="button" class="email-mobile-nav-item is-active" data-email-view="mail">
+              <span class="email-mobile-nav-icon email-mobile-nav-icon-mail" aria-hidden="true"></span>
+              <span>E-mail</span>
+            </button>
+            <button type="button" class="email-mobile-nav-item" data-email-view="address-book">
+              <span class="email-mobile-nav-icon email-mobile-nav-icon-list" aria-hidden="true"></span>
+              <span>Mailing List</span>
+            </button>
+            <button type="button" id="email-mobile-dashboard-menu" class="email-mobile-nav-item">
+              <span class="email-mobile-nav-icon email-mobile-nav-icon-menu" aria-hidden="true"></span>
+              <span>Menu</span>
+            </button>
+          </nav>
+        </div>
+      </div>
