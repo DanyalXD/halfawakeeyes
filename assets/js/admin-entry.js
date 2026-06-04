@@ -112,7 +112,7 @@ async function bootAdmin() {
     return;
   }
 
-  const assetVersion = isLocalAdminHost() ? String(Date.now()) : "20260604-inline-link-editor";
+  const assetVersion = isLocalAdminHost() ? String(Date.now()) : "20260605-contact-detail-solid";
 
   if (!window.HAEAdminComponents?.load) {
     showComponentLoadError(new Error("Admin component loader is unavailable."));

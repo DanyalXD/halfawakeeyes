@@ -3441,6 +3441,54 @@
       });
     }
 
+    function splitEmailConversationText(text) {
+      const source = String(text || "").trim();
+      if (!source) {
+        return { current: "", history: "" };
+      }
+
+      const lines = source.split(/\r?\n/);
+      const quotedStartIndex = lines.findIndex((line, index) => {
+        const cleanLine = line.replace(/^\s*>+\s?/, "").trim();
+        if (/^On .+ wrote:?$/i.test(cleanLine)) {
+          return true;
+        }
+
+        if (!/^On\b/i.test(cleanLine)) {
+          return false;
+        }
+
+        const nextLines = lines
+          .slice(index, index + 4)
+          .map((nextLine) => nextLine.replace(/^\s*>+\s?/, "").trim())
+          .filter(Boolean);
+
+        return nextLines.some((nextLine) => /^wrote:?$/i.test(nextLine))
+          || /^On .+<[^>]+>$/i.test(nextLines.join(" "));
+      });
+
+      if (quotedStartIndex <= 0) {
+        return { current: source, history: "" };
+      }
+
+      return {
+        current: lines.slice(0, quotedStartIndex).join("\n").trim(),
+        history: lines.slice(quotedStartIndex).join("\n").trim(),
+      };
+    }
+
+    function formatQuotedEmailHistory(text) {
+      return String(text || "")
+        .split(/\r?\n/)
+        .map((line) => {
+          const cleanedLine = line.replace(/^\s*>+\s?/, "").trimEnd();
+          return cleanedLine.trim() ? cleanedLine : "";
+        })
+        .join("\n")
+        .replace(/\n{3,}/g, "\n\n")
+        .trim();
+    }
+
     function renderEmailReader() {
       if (!elements.emailReader || !elements.emailReaderTitle || !elements.emailReaderMeta) {
         return;
@@ -3502,13 +3550,36 @@
         meta.appendChild(row);
       });
 
-      const body = document.createElement("pre");
+      const body = document.createElement("div");
       body.className = "email-reader-body";
       if (state.isLoadingEmailMessage && !message.text && !message.html) {
         body.classList.add("is-loading");
         body.innerHTML = `<span class="email-reader-loading-spinner" aria-hidden="true"></span><span>Loading message...</span>`;
       } else {
-        body.textContent = message.text || "Message body unavailable.";
+        const conversation = splitEmailConversationText(message.text);
+        const currentMessage = document.createElement("pre");
+        currentMessage.className = "email-reader-body-main";
+        currentMessage.textContent = conversation.current || "Message body unavailable.";
+        body.appendChild(currentMessage);
+
+        if (conversation.history) {
+          const history = document.createElement("details");
+          history.className = "email-reader-history";
+
+          const summary = document.createElement("summary");
+          summary.textContent = "Show previous messages";
+
+          const historyText = document.createElement("pre");
+          historyText.className = "email-reader-history-text";
+          historyText.textContent = formatQuotedEmailHistory(conversation.history);
+
+          history.addEventListener("toggle", () => {
+            summary.textContent = history.open ? "Hide previous messages" : "Show previous messages";
+          });
+
+          history.append(summary, historyText);
+          body.appendChild(history);
+        }
       }
 
       const actions = document.createElement("div");
