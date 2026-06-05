@@ -10,6 +10,7 @@
     { name: "links-page", path: "assets/components/admin/pages/links.html" },
     { name: "email-page", path: "assets/components/admin/pages/email.html" },
     { name: "campaigns-page", path: "assets/components/admin/pages/campaigns.html" },
+    { name: "settings-page", path: "assets/components/admin/pages/settings.html" },
     { name: "delete-dialog", path: "assets/components/admin/dialogs/delete.html" },
     { name: "cache-reset-dialog", path: "assets/components/admin/dialogs/cache-reset.html" },
     { name: "campaign-analytics-dialog", path: "assets/components/admin/dialogs/campaign-analytics.html" },

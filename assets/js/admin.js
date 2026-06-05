@@ -2,18 +2,39 @@
     import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
     import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, getFirestore, orderBy, query, setDoc, updateDoc, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
     import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-functions.js";
+    import { getMessaging, getToken, isSupported as isMessagingSupported, onMessage } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging.js";
     import QRCode from "https://cdn.jsdelivr.net/npm/qrcode@1.5.4/+esm";
 
     const firebaseConfig = {
       apiKey: "AIzaSyAv7G28uXxlQNG_HMLbBkuz4xseXzOzm4Y",
       authDomain: "half-awake-eyes.firebaseapp.com",
-      projectId: "half-awake-eyes"
+      projectId: "half-awake-eyes",
+      messagingSenderId: "1002821452473",
+      appId: "1:1002821452473:web:afe7131dd9b1b7f5715168"
     };
+
+    const EMAIL_PUSH_VAPID_KEY = "BFdy6s0O0OpJPh38uAC69Sz3uyt_2iwWjNpG-YR8hGHUcCqaibrg3et73M_B_aQ9kzNMT40U34tUuko9ign3q5M";
+    const EMAIL_PUSH_SERVICE_WORKER_URL = "firebase-messaging-sw.js";
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
     const functions = getFunctions(app);
+    let messaging = null;
+
+    const NOTIFICATION_SETTINGS_COLLECTION = "admin-notification-settings";
+    const DEFAULT_NOTIFICATION_SETTINGS = {
+      emailNewMessages: true,
+      mailingListSignups: true,
+      siteActions: {
+        page_view: false,
+        click: true,
+        email_signup: false,
+        video_play: false,
+        ticket_redirect_continue: true,
+        ticket_redirect_unavailable: true
+      }
+    };
 
     const state = {
       allLogs: [],
@@ -29,12 +50,15 @@
       activeEmailView: "mail",
       campaign: null,
       campaigns: [],
+      notificationSettings: structuredClone(DEFAULT_NOTIFICATION_SETTINGS),
       activeCampaignId: "",
       activeCampaignAnalyticsId: "",
       activeCampaignQrId: "",
       campaignAnalyticsLogs: [],
       isLoadingCampaignAnalytics: false,
       isGeneratingCampaignQr: false,
+      isLoadingNotificationSettings: false,
+      isSavingNotificationSettings: false,
       activePage: "analytics",
       currentCollection: "site-actions",
       dynamicFields: [],
@@ -50,6 +74,8 @@
       isLoadingMailingList: false,
       isLoadingEmail: false,
       isLoadingEmailMessage: false,
+      isRegisteringPush: false,
+      isPushEnabled: false,
       isLoadingCampaign: false,
       isTrashingEmail: false,
       gigSortMode: "upcoming-first",
@@ -80,7 +106,7 @@
     };
 
     const ADMIN_ACTIVE_PAGE_STORAGE_KEY = "hae-admin-active-page";
-    const VALID_ADMIN_PAGES = new Set(["analytics", "gigs", "links", "email", "campaigns"]);
+    const VALID_ADMIN_PAGES = new Set(["analytics", "gigs", "links", "email", "campaigns", "settings"]);
     const ADMIN_EMAIL_ALLOWLIST = new Set([
       "danyal1995@hotmail.co.uk",
       "danyalc95@gmail.com"
@@ -107,7 +133,13 @@
       linksPage: document.getElementById("links-page"),
       emailPage: document.getElementById("email-page"),
       campaignsPage: document.getElementById("campaigns-page"),
+      settingsPage: document.getElementById("settings-page"),
       pageTabs: Array.from(document.querySelectorAll("[data-page]")),
+      notificationSettingInputs: Array.from(document.querySelectorAll("[data-notification-setting]")),
+      siteActionSettingInputs: Array.from(document.querySelectorAll("[data-site-action-setting]")),
+      saveNotificationSettings: document.getElementById("save-notification-settings"),
+      notificationSettingsStatus: document.getElementById("settings-notification-status"),
+      notificationSettingsSaveStatus: document.getElementById("settings-save-status"),
       emailFolderButtons: Array.from(document.querySelectorAll("[data-email-folder]")),
       summary: document.getElementById("summary"),
       summaryCaption: document.getElementById("summary-caption"),
@@ -176,6 +208,8 @@
       exportMailingListCsv: document.getElementById("export-mailing-list-csv"),
       emailCount: document.getElementById("email-count"),
       emailWorkspace: document.querySelector(".email-workspace"),
+      emailPushEnable: document.getElementById("email-push-enable"),
+      emailPushStatus: document.getElementById("email-push-status"),
       emailViewButtons: Array.from(document.querySelectorAll("[data-email-view]")),
       emailNew: document.getElementById("email-new"),
       emailComposeOpenButtons: Array.from(document.querySelectorAll("[data-email-compose-open]")),
@@ -1728,6 +1762,9 @@
       if (state.activePage === "campaigns") {
         return "campaigns";
       }
+      if (state.activePage === "settings") {
+        return NOTIFICATION_SETTINGS_COLLECTION;
+      }
       return state.currentCollection;
     }
 
@@ -2998,7 +3035,7 @@
           <div class="mailing-contact-profile-main">
             <h4>${escapeHtml(name)}</h4>
             <div class="mailing-contact-profile-actions">
-              <button type="button" id="mailing-contact-email-action" class="mailing-contact-round-action">Email</button>
+              <button type="button" id="mailing-contact-email-action" class="mailing-contact-round-action"${email ? "" : " disabled"}>Email</button>
               <button type="button" class="mailing-contact-round-action" disabled>Invite</button>
             </div>
           </div>
@@ -3037,11 +3074,12 @@
 
       elements.mailingListDetail.querySelector("#mailing-contact-email-action")?.addEventListener("click", () => {
         setEmailComposeStatus("");
-        openEmailCompose();
+        document.body.classList.remove("mailing-contact-detail-open");
         if (elements.emailTo) {
           elements.emailTo.value = extractEmailAddress(email);
-          elements.emailSubject?.focus();
         }
+        openEmailCompose();
+        elements.emailSubject?.focus();
       });
     }
 
@@ -3679,6 +3717,318 @@
       const callable = httpsCallable(functions, name);
       const result = await callable(payload);
       return result.data || {};
+    }
+
+    function hasEmailPushVapidKey() {
+      return EMAIL_PUSH_VAPID_KEY && !/^PASTE_/i.test(EMAIL_PUSH_VAPID_KEY);
+    }
+
+    function hasEmailPushAppId() {
+      return firebaseConfig.appId && !/^PASTE_/i.test(firebaseConfig.appId);
+    }
+
+    function setEmailPushStatus(message, className = "") {
+      if (!elements.emailPushStatus) {
+        return;
+      }
+
+      elements.emailPushStatus.textContent = message;
+      elements.emailPushStatus.className = className;
+    }
+
+    function syncEmailPushState() {
+      if (!elements.emailPushEnable) {
+        return;
+      }
+
+      const isUnavailable = !("Notification" in window)
+        || !("serviceWorker" in navigator)
+        || !hasEmailPushVapidKey()
+        || !hasEmailPushAppId()
+        || Notification.permission === "denied";
+
+      elements.emailPushEnable.disabled = state.isRegisteringPush || !state.authUser || isUnavailable;
+      elements.emailPushEnable.textContent = state.isRegisteringPush
+        ? "Enabling..."
+        : state.isPushEnabled
+          ? "Alerts Enabled"
+          : "Enable Alerts";
+    }
+
+    async function updateEmailPushStatus() {
+      syncEmailPushState();
+
+      if (!elements.emailPushStatus || !elements.emailPushEnable) {
+        return;
+      }
+
+      if (!("Notification" in window)) {
+        setEmailPushStatus("Push notifications are not supported in this browser.", "is-error");
+        elements.emailPushEnable.disabled = true;
+        return;
+      }
+
+      if (!("serviceWorker" in navigator)) {
+        setEmailPushStatus("Service workers are not available, so push alerts cannot run here.", "is-error");
+        elements.emailPushEnable.disabled = true;
+        return;
+      }
+
+      if (!hasEmailPushVapidKey()) {
+        setEmailPushStatus("Add your Firebase Web Push key in admin.js to enable alerts.", "is-warning");
+        elements.emailPushEnable.disabled = true;
+        return;
+      }
+
+      if (!hasEmailPushAppId()) {
+        setEmailPushStatus("Add your Firebase Web App ID in admin.js and firebase-messaging-sw.js.", "is-warning");
+        elements.emailPushEnable.disabled = true;
+        return;
+      }
+
+      const supported = await isMessagingSupported().catch(() => false);
+      if (!supported) {
+        setEmailPushStatus("Firebase Messaging is not supported in this browser.", "is-error");
+        elements.emailPushEnable.disabled = true;
+        return;
+      }
+
+      if (Notification.permission === "granted") {
+        state.isPushEnabled = true;
+        setEmailPushStatus("Email alerts are enabled on this device.", "is-success");
+      } else if (Notification.permission === "denied") {
+        state.isPushEnabled = false;
+        setEmailPushStatus("Notifications are blocked for this site in the browser.", "is-error");
+      } else {
+        state.isPushEnabled = false;
+        setEmailPushStatus("Notifications are not enabled on this device.");
+      }
+
+      syncEmailPushState();
+    }
+
+    async function getEmailMessagingInstance() {
+      if (messaging) {
+        return messaging;
+      }
+
+      const supported = await isMessagingSupported().catch(() => false);
+      if (!supported) {
+        throw new Error("Firebase Messaging is not supported in this browser.");
+      }
+
+      messaging = getMessaging(app);
+      onMessage(messaging, (payload) => {
+        const title = payload.notification?.title || "New email";
+        const body = payload.notification?.body || payload.data?.preview || "A new mailbox message arrived.";
+        setEmailPushStatus(`${title}: ${body}`, "is-success");
+
+        if (Notification.permission === "granted") {
+          new Notification(title, {
+            body,
+            icon: "/assets/images/logo.jpg",
+            tag: "hae-admin-email"
+          });
+        }
+      });
+
+      return messaging;
+    }
+
+    async function enableEmailPushNotifications() {
+      if (state.isRegisteringPush) {
+        return;
+      }
+
+      if (!state.authUser) {
+        setEmailPushStatus("Sign in before enabling push alerts.", "is-error");
+        return;
+      }
+
+      state.isRegisteringPush = true;
+      syncEmailPushState();
+
+      try {
+        await updateEmailPushStatus();
+
+        if (!hasEmailPushVapidKey()) {
+          return;
+        }
+
+        const permission = await Notification.requestPermission();
+        if (permission !== "granted") {
+          state.isPushEnabled = false;
+          setEmailPushStatus("Notifications were not allowed for this device.", "is-error");
+          return;
+        }
+
+        const registration = await navigator.serviceWorker.register(EMAIL_PUSH_SERVICE_WORKER_URL);
+        const currentMessaging = await getEmailMessagingInstance();
+        const token = await getToken(currentMessaging, {
+          vapidKey: EMAIL_PUSH_VAPID_KEY,
+          serviceWorkerRegistration: registration
+        });
+
+        if (!token) {
+          throw new Error("Firebase did not return a notification token.");
+        }
+
+        await callAdminEmailFunction("registerEmailPushToken", {
+          token,
+          userAgent: navigator.userAgent || "",
+          permission
+        });
+
+        state.isPushEnabled = true;
+        setEmailPushStatus("Email alerts are enabled on this device.", "is-success");
+      } catch (error) {
+        console.error("Could not enable email push notifications:", error);
+        state.isPushEnabled = false;
+        setEmailPushStatus(getEmailFunctionErrorMessage(error, "Could not enable push alerts."), "is-error");
+      } finally {
+        state.isRegisteringPush = false;
+        syncEmailPushState();
+      }
+    }
+
+    function mergeNotificationSettings(settings = {}) {
+      return {
+        ...structuredClone(DEFAULT_NOTIFICATION_SETTINGS),
+        ...settings,
+        siteActions: {
+          ...DEFAULT_NOTIFICATION_SETTINGS.siteActions,
+          ...(settings.siteActions || {})
+        }
+      };
+    }
+
+    function getNotificationSettingsDocId() {
+      return String(state.authUser?.email || "").trim().toLowerCase();
+    }
+
+    function refreshNotificationSettingsElements() {
+      elements.settingsPage = document.getElementById("settings-page");
+      elements.notificationSettingInputs = Array.from(document.querySelectorAll("[data-notification-setting]"));
+      elements.siteActionSettingInputs = Array.from(document.querySelectorAll("[data-site-action-setting]"));
+      elements.saveNotificationSettings = document.getElementById("save-notification-settings");
+      elements.notificationSettingsStatus = document.getElementById("settings-notification-status");
+      elements.notificationSettingsSaveStatus = document.getElementById("settings-save-status");
+    }
+
+    function renderNotificationSettings() {
+      refreshNotificationSettingsElements();
+      const settings = mergeNotificationSettings(state.notificationSettings);
+
+      elements.notificationSettingInputs.forEach((input) => {
+        input.checked = Boolean(settings[input.dataset.notificationSetting]);
+        input.disabled = state.isLoadingNotificationSettings || state.isSavingNotificationSettings;
+      });
+
+      elements.siteActionSettingInputs.forEach((input) => {
+        input.checked = Boolean(settings.siteActions?.[input.dataset.siteActionSetting]);
+        input.disabled = state.isLoadingNotificationSettings || state.isSavingNotificationSettings;
+      });
+
+      if (elements.saveNotificationSettings) {
+        elements.saveNotificationSettings.disabled = state.isLoadingNotificationSettings || state.isSavingNotificationSettings;
+        elements.saveNotificationSettings.textContent = state.isSavingNotificationSettings ? "Saving..." : "Save Settings";
+      }
+
+      if (elements.notificationSettingsStatus) {
+        elements.notificationSettingsStatus.textContent = state.isLoadingNotificationSettings
+          ? "Loading..."
+          : `Saved for ${state.authUser?.email || "this user"}`;
+      }
+    }
+
+    function collectNotificationSettingsFromForm() {
+      const settings = mergeNotificationSettings(state.notificationSettings);
+
+      elements.notificationSettingInputs.forEach((input) => {
+        settings[input.dataset.notificationSetting] = input.checked;
+      });
+
+      elements.siteActionSettingInputs.forEach((input) => {
+        settings.siteActions[input.dataset.siteActionSetting] = input.checked;
+      });
+
+      return settings;
+    }
+
+    function setNotificationSettingsSaveStatus(message = "", className = "") {
+      refreshNotificationSettingsElements();
+
+      if (!elements.notificationSettingsSaveStatus) {
+        return;
+      }
+
+      elements.notificationSettingsSaveStatus.textContent = message;
+      elements.notificationSettingsSaveStatus.className = ["status-message", className].filter(Boolean).join(" ");
+    }
+
+    async function loadNotificationSettings() {
+      refreshNotificationSettingsElements();
+
+      if (!elements.settingsPage) {
+        return;
+      }
+
+      state.isLoadingNotificationSettings = true;
+      renderNotificationSettings();
+
+      try {
+        const settingsDocId = getNotificationSettingsDocId();
+        if (!settingsDocId) {
+          throw new Error("Sign in before loading notification settings.");
+        }
+
+        const snapshot = await getDoc(doc(db, NOTIFICATION_SETTINGS_COLLECTION, settingsDocId));
+        state.notificationSettings = mergeNotificationSettings(snapshot.exists() ? snapshot.data() : {});
+        setNotificationSettingsSaveStatus("");
+      } catch (error) {
+        console.error("Could not load notification settings:", error);
+        state.notificationSettings = mergeNotificationSettings(state.notificationSettings);
+        setNotificationSettingsSaveStatus("Could not load notification settings.", "is-error");
+      } finally {
+        state.isLoadingNotificationSettings = false;
+        renderNotificationSettings();
+      }
+    }
+
+    async function saveNotificationSettings() {
+      refreshNotificationSettingsElements();
+
+      if (!elements.settingsPage || state.isSavingNotificationSettings) {
+        return;
+      }
+
+      const settings = collectNotificationSettingsFromForm();
+      state.isSavingNotificationSettings = true;
+      setNotificationSettingsSaveStatus("");
+      renderNotificationSettings();
+
+      try {
+        const settingsDocId = getNotificationSettingsDocId();
+        if (!settingsDocId) {
+          throw new Error("Sign in before saving notification settings.");
+        }
+
+        await setDoc(doc(db, NOTIFICATION_SETTINGS_COLLECTION, settingsDocId), {
+          ...settings,
+          adminUid: state.authUser?.uid || "",
+          adminEmail: state.authUser?.email || "",
+          updatedAt: new Date().toISOString(),
+          updatedBy: state.authUser?.email || ""
+        }, { merge: true });
+        state.notificationSettings = settings;
+        setNotificationSettingsSaveStatus("Notification settings saved.", "is-success");
+      } catch (error) {
+        console.error("Could not save notification settings:", error);
+        setNotificationSettingsSaveStatus(getEmailFunctionErrorMessage(error, "Could not save notification settings."), "is-error");
+      } finally {
+        state.isSavingNotificationSettings = false;
+        renderNotificationSettings();
+      }
     }
 
     function getEmailFunctionErrorMessage(error, fallbackMessage) {
@@ -5355,11 +5705,14 @@
       const isLinksPage = state.activePage === "links";
       const isEmailPage = state.activePage === "email";
       const isCampaignsPage = state.activePage === "campaigns";
+      const isSettingsPage = state.activePage === "settings";
       elements.analyticsPage.classList.toggle("active", isAnalyticsPage);
       elements.gigsPage.classList.toggle("active", isGigsPage);
       elements.linksPage.classList.toggle("active", isLinksPage);
       elements.emailPage?.classList.toggle("active", isEmailPage);
       elements.campaignsPage.classList.toggle("active", isCampaignsPage);
+      elements.settingsPage?.classList.toggle("active", isSettingsPage);
+      document.body.classList.toggle("email-page-active", isEmailPage);
 
       elements.pageTabs.forEach((link) => {
         const isAnalyticsTab = link.dataset.page === "analytics";
@@ -5390,6 +5743,8 @@
           : state.isLoadingEmail
             ? `Loading ${getEmailFolderLabel().toLowerCase()} through Firebase Functions...`
             : `${getEmailFolderLabel()} ready for ${state.emailMessages.length} loaded message${state.emailMessages.length === 1 ? "" : "s"}.`;
+      } else if (isSettingsPage) {
+        elements.collectionNote.textContent = "Notification preferences for admin push alerts.";
       } else {
         const destinationCount = getCampaignDestinations().length;
         elements.collectionNote.textContent = state.isLoadingCampaign
@@ -5916,6 +6271,7 @@
       syncSignOutButton();
       syncGigFormState();
       syncLinkFormState();
+      updateEmailPushStatus();
       resetLinkFormDefaults();
       syncActivePageUI();
       syncMobileNav();
@@ -5939,6 +6295,8 @@
       elements.heroCollection.textContent = "Collection: site-actions";
       elements.heroUpdated.textContent = "Waiting for sign-in";
       setAnalyticsCacheStatus("Analytics cache: not loaded yet.");
+      state.isPushEnabled = false;
+      updateEmailPushStatus();
       syncSignOutButton();
       syncMobileNav();
     }
@@ -5972,6 +6330,14 @@
 
       if (page === "campaigns") {
         state.activePage = "campaigns";
+        persistActivePage(state.activePage);
+        syncActivePageUI();
+        loadActivePageData();
+        return;
+      }
+
+      if (page === "settings") {
+        state.activePage = "settings";
         persistActivePage(state.activePage);
         syncActivePageUI();
         loadActivePageData();
@@ -6015,6 +6381,10 @@
 
       if (state.activePage === "campaigns") {
         return loadCampaign();
+      }
+
+      if (state.activePage === "settings") {
+        return loadNotificationSettings();
       }
 
       return loadLogs(state.currentCollection, options);
@@ -6384,6 +6754,12 @@
         exportMailingListCsv();
       });
 
+      document.addEventListener("click", (event) => {
+        if (event.target.closest("#save-notification-settings")) {
+          saveNotificationSettings();
+        }
+      });
+
       elements.emailRefresh?.addEventListener("click", () => {
         loadEmailInbox();
       });
@@ -6395,6 +6771,10 @@
         }
 
         loadEmailInbox();
+      });
+
+      elements.emailPushEnable?.addEventListener("click", () => {
+        enableEmailPushNotifications();
       });
 
       elements.emailFolderButtons.forEach((button) => {
@@ -6514,6 +6894,11 @@
 
         if (state.activePage === "campaigns") {
           loadCampaign();
+          return;
+        }
+
+        if (state.activePage === "settings") {
+          loadNotificationSettings();
           return;
         }
 

@@ -1,0 +1,94 @@
+      <div id="settings-page" class="dashboard-page">
+        <div class="summary-panel">
+          <div class="section-title">
+            <h3>Settings</h3>
+            <span>Notification controls</span>
+          </div>
+          <div class="helper-copy">Choose which admin events should send push notifications to enabled devices.</div>
+        </div>
+
+        <section class="manager-card settings-card">
+          <div class="section-title">
+            <h3>Push Notifications</h3>
+            <span id="settings-notification-status">Not loaded</span>
+          </div>
+
+          <div class="settings-toggle-grid">
+            <label class="settings-toggle-row">
+              <input type="checkbox" id="setting-notify-email-new" data-notification-setting="emailNewMessages" />
+              <span>
+                <strong>New mailbox emails</strong>
+                <small>Notify when the IONOS inbox receives new mail.</small>
+              </span>
+            </label>
+
+            <label class="settings-toggle-row">
+              <input type="checkbox" id="setting-notify-mailing-signup" data-notification-setting="mailingListSignups" />
+              <span>
+                <strong>Mailing list signups</strong>
+                <small>Notify when a new email signs up on the site.</small>
+              </span>
+            </label>
+          </div>
+
+          <div class="settings-section-heading">
+            <h4>Site Actions</h4>
+            <p>Toggle push alerts based on the analytics action recorded in <code>site-actions</code>.</p>
+          </div>
+
+          <div class="settings-action-grid">
+            <label class="settings-toggle-row">
+              <input type="checkbox" data-site-action-setting="page_view" />
+              <span>
+                <strong>Page views</strong>
+                <small>Visitors opening public pages.</small>
+              </span>
+            </label>
+
+            <label class="settings-toggle-row">
+              <input type="checkbox" data-site-action-setting="click" />
+              <span>
+                <strong>Clicks</strong>
+                <small>Public links, campaign buttons, and tracked CTAs.</small>
+              </span>
+            </label>
+
+            <label class="settings-toggle-row">
+              <input type="checkbox" data-site-action-setting="email_signup" />
+              <span>
+                <strong>Email signups</strong>
+                <small>Signup actions recorded in analytics.</small>
+              </span>
+            </label>
+
+            <label class="settings-toggle-row">
+              <input type="checkbox" data-site-action-setting="video_play" />
+              <span>
+                <strong>Video plays</strong>
+                <small>Tracked video playback events.</small>
+              </span>
+            </label>
+
+            <label class="settings-toggle-row">
+              <input type="checkbox" data-site-action-setting="ticket_redirect_continue" />
+              <span>
+                <strong>Ticket redirects</strong>
+                <small>Visitors continuing through ticket redirect pages.</small>
+              </span>
+            </label>
+
+            <label class="settings-toggle-row">
+              <input type="checkbox" data-site-action-setting="ticket_redirect_unavailable" />
+              <span>
+                <strong>Ticket issues</strong>
+                <small>Notify when a ticket redirect cannot complete.</small>
+              </span>
+            </label>
+          </div>
+
+          <div class="settings-actions">
+            <button type="button" id="save-notification-settings" class="btn btn-accent">Save Settings</button>
+            <div id="settings-save-status" class="status-message" aria-live="polite"></div>
+          </div>
+        </section>
+      </div>

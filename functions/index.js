@@ -1,13 +1,20 @@
 "use strict";
 
+const crypto = require("crypto");
 const { initializeApp } = require("firebase-admin/app");
+const { getFirestore, FieldValue } = require("firebase-admin/firestore");
+const { getMessaging } = require("firebase-admin/messaging");
 const { HttpsError, onCall } = require("firebase-functions/v2/https");
+const { onDocumentCreated } = require("firebase-functions/v2/firestore");
+const { onSchedule } = require("firebase-functions/v2/scheduler");
 const { defineSecret } = require("firebase-functions/params");
 const { ImapFlow } = require("imapflow");
 const { simpleParser } = require("mailparser");
 const nodemailer = require("nodemailer");
 
 initializeApp();
+
+const db = getFirestore();
 
 const IONOS_EMAIL = defineSecret("IONOS_EMAIL");
 const IONOS_PASSWORD = defineSecret("IONOS_PASSWORD");
@@ -26,7 +33,41 @@ const EMAIL_FUNCTION_OPTIONS = {
   memory: "256MiB"
 };
 
+const PUSH_FUNCTION_OPTIONS = {
+  cors: true,
+  region: "us-central1",
+  maxInstances: 2,
+  timeoutSeconds: 30,
+  memory: "256MiB"
+};
+
+const EMAIL_NOTIFICATION_SCHEDULE_OPTIONS = {
+  region: "us-central1",
+  schedule: "every 5 minutes",
+  timeZone: "Europe/London",
+  secrets: [IONOS_EMAIL, IONOS_PASSWORD],
+  maxInstances: 1,
+  timeoutSeconds: 60,
+  memory: "256MiB"
+};
+
 const DEPLOY_MARKER = "email-functions-20260604-secret-check";
+const PUSH_TOKENS_COLLECTION = "admin-email-push-tokens";
+const NOTIFICATION_SETTINGS_COLLECTION = "admin-notification-settings";
+const EMAIL_NOTIFICATION_STATE_COLLECTION = "admin-email-notification-state";
+const EMAIL_NOTIFICATION_STATE_DOC = "inbox";
+const DEFAULT_NOTIFICATION_SETTINGS = {
+  emailNewMessages: true,
+  mailingListSignups: true,
+  siteActions: {
+    page_view: false,
+    click: true,
+    email_signup: false,
+    video_play: false,
+    ticket_redirect_continue: true,
+    ticket_redirect_unavailable: true
+  }
+};
 const EMAIL_FOLDER_CONFIG = {
   inbox: {
     label: "Inbox",
@@ -232,6 +273,154 @@ function normalizeEmailFolder(value) {
   return EMAIL_FOLDER_CONFIG[folder] ? folder : "inbox";
 }
 
+function getPushTokenDocId(token) {
+  return crypto.createHash("sha256").update(String(token || "")).digest("hex");
+}
+
+function getNotificationTitle(message) {
+  return message.subject && message.subject !== "(No subject)" ? message.subject : "New email";
+}
+
+function getNotificationBody(message) {
+  const sender = String(message.from || "Unknown sender").trim();
+  const preview = String(message.preview || "").trim();
+  return [sender, preview].filter(Boolean).join(" - ").slice(0, 180) || "A new inbox message arrived.";
+}
+
+function mergeNotificationSettings(settings = {}) {
+  return {
+    ...DEFAULT_NOTIFICATION_SETTINGS,
+    ...settings,
+    siteActions: {
+      ...DEFAULT_NOTIFICATION_SETTINGS.siteActions,
+      ...(settings.siteActions || {})
+    }
+  };
+}
+
+function getNotificationSettingsCacheKey(tokenEntry = {}) {
+  return tokenEntry.adminEmail || tokenEntry.adminUid || "default";
+}
+
+async function getNotificationSettingsForToken(tokenEntry = {}, cache = new Map()) {
+  const cacheKey = getNotificationSettingsCacheKey(tokenEntry);
+
+  if (cache.has(cacheKey)) {
+    return cache.get(cacheKey);
+  }
+
+  const docId = String(tokenEntry.adminEmail || tokenEntry.adminUid || "default").trim();
+  const snapshot = await db.collection(NOTIFICATION_SETTINGS_COLLECTION).doc(docId).get();
+  const settings = mergeNotificationSettings(snapshot.exists ? snapshot.data() : {});
+  cache.set(cacheKey, settings);
+  return settings;
+}
+
+async function getAdminPushTokens() {
+  const snapshot = await db.collection(PUSH_TOKENS_COLLECTION).where("enabled", "==", true).get();
+  return snapshot.docs
+    .map((docSnapshot) => ({
+      id: docSnapshot.id,
+      token: String(docSnapshot.data()?.token || "").trim(),
+      adminUid: String(docSnapshot.data()?.adminUid || "").trim(),
+      adminEmail: String(docSnapshot.data()?.adminEmail || "").trim().toLowerCase()
+    }))
+    .filter((entry) => entry.token);
+}
+
+async function disableInvalidPushTokens(results, tokenEntries) {
+  const writes = [];
+
+  results.responses.forEach((response, index) => {
+    if (response.success) {
+      return;
+    }
+
+    const code = response.error?.code || "";
+    if (!["messaging/registration-token-not-registered", "messaging/invalid-registration-token"].includes(code)) {
+      return;
+    }
+
+    const tokenEntry = tokenEntries[index];
+    if (tokenEntry?.id) {
+      writes.push(db.collection(PUSH_TOKENS_COLLECTION).doc(tokenEntry.id).set({
+        enabled: false,
+        disabledAt: FieldValue.serverTimestamp(),
+        disabledReason: code
+      }, { merge: true }));
+    }
+  });
+
+  await Promise.all(writes);
+}
+
+async function sendNewEmailNotification(message, newMessageCount = 1) {
+  return sendAdminPushNotification({
+    title: newMessageCount > 1 ? `${newMessageCount} new emails` : getNotificationTitle(message),
+    body: getNotificationBody(message),
+    data: {
+      type: "admin-email",
+      messageId: String(message.id || ""),
+      folder: "inbox",
+      subject: String(message.subject || ""),
+      from: String(message.from || ""),
+      preview: String(message.preview || "")
+    },
+    tag: "hae-admin-email",
+    isEnabled: (settings) => Boolean(settings.emailNewMessages)
+  });
+}
+
+async function sendAdminPushNotification({ title, body, data = {}, tag = "hae-admin-alert", isEnabled = () => true }) {
+  const tokenEntries = await getAdminPushTokens();
+
+  if (!tokenEntries.length) {
+    console.log("No admin push tokens registered; skipping notification.", { title });
+    return { sent: 0, failed: 0 };
+  }
+
+  const settingsCache = new Map();
+  const enabledTokenEntries = [];
+
+  for (const tokenEntry of tokenEntries) {
+    const settings = await getNotificationSettingsForToken(tokenEntry, settingsCache);
+    if (isEnabled(settings, tokenEntry)) {
+      enabledTokenEntries.push(tokenEntry);
+    }
+  }
+
+  if (!enabledTokenEntries.length) {
+    console.log("No admin push tokens opted in for this notification.", { title, tag });
+    return { sent: 0, failed: 0, skipped: true };
+  }
+
+  const results = await getMessaging().sendEachForMulticast({
+    tokens: enabledTokenEntries.map((entry) => entry.token),
+    notification: {
+      title,
+      body
+    },
+    webpush: {
+      fcmOptions: {
+        link: "/admin.html"
+      },
+      notification: {
+        icon: "/assets/images/logo.jpg",
+        tag,
+        renotify: true,
+        requireInteraction: false
+      }
+    },
+    data: Object.fromEntries(Object.entries(data).map(([key, value]) => [key, String(value || "")]))
+  });
+
+  await disableInvalidPushTokens(results, enabledTokenEntries);
+  return {
+    sent: results.successCount,
+    failed: results.failureCount
+  };
+}
+
 function flattenMailboxes(mailboxes = []) {
   const flattened = [];
 
@@ -343,14 +532,7 @@ async function appendSentCopy(mailOptions) {
   });
 }
 
-exports.listInboxMessages = onCall(EMAIL_FUNCTION_OPTIONS, async (request) => {
-  assertAdmin(request);
-  console.log("listInboxMessages running", { deployMarker: DEPLOY_MARKER });
-
-  const requestedLimit = Number.parseInt(String(request.data?.limit || "25"), 10);
-  const limit = Math.min(Math.max(requestedLimit || 25, 1), 50);
-  const folder = normalizeEmailFolder(request.data?.folder);
-
+async function fetchMailboxMessages(folder, limit) {
   return withMailbox(folder, async (client, path) => {
     const mailboxSize = Number(client.mailbox?.exists || 0);
 
@@ -384,6 +566,165 @@ exports.listInboxMessages = onCall(EMAIL_FUNCTION_OPTIONS, async (request) => {
 
     messages.sort((a, b) => Number(b.id) - Number(a.id));
     return { folder, path, messages };
+  });
+}
+
+exports.listInboxMessages = onCall(EMAIL_FUNCTION_OPTIONS, async (request) => {
+  assertAdmin(request);
+  console.log("listInboxMessages running", { deployMarker: DEPLOY_MARKER });
+
+  const requestedLimit = Number.parseInt(String(request.data?.limit || "25"), 10);
+  const limit = Math.min(Math.max(requestedLimit || 25, 1), 50);
+  const folder = normalizeEmailFolder(request.data?.folder);
+
+  return fetchMailboxMessages(folder, limit);
+});
+
+exports.registerEmailPushToken = onCall(PUSH_FUNCTION_OPTIONS, async (request) => {
+  const adminEmail = assertAdmin(request);
+  const adminUid = String(request.auth?.uid || "").trim();
+  const token = String(request.data?.token || "").trim();
+
+  if (!token || token.length < 40) {
+    throw new HttpsError("invalid-argument", "A valid push token is required.");
+  }
+
+  const docId = getPushTokenDocId(token);
+  await db.collection(PUSH_TOKENS_COLLECTION).doc(docId).set({
+    token,
+    adminUid,
+    adminEmail,
+    enabled: true,
+    permission: String(request.data?.permission || ""),
+    userAgent: String(request.data?.userAgent || "").slice(0, 500),
+    updatedAt: FieldValue.serverTimestamp(),
+    createdAt: FieldValue.serverTimestamp()
+  }, { merge: true });
+
+  return { ok: true };
+});
+
+exports.checkInboxForPushNotifications = onSchedule(EMAIL_NOTIFICATION_SCHEDULE_OPTIONS, async () => {
+  console.log("checkInboxForPushNotifications running", { deployMarker: DEPLOY_MARKER });
+
+  const stateRef = db.collection(EMAIL_NOTIFICATION_STATE_COLLECTION).doc(EMAIL_NOTIFICATION_STATE_DOC);
+  const stateSnapshot = await stateRef.get();
+  const lastSeenUid = Number.parseInt(String(stateSnapshot.data()?.lastSeenUid || "0"), 10) || 0;
+  const { messages } = await fetchMailboxMessages("inbox", 10);
+
+  if (!messages.length) {
+    await stateRef.set({
+      lastCheckedAt: FieldValue.serverTimestamp(),
+      lastSeenUid
+    }, { merge: true });
+    return;
+  }
+
+  const latestMessage = messages[0];
+  const latestUid = Number.parseInt(String(latestMessage.id || "0"), 10) || 0;
+
+  if (!lastSeenUid) {
+    await stateRef.set({
+      lastSeenUid: latestUid,
+      lastCheckedAt: FieldValue.serverTimestamp(),
+      initializedAt: FieldValue.serverTimestamp()
+    }, { merge: true });
+    console.log("Initialized inbox push notification baseline", { latestUid });
+    return;
+  }
+
+  if (latestUid <= lastSeenUid) {
+    await stateRef.set({
+      lastCheckedAt: FieldValue.serverTimestamp(),
+      lastSeenUid
+    }, { merge: true });
+    return;
+  }
+
+  const newMessages = messages.filter((message) => {
+    const uid = Number.parseInt(String(message.id || "0"), 10) || 0;
+    return uid > lastSeenUid;
+  });
+
+  const notificationResult = await sendNewEmailNotification(latestMessage, newMessages.length || 1);
+
+  await stateRef.set({
+    lastSeenUid: latestUid,
+    lastNotifiedUid: latestUid,
+    lastNotificationResult: notificationResult,
+    lastCheckedAt: FieldValue.serverTimestamp(),
+    lastNotifiedAt: FieldValue.serverTimestamp()
+  }, { merge: true });
+});
+
+function getSiteActionTitle(action) {
+  const labels = {
+    page_view: "Page view",
+    click: "Site click",
+    email_signup: "Email signup",
+    video_play: "Video play",
+    ticket_redirect_continue: "Ticket redirect",
+    ticket_redirect_unavailable: "Ticket issue"
+  };
+
+  return labels[action] || "Site action";
+}
+
+function getSiteActionBody(data = {}) {
+  const actionSubtype = String(data.actionSubtype || "").trim();
+  const pageName = String(data.pageName || data.sourcePage || data.page || "").trim();
+  const label = String(data.label || data.title || data.linkTitle || data.destinationLabel || "").trim();
+  const source = [pageName, label, actionSubtype].filter(Boolean).join(" - ");
+  return source.slice(0, 180) || "A tracked site action was recorded.";
+}
+
+exports.notifyOnSiteActionCreated = onDocumentCreated({
+  region: "us-central1",
+  document: "site-actions/{actionId}",
+  maxInstances: 5
+}, async (event) => {
+  const data = event.data?.data() || {};
+  const action = String(data.action || "").trim();
+
+  if (!action) {
+    return;
+  }
+
+  await sendAdminPushNotification({
+    title: getSiteActionTitle(action),
+    body: getSiteActionBody(data),
+    tag: `hae-site-action-${action}`,
+    data: {
+      type: "site-action",
+      action,
+      actionId: event.params.actionId,
+      actionSubtype: data.actionSubtype || "",
+      pageName: data.pageName || data.sourcePage || data.page || ""
+    },
+    isEnabled: (settings) => Boolean(settings.siteActions?.[action])
+  });
+});
+
+exports.notifyOnMailingListSignupCreated = onDocumentCreated({
+  region: "us-central1",
+  document: "mailing-list-signups/{signupId}",
+  maxInstances: 5
+}, async (event) => {
+  const data = event.data?.data() || {};
+  const email = String(data.email || event.params.signupId || "").trim();
+  const source = String(data.sourcePage || data.source || "").trim();
+
+  await sendAdminPushNotification({
+    title: "Mailing list signup",
+    body: [email, source].filter(Boolean).join(" - ").slice(0, 180) || "A new contact joined the mailing list.",
+    tag: "hae-mailing-list-signup",
+    data: {
+      type: "mailing-list-signup",
+      signupId: event.params.signupId,
+      email,
+      source
+    },
+    isEnabled: (settings) => Boolean(settings.mailingListSignups)
   });
 });
 
