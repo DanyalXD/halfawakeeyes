@@ -404,6 +404,24 @@ async function sendNewEmailNotification(message, newMessageCount = 1) {
   });
 }
 
+function getAdminNotificationLink(data = {}) {
+  const type = String(data.type || "").trim();
+
+  if (type === "admin-email") {
+    return "/admin.html?page=email&emailView=mail";
+  }
+
+  if (type === "mailing-list-signup") {
+    return "/admin.html?page=email&emailView=address-book";
+  }
+
+  if (type === "site-action") {
+    return "/admin.html?page=analytics&collection=site-actions";
+  }
+
+  return "/admin.html";
+}
+
 async function sendAdminPushNotification({ title, body, data = {}, tag = "hae-admin-alert", isEnabled = () => true }) {
   const tokenEntries = await getAdminPushTokens();
 
@@ -435,6 +453,8 @@ async function sendAdminPushNotification({ title, body, data = {}, tag = "hae-ad
     return { sent: 0, failed: 0, skipped: true };
   }
 
+  const payloadData = Object.fromEntries(Object.entries(data).map(([key, value]) => [key, String(value || "")]));
+  const notificationLink = getAdminNotificationLink(payloadData);
   const results = await getMessaging().sendEachForMulticast({
     tokens: enabledTokenEntries.map((entry) => entry.token),
     notification: {
@@ -443,7 +463,7 @@ async function sendAdminPushNotification({ title, body, data = {}, tag = "hae-ad
     },
     webpush: {
       fcmOptions: {
-        link: "/admin.html"
+        link: notificationLink
       },
       notification: {
         icon: "/assets/images/logo.jpg",
@@ -452,7 +472,10 @@ async function sendAdminPushNotification({ title, body, data = {}, tag = "hae-ad
         requireInteraction: false
       }
     },
-    data: Object.fromEntries(Object.entries(data).map(([key, value]) => [key, String(value || "")]))
+    data: {
+      ...payloadData,
+      url: notificationLink
+    }
   });
 
   await disableInvalidPushTokens(results, enabledTokenEntries);

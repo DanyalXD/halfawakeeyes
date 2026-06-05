@@ -1,7 +1,7 @@
 /* global firebase */
 
 let firebaseMessagingReady = false;
-const APP_SHELL_CACHE = "hae-admin-shell-v1";
+const APP_SHELL_CACHE = "hae-admin-shell-v2";
 const APP_SHELL_ASSETS = [
   "admin.html",
   "manifest.webmanifest",
@@ -113,6 +113,14 @@ self.addEventListener("notificationclick", (event) => {
     const existingClient = clientList.find((client) => client.url.includes("/admin.html"));
 
     if (existingClient) {
+      if ("navigate" in existingClient) {
+        const navigatedClient = await existingClient.navigate(targetUrl);
+        if (navigatedClient) {
+          await navigatedClient.focus();
+          return;
+        }
+      }
+
       await existingClient.focus();
       return;
     }

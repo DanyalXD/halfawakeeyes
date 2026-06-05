@@ -370,6 +370,28 @@
       }
     }
 
+    function getRequestedAdminRoute() {
+      const params = new URLSearchParams(window.location.search);
+      const page = params.get("page");
+      const emailView = params.get("emailView");
+      const collectionName = params.get("collection");
+      const route = {
+        page: VALID_ADMIN_PAGES.has(page) ? page : "",
+        emailView: ["mail", "address-book"].includes(emailView) ? emailView : "",
+        collectionName: collectionName || ""
+      };
+
+      if (route.page || route.emailView || route.collectionName) {
+        const cleanUrl = new URL(window.location.href);
+        cleanUrl.searchParams.delete("page");
+        cleanUrl.searchParams.delete("emailView");
+        cleanUrl.searchParams.delete("collection");
+        window.history.replaceState({}, "", `${cleanUrl.pathname}${cleanUrl.search}${cleanUrl.hash}`);
+      }
+
+      return route;
+    }
+
     function persistActivePage(page) {
       if (!VALID_ADMIN_PAGES.has(page)) {
         return;
@@ -6496,7 +6518,14 @@
 
       hasInitializedAdmin = true;
       openAdminLogCache();
-      state.activePage = getStoredActivePage();
+      const requestedRoute = getRequestedAdminRoute();
+      state.activePage = requestedRoute.page || getStoredActivePage();
+      if (requestedRoute.emailView) {
+        state.activeEmailView = requestedRoute.emailView;
+      }
+      if (requestedRoute.collectionName) {
+        state.currentCollection = requestedRoute.collectionName;
+      }
       syncDeleteDialogState();
       syncDeleteDialogCopy();
       syncActivePageUI();
