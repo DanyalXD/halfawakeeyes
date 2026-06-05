@@ -316,6 +316,16 @@ function getNotificationSettingsCacheKey(tokenEntry = {}) {
   return tokenEntry.adminEmail || tokenEntry.adminUid || "default";
 }
 
+function getTimestampMillis(value) {
+  return typeof value?.toMillis === "function" ? value.toMillis() : 0;
+}
+
+function getPushTokenDeviceKey(tokenEntry = {}) {
+  const ownerKey = tokenEntry.adminEmail || tokenEntry.adminUid || tokenEntry.id || "unknown";
+  const userAgent = String(tokenEntry.userAgent || "").trim();
+  return userAgent ? `${ownerKey}::${userAgent}` : `${ownerKey}::${tokenEntry.id || tokenEntry.token}`;
+}
+
 async function getNotificationSettingsForToken(tokenEntry = {}, cache = new Map()) {
   const cacheKey = getNotificationSettingsCacheKey(tokenEntry);
 
@@ -332,14 +342,28 @@ async function getNotificationSettingsForToken(tokenEntry = {}, cache = new Map(
 
 async function getAdminPushTokens() {
   const snapshot = await db.collection(PUSH_TOKENS_COLLECTION).where("enabled", "==", true).get();
-  return snapshot.docs
+  const tokenEntries = snapshot.docs
     .map((docSnapshot) => ({
       id: docSnapshot.id,
       token: String(docSnapshot.data()?.token || "").trim(),
       adminUid: String(docSnapshot.data()?.adminUid || "").trim(),
-      adminEmail: String(docSnapshot.data()?.adminEmail || "").trim().toLowerCase()
+      adminEmail: String(docSnapshot.data()?.adminEmail || "").trim().toLowerCase(),
+      userAgent: String(docSnapshot.data()?.userAgent || "").trim(),
+      updatedAtMs: getTimestampMillis(docSnapshot.data()?.updatedAt)
     }))
-    .filter((entry) => entry.token);
+    .filter((entry) => entry.token)
+    .sort((a, b) => b.updatedAtMs - a.updatedAtMs);
+
+  const seenDeviceKeys = new Set();
+  return tokenEntries.filter((entry) => {
+    const deviceKey = getPushTokenDeviceKey(entry);
+    if (seenDeviceKeys.has(deviceKey)) {
+      return false;
+    }
+
+    seenDeviceKeys.add(deviceKey);
+    return true;
+  });
 }
 
 async function disableInvalidPushTokens(results, tokenEntries) {
@@ -366,6 +390,25 @@ async function disableInvalidPushTokens(results, tokenEntries) {
   });
 
   await Promise.all(writes);
+}
+
+function summarizePushFailures(results, tokenEntries) {
+  return results.responses
+    .map((response, index) => {
+      if (response.success) {
+        return null;
+      }
+
+      const tokenEntry = tokenEntries[index] || {};
+      const token = String(tokenEntry.token || "");
+      return {
+        code: response.error?.code || "unknown",
+        message: response.error?.message || "Unknown push send failure",
+        adminEmail: tokenEntry.adminEmail || "",
+        tokenSuffix: token ? token.slice(-8) : ""
+      };
+    })
+    .filter(Boolean);
 }
 
 async function sendNewEmailNotification(message, newMessageCount = 1) {
@@ -437,11 +480,13 @@ async function sendAdminPushNotification({ title, body, data = {}, tag = "hae-ad
   });
 
   await disableInvalidPushTokens(results, enabledTokenEntries);
+  const failures = summarizePushFailures(results, enabledTokenEntries);
   console.log("Admin push notification send result", {
     title,
     tag,
     sent: results.successCount,
-    failed: results.failureCount
+    failed: results.failureCount,
+    failures
   });
 
   return {
@@ -617,6 +662,7 @@ exports.registerEmailPushToken = onCall(PUSH_FUNCTION_OPTIONS, async (request) =
   const adminEmail = assertAdmin(request);
   const adminUid = String(request.auth?.uid || "").trim();
   const token = String(request.data?.token || "").trim();
+  const userAgent = String(request.data?.userAgent || "").slice(0, 500);
 
   if (!token || token.length < 40) {
     throw new HttpsError("invalid-argument", "A valid push token is required.");
@@ -629,10 +675,28 @@ exports.registerEmailPushToken = onCall(PUSH_FUNCTION_OPTIONS, async (request) =
     adminEmail,
     enabled: true,
     permission: String(request.data?.permission || ""),
-    userAgent: String(request.data?.userAgent || "").slice(0, 500),
+    userAgent,
     updatedAt: FieldValue.serverTimestamp(),
     createdAt: FieldValue.serverTimestamp()
   }, { merge: true });
+
+  if (userAgent) {
+    const existingTokens = await db.collection(PUSH_TOKENS_COLLECTION)
+      .where("enabled", "==", true)
+      .where("adminEmail", "==", adminEmail)
+      .where("userAgent", "==", userAgent)
+      .get();
+
+    const cleanupWrites = existingTokens.docs
+      .filter((docSnapshot) => docSnapshot.id !== docId)
+      .map((docSnapshot) => docSnapshot.ref.set({
+        enabled: false,
+        disabledAt: FieldValue.serverTimestamp(),
+        disabledReason: "replaced-by-newer-device-token"
+      }, { merge: true }));
+
+    await Promise.all(cleanupWrites);
+  }
 
   return { ok: true };
 });
