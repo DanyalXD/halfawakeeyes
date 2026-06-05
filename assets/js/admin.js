@@ -115,6 +115,7 @@
     const ADMIN_LOG_CACHE_DB_VERSION = 1;
     const ADMIN_LOG_CACHE_ENTRIES_STORE = "analyticsEntries";
     const ADMIN_LOG_CACHE_META_STORE = "analyticsMeta";
+    const EMAIL_PUSH_PROMPT_DISMISSED_KEY = "hae-email-push-prompt-dismissed";
     const PUBLIC_MIRROR_DOC_ID = "public-index";
     const PUBLIC_MIRROR_KIND = "public-mirror";
     let adminLogCachePromise = null;
@@ -3755,6 +3756,77 @@
           : "Enable Alerts";
     }
 
+    function getEmailPushPrompt() {
+      let prompt = document.getElementById("email-push-prompt");
+
+      if (prompt) {
+        return prompt;
+      }
+
+      prompt = document.createElement("div");
+      prompt.id = "email-push-prompt";
+      prompt.className = "email-push-prompt";
+      prompt.hidden = true;
+      prompt.innerHTML = `
+        <div class="email-push-prompt-card" role="dialog" aria-live="polite" aria-labelledby="email-push-prompt-title">
+          <button type="button" class="email-push-prompt-close" data-email-push-prompt-dismiss aria-label="Dismiss push notification prompt">x</button>
+          <div class="email-push-prompt-kicker">Push alerts</div>
+          <h2 id="email-push-prompt-title">Enable admin notifications?</h2>
+          <p>Get alerts on this device when new email or enabled site actions come in.</p>
+          <div class="email-push-prompt-actions">
+            <button type="button" class="btn btn-accent" data-email-push-prompt-enable>Enable Alerts</button>
+            <button type="button" class="btn ghost-button" data-email-push-prompt-dismiss>Not now</button>
+          </div>
+        </div>
+      `;
+
+      document.body.appendChild(prompt);
+
+      prompt.querySelector("[data-email-push-prompt-enable]")?.addEventListener("click", async () => {
+        await enableEmailPushNotifications();
+        if (state.isPushEnabled || Notification.permission !== "default") {
+          dismissEmailPushPrompt();
+        }
+      });
+
+      prompt.querySelectorAll("[data-email-push-prompt-dismiss]").forEach((button) => {
+        button.addEventListener("click", () => {
+          dismissEmailPushPrompt();
+        });
+      });
+
+      return prompt;
+    }
+
+    function dismissEmailPushPrompt() {
+      window.sessionStorage.setItem(EMAIL_PUSH_PROMPT_DISMISSED_KEY, "1");
+      const prompt = document.getElementById("email-push-prompt");
+      if (prompt) {
+        prompt.hidden = true;
+      }
+    }
+
+    async function showEmailPushPromptIfNeeded() {
+      if (!state.authUser || window.sessionStorage.getItem(EMAIL_PUSH_PROMPT_DISMISSED_KEY)) {
+        return;
+      }
+
+      if (!("Notification" in window)
+        || !("serviceWorker" in navigator)
+        || !hasEmailPushVapidKey()
+        || !hasEmailPushAppId()
+        || Notification.permission !== "default") {
+        return;
+      }
+
+      const supported = await isMessagingSupported().catch(() => false);
+      if (!supported || !state.authUser) {
+        return;
+      }
+
+      getEmailPushPrompt().hidden = false;
+    }
+
     async function updateEmailPushStatus() {
       syncEmailPushState();
 
@@ -6272,6 +6344,7 @@
       syncGigFormState();
       syncLinkFormState();
       updateEmailPushStatus();
+      window.setTimeout(showEmailPushPromptIfNeeded, 700);
       resetLinkFormDefaults();
       syncActivePageUI();
       syncMobileNav();

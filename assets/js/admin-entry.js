@@ -112,7 +112,7 @@ async function bootAdmin() {
     return;
   }
 
-  const assetVersion = isLocalAdminHost() ? String(Date.now()) : "20260605-contact-compose-layer-fix";
+  const assetVersion = isLocalAdminHost() ? String(Date.now()) : "20260605-mobile-message-row-breathing";
 
   if (!window.HAEAdminComponents?.load) {
     showComponentLoadError(new Error("Admin component loader is unavailable."));
