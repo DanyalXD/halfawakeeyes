@@ -5718,6 +5718,41 @@
         flex-shrink: 0;
       }
 
+      body.email-page-active.email-folders-mobile-open #email-page .email-folder-rail {
+        display: grid;
+        grid-row: 2;
+        align-content: start;
+        gap: 1.4rem;
+        min-height: 0;
+        overflow: auto;
+        padding: 1.45rem 1.2rem 0;
+        border-bottom: 0;
+      }
+
+      body.email-page-active.email-folders-mobile-open #email-page .email-folder-list {
+        gap: 0.35rem;
+      }
+
+      body.email-page-active.email-folders-mobile-open #email-page .email-folder-item {
+        min-height: 58px;
+        padding: 0.65rem 0.2rem;
+        gap: 0.85rem;
+        font-size: 1.02rem;
+      }
+
+      body.email-page-active.email-folders-mobile-open #email-page .email-folder-item::before {
+        width: 24px;
+        height: 24px;
+        margin-right: 0;
+        border-radius: 7px;
+      }
+
+      body.email-page-active.email-folders-mobile-open #email-page .email-inbox-card,
+      body.email-page-active.email-folders-mobile-open #email-page .email-reader-card,
+      body.email-page-active.email-folders-mobile-open #email-page .email-address-book-card {
+        display: none !important;
+      }
+
       body.email-page-active #email-page .mailing-contacts-layout {
         min-height: 0;
         max-height: none;

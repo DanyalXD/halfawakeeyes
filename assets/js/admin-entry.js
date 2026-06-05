@@ -106,13 +106,25 @@ function loadAdminScript(version) {
   document.body.appendChild(script);
 }
 
+async function registerAdminServiceWorker() {
+  if (!("serviceWorker" in navigator)) {
+    return;
+  }
+
+  try {
+    await navigator.serviceWorker.register("firebase-messaging-sw.js");
+  } catch (error) {
+    console.warn("Could not register admin service worker.", error);
+  }
+}
+
 async function bootAdmin() {
   if (window.location.protocol === "file:") {
     showLocalFileModeMessage();
     return;
   }
 
-  const assetVersion = isLocalAdminHost() ? String(Date.now()) : "20260605-mobile-message-row-breathing";
+  const assetVersion = isLocalAdminHost() ? String(Date.now()) : "20260605-mobile-folder-menu-scale";
 
   if (!window.HAEAdminComponents?.load) {
     showComponentLoadError(new Error("Admin component loader is unavailable."));
@@ -120,6 +132,7 @@ async function bootAdmin() {
   }
 
   try {
+    registerAdminServiceWorker();
     await window.HAEAdminComponents.load({ version: assetVersion });
     loadAdminScript(assetVersion);
   } catch (error) {

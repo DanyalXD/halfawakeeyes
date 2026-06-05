@@ -769,12 +769,6 @@ async function loadGig() {
         "This show is hidden from links, missing a ticket URL, or no longer upcoming.",
         "Only upcoming gigs with a ticket URL stay available on this page."
       );
-      await logEvent("ticket_redirect_unavailable", {
-        label: gig.event || "Live show",
-        target: gig.id,
-        actionSubtype: "gig_not_live",
-        section: "tickets"
-      });
       return;
     }
 

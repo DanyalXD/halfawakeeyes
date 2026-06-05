@@ -117,13 +117,27 @@ function getMailboxConfig() {
   return {
     email: IONOS_EMAIL.value().trim(),
     password: IONOS_PASSWORD.value().trim(),
-    imapHost: process.env.IMAP_HOST || "imap.ionos.com",
+    imapHost: process.env.IMAP_HOST || "imap.ionos.co.uk",
     imapPort: Number.parseInt(process.env.IMAP_PORT || "993", 10),
     smtpHost: process.env.SMTP_HOST || "smtp.ionos.com",
     smtpPort: Number.parseInt(process.env.SMTP_PORT || "587", 10),
     smtpSecure: String(process.env.SMTP_SECURE || "false").toLowerCase() === "true",
     fromName: process.env.MAIL_FROM_NAME || "Half Awake Eyes"
   };
+}
+
+function logMailboxCredentialDiagnostic(source) {
+  const rawEmail = IONOS_EMAIL.value();
+  const rawPassword = IONOS_PASSWORD.value();
+
+  console.log("Mailbox credential diagnostic", {
+    source,
+    email: rawEmail.trim(),
+    emailLength: rawEmail.length,
+    passwordLength: rawPassword.length,
+    emailTrimmed: rawEmail !== rawEmail.trim(),
+    passwordTrimmed: rawPassword !== rawPassword.trim()
+  });
 }
 
 function getImapHosts() {
@@ -389,6 +403,14 @@ async function sendAdminPushNotification({ title, body, data = {}, tag = "hae-ad
     }
   }
 
+  console.log("Admin push notification token filter", {
+    title,
+    tag,
+    tokenCount: tokenEntries.length,
+    enabledTokenCount: enabledTokenEntries.length,
+    settingsOwners: settingsCache.size
+  });
+
   if (!enabledTokenEntries.length) {
     console.log("No admin push tokens opted in for this notification.", { title, tag });
     return { sent: 0, failed: 0, skipped: true };
@@ -415,6 +437,13 @@ async function sendAdminPushNotification({ title, body, data = {}, tag = "hae-ad
   });
 
   await disableInvalidPushTokens(results, enabledTokenEntries);
+  console.log("Admin push notification send result", {
+    title,
+    tag,
+    sent: results.successCount,
+    failed: results.failureCount
+  });
+
   return {
     sent: results.successCount,
     failed: results.failureCount
@@ -475,8 +504,10 @@ async function resolveMailboxPath(client, folder) {
   return mailboxPath(match);
 }
 
-async function withMailbox(folder, callback) {
-  const hosts = getImapHosts();
+async function withMailbox(folder, callback, options = {}) {
+  const hosts = Array.isArray(options.hosts) && options.hosts.length
+    ? [...new Set(options.hosts.filter(Boolean))]
+    : getImapHosts();
   let lastError = null;
   const attempts = [];
 
@@ -487,6 +518,7 @@ async function withMailbox(folder, callback) {
 
     try {
       await client.connect();
+      console.log("IMAP connection succeeded", { host });
       const resolvedPath = await resolveMailboxPath(client, folder);
       await client.mailboxOpen(resolvedPath);
       return await callback(client, resolvedPath);
@@ -532,7 +564,7 @@ async function appendSentCopy(mailOptions) {
   });
 }
 
-async function fetchMailboxMessages(folder, limit) {
+async function fetchMailboxMessages(folder, limit, options = {}) {
   return withMailbox(folder, async (client, path) => {
     const mailboxSize = Number(client.mailbox?.exists || 0);
 
@@ -566,12 +598,13 @@ async function fetchMailboxMessages(folder, limit) {
 
     messages.sort((a, b) => Number(b.id) - Number(a.id));
     return { folder, path, messages };
-  });
+  }, options);
 }
 
 exports.listInboxMessages = onCall(EMAIL_FUNCTION_OPTIONS, async (request) => {
   assertAdmin(request);
   console.log("listInboxMessages running", { deployMarker: DEPLOY_MARKER });
+  logMailboxCredentialDiagnostic("listInboxMessages");
 
   const requestedLimit = Number.parseInt(String(request.data?.limit || "25"), 10);
   const limit = Math.min(Math.max(requestedLimit || 25, 1), 50);
@@ -606,11 +639,20 @@ exports.registerEmailPushToken = onCall(PUSH_FUNCTION_OPTIONS, async (request) =
 
 exports.checkInboxForPushNotifications = onSchedule(EMAIL_NOTIFICATION_SCHEDULE_OPTIONS, async () => {
   console.log("checkInboxForPushNotifications running", { deployMarker: DEPLOY_MARKER });
+  logMailboxCredentialDiagnostic("checkInboxForPushNotifications");
 
   const stateRef = db.collection(EMAIL_NOTIFICATION_STATE_COLLECTION).doc(EMAIL_NOTIFICATION_STATE_DOC);
   const stateSnapshot = await stateRef.get();
   const lastSeenUid = Number.parseInt(String(stateSnapshot.data()?.lastSeenUid || "0"), 10) || 0;
-  const { messages } = await fetchMailboxMessages("inbox", 10);
+  const mailboxConfig = getMailboxConfig();
+  const { messages } = await fetchMailboxMessages("inbox", 10, {
+    hosts: [mailboxConfig.imapHost]
+  });
+
+  console.log("Inbox push check fetched messages", {
+    messageCount: messages.length,
+    lastSeenUid
+  });
 
   if (!messages.length) {
     await stateRef.set({
@@ -623,6 +665,13 @@ exports.checkInboxForPushNotifications = onSchedule(EMAIL_NOTIFICATION_SCHEDULE_
   const latestMessage = messages[0];
   const latestUid = Number.parseInt(String(latestMessage.id || "0"), 10) || 0;
 
+  console.log("Inbox push check latest message", {
+    latestUid,
+    lastSeenUid,
+    latestSubject: String(latestMessage.subject || ""),
+    latestFrom: String(latestMessage.from || "")
+  });
+
   if (!lastSeenUid) {
     await stateRef.set({
       lastSeenUid: latestUid,
@@ -634,6 +683,7 @@ exports.checkInboxForPushNotifications = onSchedule(EMAIL_NOTIFICATION_SCHEDULE_
   }
 
   if (latestUid <= lastSeenUid) {
+    console.log("No new inbox messages for push notification.", { latestUid, lastSeenUid });
     await stateRef.set({
       lastCheckedAt: FieldValue.serverTimestamp(),
       lastSeenUid
@@ -647,6 +697,12 @@ exports.checkInboxForPushNotifications = onSchedule(EMAIL_NOTIFICATION_SCHEDULE_
   });
 
   const notificationResult = await sendNewEmailNotification(latestMessage, newMessages.length || 1);
+  console.log("Inbox push notification result", {
+    latestUid,
+    previousLastSeenUid: lastSeenUid,
+    newMessageCount: newMessages.length || 1,
+    notificationResult
+  });
 
   await stateRef.set({
     lastSeenUid: latestUid,

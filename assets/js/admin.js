@@ -3279,6 +3279,7 @@
 
     function syncEmailViewUI() {
       const activeView = state.activeEmailView === "address-book" ? "address-book" : "mail";
+      const isFolderMenuOpen = document.body.classList.contains("email-folders-mobile-open");
 
       elements.emailViewButtons.forEach((button) => {
         button.classList.toggle("is-active", button.dataset.emailView === activeView);
@@ -3296,7 +3297,11 @@
       }
 
       if (elements.emailMobileTitle) {
-        elements.emailMobileTitle.textContent = activeView === "address-book" ? "Mailing List" : "Folders";
+        elements.emailMobileTitle.textContent = isFolderMenuOpen
+          ? "Folders"
+          : activeView === "address-book"
+            ? "Mailing List"
+            : getEmailFolderLabel();
       }
 
       document.body.classList.toggle("email-address-book-open", activeView === "address-book");
@@ -3707,11 +3712,14 @@
         return;
       }
 
+      closeMobileEmailReader();
       document.body.classList.add("email-folders-mobile-open");
+      syncEmailViewUI();
     }
 
     function closeMobileEmailFolders() {
       document.body.classList.remove("email-folders-mobile-open");
+      syncEmailViewUI();
     }
 
     async function callAdminEmailFunction(name, payload = {}) {

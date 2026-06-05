@@ -1,6 +1,13 @@
 /* global firebase */
 
 let firebaseMessagingReady = false;
+const APP_SHELL_CACHE = "hae-admin-shell-v1";
+const APP_SHELL_ASSETS = [
+  "admin.html",
+  "manifest.webmanifest",
+  "assets/images/logo.jpg",
+  "assets/images/favicon.ico"
+];
 
 function showEmailNotification(payload = {}) {
   const title = payload.notification?.title || "New email";
@@ -35,6 +42,41 @@ try {
 } catch (error) {
   console.warn("Firebase Messaging service worker setup failed.", error);
 }
+
+self.addEventListener("install", (event) => {
+  event.waitUntil((async () => {
+    const cache = await caches.open(APP_SHELL_CACHE);
+    await cache.addAll(APP_SHELL_ASSETS);
+    await self.skipWaiting();
+  })());
+});
+
+self.addEventListener("activate", (event) => {
+  event.waitUntil((async () => {
+    const cacheNames = await caches.keys();
+    await Promise.all(
+      cacheNames
+        .filter((cacheName) => cacheName.startsWith("hae-admin-shell-") && cacheName !== APP_SHELL_CACHE)
+        .map((cacheName) => caches.delete(cacheName))
+    );
+    await self.clients.claim();
+  })());
+});
+
+self.addEventListener("fetch", (event) => {
+  if (event.request.mode !== "navigate") {
+    return;
+  }
+
+  event.respondWith((async () => {
+    try {
+      return await fetch(event.request);
+    } catch (error) {
+      const cache = await caches.open(APP_SHELL_CACHE);
+      return await cache.match("admin.html");
+    }
+  })());
+});
 
 self.addEventListener("push", (event) => {
   if (firebaseMessagingReady) {
