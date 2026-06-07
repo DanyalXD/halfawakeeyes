@@ -48,6 +48,7 @@
       activeEmailMessage: null,
       activeEmailFolder: "inbox",
       activeEmailView: "mail",
+      emailSearchTerm: "",
       campaign: null,
       campaigns: [],
       notificationSettings: structuredClone(DEFAULT_NOTIFICATION_SETTINGS),
@@ -73,6 +74,8 @@
       isLoadingLinks: false,
       isLoadingMailingList: false,
       isLoadingEmail: false,
+      isLoadingOlderEmail: false,
+      hasMoreOlderEmail: true,
       isLoadingEmailMessage: false,
       isRegisteringPush: false,
       isPushEnabled: false,
@@ -112,13 +115,22 @@
       "danyalc95@gmail.com"
     ]);
     const ADMIN_LOG_CACHE_DB_NAME = "hae-admin-cache";
-    const ADMIN_LOG_CACHE_DB_VERSION = 1;
+    const ADMIN_LOG_CACHE_DB_VERSION = 3;
     const ADMIN_LOG_CACHE_ENTRIES_STORE = "analyticsEntries";
     const ADMIN_LOG_CACHE_META_STORE = "analyticsMeta";
+    const ADMIN_EMAIL_CACHE_STORE = "emailFolders";
+    const ADMIN_EMAIL_MESSAGE_CACHE_STORE = "emailMessages";
     const EMAIL_PUSH_PROMPT_DISMISSED_KEY = "hae-email-push-prompt-dismissed";
+    const MAX_EMAIL_ATTACHMENT_COUNT = 5;
+    const MAX_EMAIL_ATTACHMENT_BYTES = 6 * 1024 * 1024;
+    const EMAIL_FOLDER_PAGE_SIZE = 25;
+    const EMAIL_FOLDER_CACHE_TTL_MS = 30 * 60 * 1000;
+    const EMAIL_MESSAGE_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+    const EMAIL_MESSAGE_ATTACHMENT_CACHE_BYTES = 2 * 1024 * 1024;
     const PUBLIC_MIRROR_DOC_ID = "public-index";
     const PUBLIC_MIRROR_KIND = "public-mirror";
     let adminLogCachePromise = null;
+    let emailSearchTimer = null;
 
     const elements = {
       dashboard: document.getElementById("dashboard"),
@@ -221,7 +233,9 @@
       emailRefresh: document.getElementById("email-refresh"),
       emailStatus: document.getElementById("email-status"),
       emailFolderTitle: document.getElementById("email-folder-title"),
+      emailSearch: document.getElementById("email-search"),
       emailMessageList: document.getElementById("email-message-list"),
+      emailLoadOlder: document.getElementById("email-load-older"),
       emailReaderTitle: document.getElementById("email-reader-title"),
       emailReaderMeta: document.getElementById("email-reader-meta"),
       emailReaderClose: document.getElementById("email-reader-close"),
@@ -239,6 +253,8 @@
       emailLinkApply: document.getElementById("email-link-apply"),
       emailLinkCancel: document.getElementById("email-link-cancel"),
       emailFormatButtons: Array.from(document.querySelectorAll("[data-email-format]")),
+      emailAttachments: document.getElementById("email-attachments"),
+      emailAttachmentList: document.getElementById("email-attachment-list"),
       emailSend: document.getElementById("email-send"),
       emailComposeStatus: document.getElementById("email-compose-status"),
       campaignForm: document.getElementById("campaign-form"),
@@ -424,6 +440,14 @@
 
             if (!dbInstance.objectStoreNames.contains(ADMIN_LOG_CACHE_META_STORE)) {
               dbInstance.createObjectStore(ADMIN_LOG_CACHE_META_STORE, { keyPath: "collectionName" });
+            }
+
+            if (!dbInstance.objectStoreNames.contains(ADMIN_EMAIL_CACHE_STORE)) {
+              dbInstance.createObjectStore(ADMIN_EMAIL_CACHE_STORE, { keyPath: "folder" });
+            }
+
+            if (!dbInstance.objectStoreNames.contains(ADMIN_EMAIL_MESSAGE_CACHE_STORE)) {
+              dbInstance.createObjectStore(ADMIN_EMAIL_MESSAGE_CACHE_STORE, { keyPath: "cacheId" });
             }
           };
 
@@ -3268,9 +3292,216 @@
         preview: String(message.preview || message.snippet || ""),
         text: String(message.text || message.body || ""),
         html: String(message.html || ""),
+        attachments: Array.isArray(message.attachments)
+          ? message.attachments.map((attachment, index) => ({
+            id: String(attachment?.id || `attachment-${index + 1}`),
+            filename: String(attachment?.filename || `attachment-${index + 1}`),
+            contentType: String(attachment?.contentType || "application/octet-stream"),
+            size: Number(attachment?.size || 0),
+            content: String(attachment?.content || "")
+          }))
+          : [],
         unread: Boolean(message.unread || message.isUnread),
         raw: message
       };
+    }
+
+    function serializeEmailSummaryForCache(message = {}) {
+      return {
+        id: String(message.id || ""),
+        folder: String(message.folder || state.activeEmailFolder || "inbox"),
+        from: String(message.from || ""),
+        to: String(message.to || ""),
+        subject: String(message.subject || "(No subject)"),
+        date: message.date || "",
+        preview: String(message.preview || ""),
+        unread: Boolean(message.unread)
+      };
+    }
+
+    function getEmailMessageCacheId(folder = state.activeEmailFolder, messageId = "") {
+      return `${String(folder || "inbox")}:${String(messageId || "")}`;
+    }
+
+    function serializeEmailMessageForCache(message = {}) {
+      const attachments = Array.isArray(message.attachments) ? message.attachments : [];
+      const attachmentBytes = attachments.reduce((sum, attachment) => {
+        return sum + Math.ceil(String(attachment?.content || "").length * 0.75);
+      }, 0);
+      const shouldCacheAttachmentContent = attachmentBytes <= EMAIL_MESSAGE_ATTACHMENT_CACHE_BYTES;
+
+      return {
+        ...serializeEmailSummaryForCache(message),
+        text: String(message.text || ""),
+        html: String(message.html || ""),
+        attachments: attachments.map((attachment, index) => ({
+          id: String(attachment?.id || `attachment-${index + 1}`),
+          filename: String(attachment?.filename || `attachment-${index + 1}`),
+          contentType: String(attachment?.contentType || "application/octet-stream"),
+          size: Number(attachment?.size || 0),
+          content: shouldCacheAttachmentContent ? String(attachment?.content || "") : ""
+        }))
+      };
+    }
+
+    async function readCachedEmailFolder(folder = state.activeEmailFolder) {
+      try {
+        const cacheDb = await openAdminLogCache();
+        if (!cacheDb || !cacheDb.objectStoreNames.contains(ADMIN_EMAIL_CACHE_STORE)) {
+          return [];
+        }
+
+        return await new Promise((resolve) => {
+          const transaction = cacheDb.transaction([ADMIN_EMAIL_CACHE_STORE], "readonly");
+          const store = transaction.objectStore(ADMIN_EMAIL_CACHE_STORE);
+          const request = store.get(String(folder || "inbox"));
+
+          request.onsuccess = () => {
+            const cached = request.result;
+            const savedAt = Number(cached?.savedAt || 0);
+            if (!savedAt || Date.now() - savedAt > EMAIL_FOLDER_CACHE_TTL_MS) {
+              resolve([]);
+              return;
+            }
+
+            resolve(Array.isArray(cached.messages)
+              ? cached.messages.map(normalizeEmailMessage).filter((message) => message.id)
+              : []);
+          };
+
+          request.onerror = () => {
+            resolve([]);
+          };
+        });
+      } catch (error) {
+        return [];
+      }
+    }
+
+    async function writeCachedEmailFolder(folder = state.activeEmailFolder, messages = state.emailMessages) {
+      try {
+        const cacheDb = await openAdminLogCache();
+        if (!cacheDb || !cacheDb.objectStoreNames.contains(ADMIN_EMAIL_CACHE_STORE)) {
+          return;
+        }
+
+        await new Promise((resolve) => {
+          const transaction = cacheDb.transaction([ADMIN_EMAIL_CACHE_STORE], "readwrite");
+          const store = transaction.objectStore(ADMIN_EMAIL_CACHE_STORE);
+          store.put({
+            folder: String(folder || "inbox"),
+            savedAt: Date.now(),
+            messages: messages.map(serializeEmailSummaryForCache)
+          });
+
+          transaction.oncomplete = () => resolve();
+          transaction.onerror = () => resolve();
+        });
+      } catch (error) {
+        // IndexedDB cache is a speed boost only; ignore storage limits.
+      }
+    }
+
+    function getNewestEmailUid(messages = []) {
+      return messages.reduce((highest, message) => {
+        const uid = Number.parseInt(String(message?.id || "0"), 10) || 0;
+        return Math.max(highest, uid);
+      }, 0);
+    }
+
+    function getOldestEmailUid(messages = []) {
+      return messages.reduce((lowest, message) => {
+        const uid = Number.parseInt(String(message?.id || "0"), 10) || 0;
+        if (!uid) {
+          return lowest;
+        }
+
+        return lowest ? Math.min(lowest, uid) : uid;
+      }, 0);
+    }
+
+    function mergeEmailSummaries(existingMessages = [], newMessages = []) {
+      const byId = new Map();
+
+      [...existingMessages, ...newMessages].forEach((message) => {
+        if (!message?.id) {
+          return;
+        }
+
+        const existing = byId.get(message.id);
+        byId.set(message.id, normalizeEmailMessage({
+          ...(existing?.raw || existing || {}),
+          ...existing,
+          ...(message.raw || message),
+          ...message
+        }));
+      });
+
+      return Array.from(byId.values()).sort((a, b) => {
+        const uidA = Number.parseInt(String(a.id || "0"), 10) || 0;
+        const uidB = Number.parseInt(String(b.id || "0"), 10) || 0;
+        return uidB - uidA;
+      });
+    }
+
+    async function readCachedEmailMessage(folder = state.activeEmailFolder, messageId = "") {
+      try {
+        const cacheDb = await openAdminLogCache();
+        if (!cacheDb || !cacheDb.objectStoreNames.contains(ADMIN_EMAIL_MESSAGE_CACHE_STORE)) {
+          return null;
+        }
+
+        return await new Promise((resolve) => {
+          const transaction = cacheDb.transaction([ADMIN_EMAIL_MESSAGE_CACHE_STORE], "readonly");
+          const store = transaction.objectStore(ADMIN_EMAIL_MESSAGE_CACHE_STORE);
+          const request = store.get(getEmailMessageCacheId(folder, messageId));
+
+          request.onsuccess = () => {
+            const cached = request.result;
+            const savedAt = Number(cached?.savedAt || 0);
+            if (!savedAt || Date.now() - savedAt > EMAIL_MESSAGE_CACHE_TTL_MS || !cached.message?.id) {
+              resolve(null);
+              return;
+            }
+
+            resolve(normalizeEmailMessage(cached.message));
+          };
+
+          request.onerror = () => {
+            resolve(null);
+          };
+        });
+      } catch (error) {
+        return null;
+      }
+    }
+
+    async function writeCachedEmailMessage(message = {}) {
+      try {
+        if (!message.id) {
+          return;
+        }
+
+        const cacheDb = await openAdminLogCache();
+        if (!cacheDb || !cacheDb.objectStoreNames.contains(ADMIN_EMAIL_MESSAGE_CACHE_STORE)) {
+          return;
+        }
+
+        await new Promise((resolve) => {
+          const transaction = cacheDb.transaction([ADMIN_EMAIL_MESSAGE_CACHE_STORE], "readwrite");
+          const store = transaction.objectStore(ADMIN_EMAIL_MESSAGE_CACHE_STORE);
+          store.put({
+            cacheId: getEmailMessageCacheId(message.folder, message.id),
+            savedAt: Date.now(),
+            message: serializeEmailMessageForCache(message)
+          });
+
+          transaction.oncomplete = () => resolve();
+          transaction.onerror = () => resolve();
+        });
+      } catch (error) {
+        // Message cache is optional; never block reading mail.
+      }
     }
 
     function getEmailMessageById(messageId) {
@@ -3383,6 +3614,7 @@
       state.activeEmailFolder = folder;
       state.emailMessages = [];
       state.activeEmailMessage = null;
+      state.hasMoreOlderEmail = true;
       closeMobileEmailFolders();
       syncEmailViewUI();
       syncEmailFolderUI();
@@ -3441,24 +3673,117 @@
       });
     }
 
+    function formatFileSize(bytes = 0) {
+      const size = Number(bytes || 0);
+      if (!Number.isFinite(size) || size <= 0) {
+        return "";
+      }
+
+      if (size < 1024) {
+        return `${size} B`;
+      }
+
+      if (size < 1024 * 1024) {
+        return `${(size / 1024).toFixed(1)} KB`;
+      }
+
+      return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+    }
+
+    function getAttachmentDataUrl(attachment = {}) {
+      const contentType = attachment.contentType || "application/octet-stream";
+      return `data:${contentType};base64,${attachment.content || ""}`;
+    }
+
+    function renderComposeAttachments() {
+      if (!elements.emailAttachments || !elements.emailAttachmentList) {
+        return;
+      }
+
+      const files = Array.from(elements.emailAttachments.files || []);
+      elements.emailAttachmentList.innerHTML = "";
+
+      files.forEach((file) => {
+        const item = document.createElement("div");
+        item.className = "email-attachment-chip";
+        item.textContent = `${file.name} ${formatFileSize(file.size)}`.trim();
+        elements.emailAttachmentList.appendChild(item);
+      });
+    }
+
+    function validateSelectedEmailAttachments(files = []) {
+      if (files.length > MAX_EMAIL_ATTACHMENT_COUNT) {
+        throw new Error(`Attach up to ${MAX_EMAIL_ATTACHMENT_COUNT} files per email.`);
+      }
+
+      const totalBytes = files.reduce((sum, file) => sum + Number(file.size || 0), 0);
+      if (totalBytes > MAX_EMAIL_ATTACHMENT_BYTES) {
+        throw new Error("Attachments are too large. Keep the total under 6 MB.");
+      }
+    }
+
+    function readFileAsBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const result = String(reader.result || "");
+          resolve(result.includes(",") ? result.split(",").pop() : result);
+        };
+        reader.onerror = () => reject(reader.error || new Error("Could not read attachment."));
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function getSelectedEmailAttachments() {
+      const files = Array.from(elements.emailAttachments?.files || []);
+      validateSelectedEmailAttachments(files);
+
+      return Promise.all(files.map(async (file) => ({
+        filename: file.name,
+        contentType: file.type || "application/octet-stream",
+        size: file.size,
+        content: await readFileAsBase64(file)
+      })));
+    }
+
     function renderEmailInbox() {
       if (!elements.emailMessageList || !elements.emailCount) {
         return;
       }
 
       const messages = state.emailMessages;
-      elements.emailCount.textContent = state.isLoadingEmail
-        ? "Loading messages..."
-        : messages.length
+      const searchTerm = state.emailSearchTerm.trim();
+      if (state.isLoadingEmail && messages.length) {
+        elements.emailCount.textContent = searchTerm
+          ? `Searching "${searchTerm}"`
+          : `${messages.length} message${messages.length === 1 ? "" : "s"}`;
+      } else if (state.isLoadingEmail) {
+        elements.emailCount.textContent = searchTerm ? `Searching "${searchTerm}"` : "Loading messages...";
+      } else if (searchTerm) {
+        elements.emailCount.textContent = `${messages.length} result${messages.length === 1 ? "" : "s"}`;
+      } else {
+        elements.emailCount.textContent = messages.length
           ? `${messages.length} message${messages.length === 1 ? "" : "s"}`
           : "No messages loaded";
+      }
       elements.emailMessageList.innerHTML = "";
       syncEmailFolderUI();
+      if (elements.emailLoadOlder) {
+        elements.emailLoadOlder.hidden = messages.length < EMAIL_FOLDER_PAGE_SIZE || !state.hasMoreOlderEmail;
+        elements.emailLoadOlder.disabled = state.isLoadingEmail || state.isLoadingOlderEmail;
+        elements.emailLoadOlder.textContent = state.isLoadingOlderEmail
+          ? "Loading older..."
+          : searchTerm
+            ? "Load more results"
+            : "Load older";
+      }
 
       if (!messages.length) {
         const empty = document.createElement("div");
         empty.className = "gig-admin-empty";
-        empty.textContent = state.isLoadingEmail ? `Loading ${getEmailFolderLabel().toLowerCase()}...` : `No messages in ${getEmailFolderLabel().toLowerCase()}.`;
+        empty.textContent = state.isLoadingEmail
+          ? searchTerm ? `Searching ${getEmailFolderLabel().toLowerCase()}...` : `Loading ${getEmailFolderLabel().toLowerCase()}...`
+          : searchTerm ? `No mailbox results for "${searchTerm}".` : `No messages in ${getEmailFolderLabel().toLowerCase()}.`;
         elements.emailMessageList.appendChild(empty);
         return;
       }
@@ -3648,6 +3973,27 @@
         }
       }
 
+      const attachmentList = document.createElement("div");
+      attachmentList.className = "email-reader-attachments";
+      const attachments = Array.isArray(message.attachments) ? message.attachments.filter((attachment) => attachment.content) : [];
+      if (attachments.length) {
+        const label = document.createElement("div");
+        label.className = "email-reader-attachments-title";
+        label.textContent = `Attachments (${attachments.length})`;
+        attachmentList.appendChild(label);
+
+        attachments.forEach((attachment) => {
+          const link = document.createElement("a");
+          link.className = "email-reader-attachment";
+          link.href = getAttachmentDataUrl(attachment);
+          link.target = "_blank";
+          link.rel = "noopener";
+          link.download = attachment.filename || "attachment";
+          link.textContent = `${attachment.filename || "Attachment"} ${formatFileSize(attachment.size)}`.trim();
+          attachmentList.appendChild(link);
+        });
+      }
+
       const actions = document.createElement("div");
       actions.className = "email-reader-actions";
 
@@ -3669,7 +4015,11 @@
       });
 
       actions.append(replyButton, trashButton);
-      elements.emailReader.append(header, meta, body, actions);
+      elements.emailReader.append(header, meta, body);
+      if (attachments.length) {
+        elements.emailReader.appendChild(attachmentList);
+      }
+      elements.emailReader.appendChild(actions);
     }
 
     function syncEmailFormState() {
@@ -3921,15 +4271,23 @@
 
       messaging = getMessaging(app);
       onMessage(messaging, (payload) => {
-        const title = payload.notification?.title || "New email";
-        const body = payload.notification?.body || payload.data?.preview || "A new mailbox message arrived.";
+        const title = payload.notification?.title || payload.data?.pushTitle || "New email";
+        const body = payload.notification?.body || payload.data?.pushBody || payload.data?.preview || "A new admin notification arrived.";
         setEmailPushStatus(`${title}: ${body}`, "is-success");
 
         if (Notification.permission === "granted") {
-          new Notification(title, {
+          const notification = new Notification(title, {
             body,
             icon: "/assets/images/logo.jpg",
-            tag: "hae-admin-email"
+            tag: payload.data?.tag || "hae-admin-email",
+            data: {
+              url: payload.data?.url || "admin.html"
+            }
+          });
+
+          notification.addEventListener("click", () => {
+            window.focus();
+            window.location.href = notification.data?.url || "admin.html";
           });
         }
       });
@@ -4149,24 +4507,67 @@
         return;
       }
 
+      const requestedFolder = state.activeEmailFolder;
+      const requestedSearch = state.emailSearchTerm.trim();
+      const cachedMessages = requestedSearch ? [] : await readCachedEmailFolder(requestedFolder);
+      const hasCachedMessages = cachedMessages.length > 0;
+      if (hasCachedMessages) {
+        state.emailMessages = cachedMessages;
+        if (state.activeEmailMessage && !getEmailMessageById(state.activeEmailMessage.id)) {
+          state.activeEmailMessage = null;
+        }
+        renderEmailInbox();
+        renderEmailReader();
+        setEmailStatus("");
+        if (state.activePage === "email") {
+          elements.collectionNote.textContent = `${getEmailFolderLabel(requestedFolder)} ready. Refreshing...`;
+          updateHeroMeta("Refreshing...");
+        }
+      }
+
       state.isLoadingEmail = true;
       let didFail = false;
+      let isStaleRequest = false;
       syncRefreshButton();
       syncEmailFormState();
-      setEmailStatus("");
+      if (!hasCachedMessages) {
+        setEmailStatus("");
+      }
       renderEmailInbox();
       if (state.activePage === "email") {
-        elements.collectionNote.textContent = `Loading ${getEmailFolderLabel().toLowerCase()} through Firebase Functions...`;
-        updateHeroMeta("Loading...");
+        elements.collectionNote.textContent = requestedSearch
+          ? `Searching ${getEmailFolderLabel(requestedFolder).toLowerCase()} for "${requestedSearch}"...`
+          : hasCachedMessages
+          ? `${getEmailFolderLabel(requestedFolder)} ready. Refreshing...`
+          : `Loading ${getEmailFolderLabel(requestedFolder).toLowerCase()} through Firebase Functions...`;
+        updateHeroMeta(requestedSearch ? "Searching..." : hasCachedMessages ? "Refreshing..." : "Loading...");
       }
 
       try {
+        const sinceUid = hasCachedMessages && !requestedSearch ? getNewestEmailUid(cachedMessages) : 0;
         const data = await callAdminEmailFunction("listInboxMessages", {
-          limit: 25,
-          folder: state.activeEmailFolder
+          limit: EMAIL_FOLDER_PAGE_SIZE,
+          folder: requestedFolder,
+          sinceUid,
+          search: requestedSearch
         });
+        if (state.activeEmailFolder !== requestedFolder || state.emailSearchTerm.trim() !== requestedSearch) {
+          isStaleRequest = true;
+          return;
+        }
         const messages = Array.isArray(data.messages) ? data.messages : [];
-        state.emailMessages = messages.map(normalizeEmailMessage).filter((message) => message.id);
+        const normalizedMessages = messages.map(normalizeEmailMessage).filter((message) => message.id);
+        state.emailMessages = hasCachedMessages && !requestedSearch
+          ? mergeEmailSummaries(cachedMessages, normalizedMessages)
+          : normalizedMessages;
+        if (requestedSearch) {
+          state.hasMoreOlderEmail = normalizedMessages.length >= EMAIL_FOLDER_PAGE_SIZE;
+        } else if (!hasCachedMessages) {
+          state.hasMoreOlderEmail = normalizedMessages.length >= EMAIL_FOLDER_PAGE_SIZE;
+        }
+        if (!requestedSearch) {
+          await writeCachedEmailFolder(requestedFolder, state.emailMessages);
+        }
         if (state.activeEmailMessage && !getEmailMessageById(state.activeEmailMessage.id)) {
           state.activeEmailMessage = null;
         }
@@ -4179,30 +4580,89 @@
       } catch (error) {
         didFail = true;
         console.error("Error loading email inbox:", error);
-        state.emailMessages = [];
-        state.activeEmailMessage = null;
         const errorMessage = getEmailFunctionErrorMessage(error, "Could not load IONOS email.");
-        elements.emailCount.textContent = "Load failed";
-        elements.emailMessageList.innerHTML = "";
-        const errorState = document.createElement("div");
-        errorState.className = "gig-admin-empty";
-        errorState.textContent = errorMessage;
-        elements.emailMessageList.appendChild(errorState);
-        renderEmailReader();
-        setEmailStatus(errorMessage, "is-error");
-        if (state.activePage === "email") {
-          updateHeroMeta("Load failed");
+        if (hasCachedMessages) {
+          renderEmailInbox();
+          renderEmailReader();
+          setEmailStatus("Could not refresh mailbox. Showing current messages.", "is-error");
+          if (state.activePage === "email") {
+            updateHeroMeta("Refresh failed");
+          }
+        } else {
+          state.emailMessages = [];
+          state.activeEmailMessage = null;
+          elements.emailCount.textContent = "Load failed";
+          elements.emailMessageList.innerHTML = "";
+          const errorState = document.createElement("div");
+          errorState.className = "gig-admin-empty";
+          errorState.textContent = errorMessage;
+          elements.emailMessageList.appendChild(errorState);
+          renderEmailReader();
+          setEmailStatus(errorMessage, "is-error");
+          if (state.activePage === "email") {
+            updateHeroMeta("Load failed");
+          }
         }
       } finally {
+        if (isStaleRequest) {
+          return;
+        }
         state.isLoadingEmail = false;
         syncRefreshButton();
         syncEmailFormState();
-        if (!didFail) {
+        if (!didFail || hasCachedMessages) {
           renderEmailInbox();
         }
         if (state.activePage === "email") {
           syncActivePageUI();
         }
+      }
+    }
+
+    async function loadOlderEmailMessages() {
+      if (!elements.emailMessageList || state.isLoadingEmail || state.isLoadingOlderEmail || !state.emailMessages.length) {
+        return;
+      }
+
+      const requestedFolder = state.activeEmailFolder;
+      const requestedSearch = state.emailSearchTerm.trim();
+      const beforeUid = getOldestEmailUid(state.emailMessages);
+      if (!beforeUid) {
+        return;
+      }
+
+      state.isLoadingOlderEmail = true;
+      renderEmailInbox();
+      setEmailStatus("Loading older messages...");
+
+      try {
+        const data = await callAdminEmailFunction("listInboxMessages", {
+          limit: EMAIL_FOLDER_PAGE_SIZE,
+          folder: requestedFolder,
+          beforeUid,
+          search: requestedSearch
+        });
+        if (state.activeEmailFolder !== requestedFolder || state.emailSearchTerm.trim() !== requestedSearch) {
+          return;
+        }
+
+        const olderMessages = Array.isArray(data.messages)
+          ? data.messages.map(normalizeEmailMessage).filter((message) => message.id)
+          : [];
+        state.hasMoreOlderEmail = olderMessages.length >= EMAIL_FOLDER_PAGE_SIZE;
+        state.emailMessages = mergeEmailSummaries(state.emailMessages, olderMessages);
+        if (!requestedSearch) {
+          await writeCachedEmailFolder(requestedFolder, state.emailMessages);
+        }
+        renderEmailInbox();
+        setEmailStatus(olderMessages.length ? "" : requestedSearch ? "No more mailbox results found." : "No older messages found.");
+      } catch (error) {
+        console.error("Error loading older email messages:", error);
+        setEmailStatus(getEmailFunctionErrorMessage(error, "Could not load older messages."), "is-error");
+      } finally {
+        state.isLoadingOlderEmail = false;
+        renderEmailInbox();
+        syncEmailFormState();
       }
     }
 
@@ -4214,6 +4674,18 @@
 
       if (summary.text || summary.html) {
         state.activeEmailMessage = summary;
+        renderEmailInbox();
+        renderEmailReader();
+        document.body.classList.add("email-reader-mobile-open");
+        writeCachedEmailMessage(summary);
+        return;
+      }
+
+      const cachedMessage = await readCachedEmailMessage(summary.folder || state.activeEmailFolder, messageId);
+      if (cachedMessage?.text || cachedMessage?.html) {
+        const mergedCachedMessage = normalizeEmailMessage({ ...summary.raw, ...summary, ...cachedMessage });
+        state.emailMessages = state.emailMessages.map((message) => message.id === messageId ? mergedCachedMessage : message);
+        state.activeEmailMessage = mergedCachedMessage;
         renderEmailInbox();
         renderEmailReader();
         document.body.classList.add("email-reader-mobile-open");
@@ -4237,6 +4709,7 @@
         state.isLoadingEmailMessage = false;
         state.emailMessages = state.emailMessages.map((message) => message.id === messageId ? fullMessage : message);
         state.activeEmailMessage = fullMessage;
+        await writeCachedEmailMessage(fullMessage);
         renderEmailInbox();
         renderEmailReader();
         setEmailStatus("");
@@ -4268,6 +4741,7 @@
         });
 
         state.emailMessages = state.emailMessages.filter((item) => item.id !== message.id);
+        await writeCachedEmailFolder(state.activeEmailFolder, state.emailMessages);
         state.activeEmailMessage = null;
         closeMobileEmailReader();
         renderEmailInbox();
@@ -4311,6 +4785,10 @@
       if (elements.emailBody) {
         elements.emailBody.innerHTML = "";
       }
+      if (elements.emailAttachments) {
+        elements.emailAttachments.value = "";
+      }
+      renderComposeAttachments();
       clearEmailBcc();
       closeEmailLinkPanel();
     }
@@ -4399,6 +4877,7 @@
       const subject = elements.emailSubject?.value.trim();
       const body = getEmailBodyText();
       const html = getEmailBodyHtml();
+      let attachments = [];
 
       if (!to && !bcc) {
         setEmailComposeStatus("At least one recipient is required.", "is-error");
@@ -4407,6 +4886,13 @@
 
       if (!subject || !body) {
         setEmailComposeStatus("Recipient, subject, and message are required.", "is-error");
+        return;
+      }
+
+      try {
+        attachments = await getSelectedEmailAttachments();
+      } catch (error) {
+        setEmailComposeStatus(error.message || "Could not read selected attachments.", "is-error");
         return;
       }
 
@@ -4421,6 +4907,7 @@
           subject,
           text: body,
           html,
+          attachments,
           replyToMessageId: state.activeEmailMessage?.id || ""
         });
         resetEmailComposeForm();
@@ -6874,6 +7361,24 @@
         loadEmailInbox();
       });
 
+      elements.emailSearch?.addEventListener("input", (event) => {
+        window.clearTimeout(emailSearchTimer);
+        state.emailSearchTerm = event.target.value.trim();
+        state.emailMessages = [];
+        state.activeEmailMessage = null;
+        state.hasMoreOlderEmail = true;
+        renderEmailInbox();
+        renderEmailReader();
+
+        emailSearchTimer = window.setTimeout(() => {
+          loadEmailInbox();
+        }, 350);
+      });
+
+      elements.emailLoadOlder?.addEventListener("click", () => {
+        loadOlderEmailMessages();
+      });
+
       elements.emailMobileRefresh?.addEventListener("click", () => {
         if (state.activeEmailView === "address-book") {
           loadMailingListSignups();
@@ -6952,6 +7457,17 @@
       });
 
       elements.emailComposeForm?.addEventListener("submit", sendEmail);
+      elements.emailAttachments?.addEventListener("change", () => {
+        try {
+          validateSelectedEmailAttachments(Array.from(elements.emailAttachments.files || []));
+          renderComposeAttachments();
+          setEmailComposeStatus("");
+        } catch (error) {
+          elements.emailAttachments.value = "";
+          renderComposeAttachments();
+          setEmailComposeStatus(error.message || "Could not attach those files.", "is-error");
+        }
+      });
 
       elements.emailFormatButtons.forEach((button) => {
         button.addEventListener("click", () => {

@@ -56,6 +56,8 @@ const PUSH_TOKENS_COLLECTION = "admin-email-push-tokens";
 const NOTIFICATION_SETTINGS_COLLECTION = "admin-notification-settings";
 const EMAIL_NOTIFICATION_STATE_COLLECTION = "admin-email-notification-state";
 const EMAIL_NOTIFICATION_STATE_DOC = "inbox";
+const MAX_EMAIL_ATTACHMENT_COUNT = 5;
+const MAX_EMAIL_ATTACHMENT_BYTES = 6 * 1024 * 1024;
 const DEFAULT_NOTIFICATION_SETTINGS = {
   emailNewMessages: true,
   mailingListSignups: true,
@@ -256,6 +258,62 @@ function getTextPreview(text = "") {
     .slice(0, 180);
 }
 
+function getAttachmentByteLength(base64Value = "") {
+  return Buffer.byteLength(String(base64Value || ""), "base64");
+}
+
+function normalizeParsedAttachments(attachments = []) {
+  let totalBytes = 0;
+  return attachments
+    .filter((attachment) => attachment?.content && attachment.filename)
+    .slice(0, MAX_EMAIL_ATTACHMENT_COUNT)
+    .filter((attachment) => {
+      const size = Number(attachment.size || attachment.content?.length || 0);
+      totalBytes += size;
+      return totalBytes <= MAX_EMAIL_ATTACHMENT_BYTES;
+    })
+    .map((attachment, index) => ({
+      id: attachment.cid || attachment.checksum || `attachment-${index + 1}`,
+      filename: String(attachment.filename || `attachment-${index + 1}`).slice(0, 180),
+      contentType: String(attachment.contentType || "application/octet-stream").slice(0, 120),
+      size: Number(attachment.size || attachment.content?.length || 0),
+      content: attachment.content.toString("base64")
+    }));
+}
+
+function normalizeOutgoingAttachments(value = []) {
+  if (!Array.isArray(value) || !value.length) {
+    return [];
+  }
+
+  if (value.length > MAX_EMAIL_ATTACHMENT_COUNT) {
+    throw new HttpsError("invalid-argument", `Attach up to ${MAX_EMAIL_ATTACHMENT_COUNT} files per email.`);
+  }
+
+  let totalBytes = 0;
+  return value.map((attachment, index) => {
+    const filename = String(attachment?.filename || `attachment-${index + 1}`).trim().slice(0, 180);
+    const contentType = String(attachment?.contentType || "application/octet-stream").trim().slice(0, 120);
+    const content = String(attachment?.content || "").trim();
+    const size = getAttachmentByteLength(content);
+    totalBytes += size;
+
+    if (!filename || !content || size <= 0) {
+      throw new HttpsError("invalid-argument", "Each attachment needs a file name and file content.");
+    }
+
+    if (totalBytes > MAX_EMAIL_ATTACHMENT_BYTES) {
+      throw new HttpsError("invalid-argument", "Attachments are too large. Keep the total under 6 MB.");
+    }
+
+    return {
+      filename,
+      content: Buffer.from(content, "base64"),
+      contentType
+    };
+  });
+}
+
 function serializeDate(value) {
   if (!value) {
     return "";
@@ -280,6 +338,15 @@ function normalizeUid(value) {
   }
 
   return uid;
+}
+
+function normalizeOptionalUid(value) {
+  const uid = Number.parseInt(String(value || ""), 10);
+  return Number.isFinite(uid) && uid > 0 ? uid : 0;
+}
+
+function normalizeMailboxSearch(value) {
+  return String(value || "").replace(/\s+/g, " ").trim().slice(0, 120);
 }
 
 function normalizeEmailFolder(value) {
@@ -455,27 +522,32 @@ async function sendAdminPushNotification({ title, body, data = {}, tag = "hae-ad
 
   const payloadData = Object.fromEntries(Object.entries(data).map(([key, value]) => [key, String(value || "")]));
   const notificationLink = getAdminNotificationLink(payloadData);
+  const notificationData = {
+    ...payloadData,
+    pushTitle: String(title || ""),
+    pushBody: String(body || ""),
+    tag,
+    url: notificationLink
+  };
   const results = await getMessaging().sendEachForMulticast({
     tokens: enabledTokenEntries.map((entry) => entry.token),
-    notification: {
-      title,
-      body
-    },
     webpush: {
+      headers: {
+        Urgency: "high"
+      },
       fcmOptions: {
         link: notificationLink
       },
       notification: {
+        title,
+        body,
         icon: "/assets/images/logo.jpg",
         tag,
         renotify: true,
         requireInteraction: false
       }
     },
-    data: {
-      ...payloadData,
-      url: notificationLink
-    }
+    data: notificationData
   });
 
   await disableInvalidPushTokens(results, enabledTokenEntries);
@@ -611,22 +683,86 @@ async function appendSentCopy(mailOptions) {
 async function fetchMailboxMessages(folder, limit, options = {}) {
   return withMailbox(folder, async (client, path) => {
     const mailboxSize = Number(client.mailbox?.exists || 0);
+    const sinceUid = normalizeOptionalUid(options.sinceUid);
+    const beforeUid = normalizeOptionalUid(options.beforeUid);
+    const searchTerm = normalizeMailboxSearch(options.search);
 
     if (!mailboxSize) {
-      return { folder, path, messages: [] };
+      return { folder, path, messages: [], sinceUid, beforeUid, search: searchTerm };
     }
 
+    if (beforeUid <= 1 && beforeUid) {
+      return { folder, path, messages: [], sinceUid, beforeUid, search: searchTerm };
+    }
+
+    const uidNext = Number(client.mailbox?.uidNext || 0);
     const startSequence = Math.max(1, mailboxSize - limit + 1);
+    const fetchRange = sinceUid
+      ? `${sinceUid + 1}:*`
+      : beforeUid
+        ? `1:${Math.max(1, beforeUid - 1)}`
+        : `${startSequence}:*`;
+    const fetchOptions = sinceUid || beforeUid ? { uid: true } : undefined;
     const messages = [];
 
-    for await (const message of client.fetch(`${startSequence}:*`, {
+    if (sinceUid && uidNext && sinceUid + 1 >= uidNext) {
+      return { folder, path, messages: [], sinceUid, beforeUid, search: searchTerm };
+    }
+
+    if (searchTerm) {
+      const matchingUids = await client.search({ text: searchTerm }, { uid: true });
+      const selectedUids = Array.isArray(matchingUids)
+        ? matchingUids
+          .map((uid) => Number(uid || 0))
+          .filter((uid) => uid > 0)
+          .filter((uid) => !sinceUid || uid > sinceUid)
+          .filter((uid) => !beforeUid || uid < beforeUid)
+          .sort((a, b) => b - a)
+          .slice(0, limit)
+        : [];
+
+      if (!selectedUids.length) {
+        return { folder, path, messages: [], sinceUid, beforeUid, search: searchTerm };
+      }
+
+      for await (const message of client.fetch(selectedUids, {
+        uid: true,
+        envelope: true,
+        flags: true,
+        internalDate: true
+      }, { uid: true })) {
+        const envelope = message.envelope || {};
+        const flags = Array.from(message.flags || []);
+
+        messages.push({
+          id: String(message.uid),
+          from: formatAddress(envelope.from),
+          to: formatAddress(envelope.to),
+          subject: envelope.subject || "(No subject)",
+          date: serializeDate(envelope.date || message.internalDate),
+          preview: "",
+          folder,
+          unread: !flags.includes("\\Seen")
+        });
+      }
+
+      messages.sort((a, b) => Number(b.id) - Number(a.id));
+      return { folder, path, messages, sinceUid, beforeUid, search: searchTerm };
+    }
+
+    for await (const message of client.fetch(fetchRange, {
       uid: true,
       envelope: true,
       flags: true,
       internalDate: true
-    })) {
+    }, fetchOptions)) {
       const envelope = message.envelope || {};
       const flags = Array.from(message.flags || []);
+
+      const uid = Number(message.uid || 0);
+      if ((sinceUid && uid <= sinceUid) || (beforeUid && uid >= beforeUid)) {
+        continue;
+      }
 
       messages.push({
         id: String(message.uid),
@@ -641,7 +777,7 @@ async function fetchMailboxMessages(folder, limit, options = {}) {
     }
 
     messages.sort((a, b) => Number(b.id) - Number(a.id));
-    return { folder, path, messages };
+    return { folder, path, messages: beforeUid ? messages.slice(0, limit) : messages, sinceUid, beforeUid, search: searchTerm };
   }, options);
 }
 
@@ -653,8 +789,11 @@ exports.listInboxMessages = onCall(EMAIL_FUNCTION_OPTIONS, async (request) => {
   const requestedLimit = Number.parseInt(String(request.data?.limit || "25"), 10);
   const limit = Math.min(Math.max(requestedLimit || 25, 1), 50);
   const folder = normalizeEmailFolder(request.data?.folder);
+  const sinceUid = normalizeOptionalUid(request.data?.sinceUid);
+  const beforeUid = normalizeOptionalUid(request.data?.beforeUid);
+  const search = normalizeMailboxSearch(request.data?.search);
 
-  return fetchMailboxMessages(folder, limit);
+  return fetchMailboxMessages(folder, limit, { sinceUid, beforeUid, search });
 });
 
 exports.registerEmailPushToken = onCall(PUSH_FUNCTION_OPTIONS, async (request) => {
@@ -863,6 +1002,7 @@ exports.getEmailMessage = onCall(EMAIL_FUNCTION_OPTIONS, async (request) => {
         preview: getTextPreview(parsed.text || parsed.html || ""),
         text: parsed.text || "",
         html: parsed.html || "",
+        attachments: normalizeParsedAttachments(parsed.attachments || []),
         folder,
         unread: !flags.includes("\\Seen")
       }
@@ -900,6 +1040,7 @@ exports.sendAdminEmail = onCall(EMAIL_FUNCTION_OPTIONS, async (request) => {
   const subject = String(request.data?.subject || "").trim();
   const text = String(request.data?.text || "").trim();
   const html = String(request.data?.html || "").trim();
+  const attachments = normalizeOutgoingAttachments(request.data?.attachments || []);
 
   if ((!to && !bcc) || !subject || !text) {
     throw new HttpsError("invalid-argument", "Recipient, subject, and message text are required.");
@@ -916,6 +1057,7 @@ exports.sendAdminEmail = onCall(EMAIL_FUNCTION_OPTIONS, async (request) => {
     subject,
     text,
     html: html || undefined,
+    attachments,
     headers: {
       "X-HAE-Admin-User": adminEmail
     }

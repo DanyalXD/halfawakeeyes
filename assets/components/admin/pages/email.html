@@ -49,7 +49,10 @@
               <span id="email-count">No messages loaded</span>
             </div>
             <div class="manager-toolbar email-toolbar">
-              <div class="helper-copy">Latest messages from your domain mailbox.</div>
+              <label class="email-search-wrap">
+                <span class="visually-hidden">Search mailbox</span>
+                <input type="search" id="email-search" placeholder="Search mailbox" autocomplete="off" />
+              </label>
               <div class="manager-toolbar-actions">
                 <button type="button" id="email-refresh" class="email-refresh-button" aria-label="Refresh folder" title="Refresh folder">
                   <span class="visually-hidden">Refresh</span>
@@ -60,6 +63,7 @@
             <div id="email-message-list" class="email-message-list">
               <div class="gig-admin-empty">No messages loaded yet.</div>
             </div>
+            <button type="button" id="email-load-older" class="email-load-older-button" hidden>Load older</button>
           </section>
 
           <section class="manager-card email-reader-card" data-email-panel="mail">
@@ -150,6 +154,10 @@
                   <button type="button" class="email-format-button" data-email-format="insertUnorderedList" aria-label="Bulleted list">List</button>
                   <button type="button" class="email-format-button" data-email-format="createLink" aria-label="Insert link">Link</button>
                   <button type="button" class="email-format-button" data-email-format="removeFormat" aria-label="Clear formatting">Clear</button>
+                  <label class="email-format-button email-attachment-picker" aria-label="Attach files" title="Attach files">
+                    <span class="email-attachment-icon" aria-hidden="true">📎</span>
+                    <input type="file" id="email-attachments" multiple />
+                  </label>
                 </div>
                 <div id="email-link-panel" class="email-link-panel" hidden>
                   <input type="url" id="email-link-url" placeholder="https://example.com" aria-label="Link URL" />
@@ -157,6 +165,9 @@
                   <button type="button" id="email-link-cancel" class="email-link-button">Cancel</button>
                 </div>
                 <div id="email-body" class="email-compose-body" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Email message" data-placeholder="Write your message..."></div>
+                <div class="email-attachment-compose">
+                  <div id="email-attachment-list" class="email-attachment-list" aria-live="polite"></div>
+                </div>
                 <div class="email-compose-footer">
                   <button type="submit" id="email-send" class="btn btn-accent email-compose-send">Send</button>
                   <div id="email-compose-status" class="email-compose-status" aria-live="polite"></div>

@@ -1,7 +1,7 @@
 /* global firebase */
 
 let firebaseMessagingReady = false;
-const APP_SHELL_CACHE = "hae-admin-shell-v2";
+const APP_SHELL_CACHE = "hae-admin-shell-v3";
 const APP_SHELL_ASSETS = [
   "admin.html",
   "manifest.webmanifest",
@@ -10,11 +10,11 @@ const APP_SHELL_ASSETS = [
 ];
 
 function showEmailNotification(payload = {}) {
-  const title = payload.notification?.title || "New email";
+  const title = payload.notification?.title || payload.data?.pushTitle || "New email";
   const options = {
-    body: payload.notification?.body || payload.data?.preview || "A new mailbox message arrived.",
+    body: payload.notification?.body || payload.data?.pushBody || payload.data?.preview || "A new admin notification arrived.",
     icon: "assets/images/logo.jpg",
-    tag: "hae-admin-email",
+    tag: payload.data?.tag || "hae-admin-alert",
     renotify: true,
     data: {
       url: "admin.html",
@@ -22,7 +22,7 @@ function showEmailNotification(payload = {}) {
     }
   };
 
-  self.registration.showNotification(title, options);
+  return self.registration.showNotification(title, options);
 }
 
 try {
@@ -37,7 +37,7 @@ try {
     appId: "1:1002821452473:web:afe7131dd9b1b7f5715168"
   });
 
-  firebase.messaging().onBackgroundMessage(showEmailNotification);
+  firebase.messaging().onBackgroundMessage((payload) => showEmailNotification(payload));
   firebaseMessagingReady = true;
 } catch (error) {
   console.warn("Firebase Messaging service worker setup failed.", error);
@@ -100,7 +100,13 @@ self.addEventListener("push", (event) => {
     };
   }
 
-  event.waitUntil(showEmailNotification(payload));
+  if (payload.notification || payload.data) {
+    event.waitUntil(showEmailNotification(payload));
+    return;
+  }
+
+  const fcmPayload = payload?.message || payload?.fcmMessage || {};
+  event.waitUntil(showEmailNotification(fcmPayload));
 });
 
 self.addEventListener("notificationclick", (event) => {
