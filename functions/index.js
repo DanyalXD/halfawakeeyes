@@ -15,6 +15,7 @@ const nodemailer = require("nodemailer");
 initializeApp();
 
 const db = getFirestore();
+const ADMIN_SITE_URL = "https://halfawakeeyes.co.uk";
 
 exports.getPublicLinksJson = onRequest({
   cors: true,
@@ -505,18 +506,18 @@ function getAdminNotificationLink(data = {}) {
   const type = String(data.type || "").trim();
 
   if (type === "admin-email") {
-    return "/admin.html?page=email&emailView=mail";
+    return `${ADMIN_SITE_URL}/admin.html?page=email&emailView=mail`;
   }
 
   if (type === "mailing-list-signup") {
-    return "/admin.html?page=email&emailView=address-book";
+    return `${ADMIN_SITE_URL}/admin.html?page=email&emailView=address-book`;
   }
 
   if (type === "site-action") {
-    return "/admin.html?page=analytics&collection=site-actions";
+    return `${ADMIN_SITE_URL}/admin.html?page=analytics&collection=site-actions`;
   }
 
-  return "/admin.html";
+  return `${ADMIN_SITE_URL}/admin.html`;
 }
 
 async function sendAdminPushNotification({ title, body, data = {}, tag = "hae-admin-alert", isEnabled = () => true }) {
@@ -567,14 +568,6 @@ async function sendAdminPushNotification({ title, body, data = {}, tag = "hae-ad
       },
       fcmOptions: {
         link: notificationLink
-      },
-      notification: {
-        title,
-        body,
-        icon: "/assets/images/logo.jpg",
-        tag,
-        renotify: true,
-        requireInteraction: false
       }
     },
     data: notificationData
@@ -962,7 +955,7 @@ exports.notifyOnSiteActionCreated = onDocumentCreated({
   await sendAdminPushNotification({
     title: getSiteActionTitle(action),
     body: getSiteActionBody(data),
-    tag: `hae-site-action-${action}`,
+    tag: `hae-site-action-${action}-${event.params.actionId}`,
     data: {
       type: "site-action",
       action,

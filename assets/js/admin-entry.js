@@ -124,7 +124,7 @@ async function bootAdmin() {
     return;
   }
 
-  const assetVersion = isLocalAdminHost() ? String(Date.now()) : "20260605-mobile-folder-menu-scale";
+  const assetVersion = isLocalAdminHost() ? String(Date.now()) : "20260725-push-reconnect";
 
   if (!window.HAEAdminComponents?.load) {
     showComponentLoadError(new Error("Admin component loader is unavailable."));

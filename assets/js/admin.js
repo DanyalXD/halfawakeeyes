@@ -4214,6 +4214,13 @@
         return;
       }
 
+      if (!state.authUser) {
+        state.isPushEnabled = false;
+        setEmailPushStatus("Sign in to connect this device.");
+        syncEmailPushState();
+        return;
+      }
+
       if (!("Notification" in window)) {
         setEmailPushStatus("Push notifications are not supported in this browser.", "is-error");
         elements.emailPushEnable.disabled = true;
@@ -4246,14 +4253,14 @@
       }
 
       if (Notification.permission === "granted") {
-        state.isPushEnabled = true;
-        setEmailPushStatus("Email alerts are enabled on this device.", "is-success");
+        state.isPushEnabled = false;
+        setEmailPushStatus("Checking this device's notification connection...");
       } else if (Notification.permission === "denied") {
         state.isPushEnabled = false;
         setEmailPushStatus("Notifications are blocked for this site in the browser.", "is-error");
       } else {
         state.isPushEnabled = false;
-        setEmailPushStatus("Notifications are not enabled on this device.");
+        setEmailPushStatus("This device is not connected.");
       }
 
       syncEmailPushState();
@@ -4271,7 +4278,7 @@
 
       messaging = getMessaging(app);
       onMessage(messaging, (payload) => {
-        const title = payload.notification?.title || payload.data?.pushTitle || "New email";
+        const title = payload.notification?.title || payload.data?.pushTitle || "Admin notification";
         const body = payload.notification?.body || payload.data?.pushBody || payload.data?.preview || "A new admin notification arrived.";
         setEmailPushStatus(`${title}: ${body}`, "is-success");
 
@@ -4340,7 +4347,7 @@
         });
 
         state.isPushEnabled = true;
-        setEmailPushStatus("Email alerts are enabled on this device.", "is-success");
+        setEmailPushStatus("This device is connected for admin alerts.", "is-success");
       } catch (error) {
         console.error("Could not enable email push notifications:", error);
         state.isPushEnabled = false;
@@ -4368,6 +4375,8 @@
 
     function refreshNotificationSettingsElements() {
       elements.settingsPage = document.getElementById("settings-page");
+      elements.emailPushEnable = document.getElementById("email-push-enable");
+      elements.emailPushStatus = document.getElementById("email-push-status");
       elements.notificationSettingInputs = Array.from(document.querySelectorAll("[data-notification-setting]"));
       elements.siteActionSettingInputs = Array.from(document.querySelectorAll("[data-site-action-setting]"));
       elements.saveNotificationSettings = document.getElementById("save-notification-settings");
@@ -6860,7 +6869,11 @@
       syncSignOutButton();
       syncGigFormState();
       syncLinkFormState();
-      updateEmailPushStatus();
+      if ("Notification" in window && Notification.permission === "granted") {
+        enableEmailPushNotifications();
+      } else {
+        updateEmailPushStatus();
+      }
       window.setTimeout(showEmailPushPromptIfNeeded, 700);
       resetLinkFormDefaults();
       syncActivePageUI();

@@ -5,7 +5,7 @@
   "description": "Firebase callable functions for the Half Awake Eyes admin dashboard.",
   "main": "index.js",
   "engines": {
-    "node": "20"
+    "node": "22"
   },
   "scripts": {
     "lint": "node --check index.js"

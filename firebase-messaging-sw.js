@@ -1,7 +1,7 @@
 /* global firebase */
 
 let firebaseMessagingReady = false;
-const APP_SHELL_CACHE = "hae-admin-shell-v3";
+const APP_SHELL_CACHE = "hae-admin-shell-v4";
 const APP_SHELL_ASSETS = [
   "admin.html",
   "manifest.webmanifest",
@@ -9,8 +9,8 @@ const APP_SHELL_ASSETS = [
   "assets/images/favicon.ico"
 ];
 
-function showEmailNotification(payload = {}) {
-  const title = payload.notification?.title || payload.data?.pushTitle || "New email";
+function showAdminNotification(payload = {}) {
+  const title = payload.notification?.title || payload.data?.pushTitle || "Admin notification";
   const options = {
     body: payload.notification?.body || payload.data?.pushBody || payload.data?.preview || "A new admin notification arrived.",
     icon: "assets/images/logo.jpg",
@@ -37,7 +37,7 @@ try {
     appId: "1:1002821452473:web:afe7131dd9b1b7f5715168"
   });
 
-  firebase.messaging().onBackgroundMessage((payload) => showEmailNotification(payload));
+  firebase.messaging().onBackgroundMessage((payload) => showAdminNotification(payload));
   firebaseMessagingReady = true;
 } catch (error) {
   console.warn("Firebase Messaging service worker setup failed.", error);
@@ -101,12 +101,12 @@ self.addEventListener("push", (event) => {
   }
 
   if (payload.notification || payload.data) {
-    event.waitUntil(showEmailNotification(payload));
+    event.waitUntil(showAdminNotification(payload));
     return;
   }
 
   const fcmPayload = payload?.message || payload?.fcmMessage || {};
-  event.waitUntil(showEmailNotification(fcmPayload));
+  event.waitUntil(showAdminNotification(fcmPayload));
 });
 
 self.addEventListener("notificationclick", (event) => {
