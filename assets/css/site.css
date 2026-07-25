@@ -1,0 +1,129 @@
+@font-face {
+  font-family: Roabla;
+  src: url('../fonts/Roabla-DemoVersion-Regular.ttf') format('truetype');
+  font-display: swap;
+}
+
+:root {
+  --ink: #080a0c;
+  --paper: #e7e4dc;
+  --muted: #a6a49e;
+  --line: rgba(231, 228, 220, .16);
+  --blue: #3d78a4;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  color: var(--paper);
+  background: var(--ink);
+  font-family: 'Source Sans 3', sans-serif;
+  font-size: 17px;
+  line-height: 1.55;
+}
+a { color: inherit; text-decoration: none; }
+img, video, iframe { display: block; max-width: 100%; }
+h1, h2, .wordmark {
+  margin: 0;
+  font-family: Roabla, Oswald, sans-serif;
+  font-weight: 400;
+  line-height: .85;
+  text-transform: uppercase;
+}
+h2 { font-size: clamp(3.4rem, 7vw, 7.5rem); }
+
+.site-header {
+  position: fixed;
+  z-index: 20;
+  top: 0;
+  left: 0;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.35rem 3vw;
+  transition: background .25s, padding .25s;
+}
+.site-header.scrolled { padding-block: .85rem; background: rgba(8, 10, 12, .88); backdrop-filter: blur(14px); }
+.wordmark { font-size: 1.2rem; letter-spacing: .03em; }
+.site-header nav { display: flex; align-items: center; gap: clamp(1.1rem, 2.4vw, 2.6rem); font-family: Oswald, sans-serif; text-transform: uppercase; font-size: .78rem; letter-spacing: .14em; }
+.site-header nav a { border-bottom: 1px solid transparent; }
+.site-header nav a:hover { border-color: currentColor; }
+.nav-toggle { display: none; border: 0; background: none; padding: .6rem; }
+.nav-toggle span { display: block; width: 24px; height: 1px; margin: 6px 0; background: white; }
+
+.hero { position: relative; min-height: 100svh; overflow: hidden; }
+.hero-image, .hero-shade { position: absolute; inset: 0; }
+.hero-image { background: url('../images/HalfAwakeEyes-annicmrn-07798.jpg') center 49% / cover no-repeat; transform: scale(1.015); }
+.hero-shade { background: radial-gradient(circle at center, transparent 30%, rgba(5, 7, 9, .55) 100%), linear-gradient(90deg, rgba(5, 7, 9, .78) 0%, rgba(5, 7, 9, .12) 60%), linear-gradient(0deg, rgba(5, 7, 9, .72), transparent 45%); }
+.hero-copy { position: absolute; z-index: 2; left: 6vw; bottom: 10vh; }
+.eyebrow { margin: 0 0 1.25rem; color: #c7c5bf; font-family: Oswald, sans-serif; font-size: .72rem; font-weight: 500; letter-spacing: .24em; text-transform: uppercase; }
+.hero h1 { display: flex; gap: .12em; font-size: clamp(4rem, 9vw, 8.5rem); letter-spacing: -.025em; white-space: nowrap; }
+.hero-actions { display: flex; gap: .8rem; margin-top: 2rem; }
+.button { display: inline-flex; align-items: center; justify-content: center; min-width: 145px; padding: .8rem 1.2rem; border: 1px solid rgba(255, 255, 255, .5); font-family: Oswald, sans-serif; font-size: .78rem; letter-spacing: .13em; text-transform: uppercase; transition: .2s; }
+.button:hover { color: var(--ink); background: var(--paper); }
+.button-solid { color: var(--ink); background: var(--paper); }
+.button-solid:hover { color: var(--paper); background: transparent; }
+.scroll-cue { position: absolute; z-index: 2; right: 3vw; bottom: 2.4rem; display: flex; gap: 1.5rem; color: #d7d5cf; font-family: Oswald, sans-serif; font-size: .7rem; letter-spacing: .16em; text-transform: uppercase; }
+
+.section { padding: clamp(5rem, 10vw, 9rem) 6vw; border-bottom: 1px solid var(--line); }
+.music-section { min-height: 68vh; display: grid; place-items: center; padding: 6rem 1.2rem; background: #080a0c; border-bottom: 1px solid var(--line); }
+.music-content { position: relative; z-index: 1; width: min(760px, 100%); text-align: center; }
+.music-content h2 { margin: 0 0 2rem; font-family: Oswald, sans-serif; font-size: 1.55rem; font-weight: 400; letter-spacing: .13em; text-transform: uppercase; }
+.music-content iframe { border: 0; border-radius: 12px; box-shadow: 0 24px 60px rgba(0,0,0,.4); }
+.text-link { display: inline-flex; gap: 2rem; margin-top: 1.5rem; padding-bottom: .35rem; border-bottom: 1px solid currentColor; font-family: Oswald, sans-serif; font-size: .76rem; letter-spacing: .15em; text-transform: uppercase; }
+
+.merch { display: grid; grid-template-columns: 1.15fr .85fr; padding: 0; background: linear-gradient(135deg, #101417, #080a0c 70%); }
+.merch-product { min-height: 760px; display: grid; place-items: center; padding: clamp(2rem, 5vw, 6rem); overflow: hidden; }
+.merch-product img { width: min(680px, 100%); height: auto; aspect-ratio: 1; object-fit: contain; filter: drop-shadow(0 30px 45px rgba(0,0,0,.45)); transition: transform .3s ease; }
+.merch-product:hover img { transform: scale(1.025); }
+.merch-copy { align-self: center; padding: clamp(4rem, 7vw, 8rem); }
+.merch-copy h2 { margin: 1rem 0 1.5rem; font-size: clamp(3rem, 5.3vw, 6rem); }
+.merch-copy > p:not(.eyebrow) { max-width: 440px; color: #b8b6b0; }
+.sale-label { display: inline-flex; padding: .3rem .55rem; color: #f3eee6; background: #7d2929; font-family: Oswald, sans-serif; font-size: .68rem; letter-spacing: .14em; text-transform: uppercase; }
+.merch-price { margin: 0 0 1rem; font-family: Oswald, sans-serif; font-size: 1.5rem; letter-spacing: .08em; }
+.merch-copy .button { margin-top: 1.5rem; }
+
+.tour { position: relative; min-height: 82vh; display: flex; align-items: end; overflow: hidden; }
+.tour-image, .tour-shade { position: absolute; inset: 0; }
+.tour-image { background: url('../images/gig-photo.jpeg') center 42% / cover no-repeat; }
+.tour-shade { background: radial-gradient(circle at center, transparent 30%, rgba(5, 7, 9, .55) 100%), linear-gradient(90deg, rgba(5, 7, 9, .88), rgba(5, 7, 9, .18) 75%), linear-gradient(0deg, rgba(5, 7, 9, .65), transparent 55%); }
+.tour-copy { position: relative; z-index: 1; max-width: 720px; }
+.tour-copy h2 { font-size: clamp(4rem, 8vw, 8rem); }
+.tour-copy > p:not(.eyebrow) { margin: 1.5rem 0 2rem; color: #d0cec7; }
+
+.connect { text-align: center; background: radial-gradient(circle at center, transparent 30%, rgba(5, 7, 9, .55) 100%), linear-gradient(rgba(5,7,9,.7), rgba(5,7,9,.82)), url('../images/Half Awake Eyes-31.jpg') center 20% / cover no-repeat; }
+.connect h2 { font-size: clamp(4rem, 10vw, 10rem); }
+.connect-links { display: flex; justify-content: center; flex-wrap: wrap; gap: 1rem 3rem; margin-top: 3.5rem; font-family: Oswald, sans-serif; font-size: .78rem; letter-spacing: .13em; text-transform: uppercase; }
+.connect-links a { padding-bottom: .3rem; border-bottom: 1px solid var(--line); }
+
+footer { display: grid; grid-template-columns: 1fr 1fr 1fr; align-items: center; gap: 2rem; padding: 1.4rem 4vw; color: var(--muted); font-size: .72rem; }
+footer p { margin: 0; text-align: center; }
+footer > div { display: flex; justify-content: end; gap: 1.5rem; }
+footer .wordmark { color: var(--paper); }
+
+@media (max-width: 800px) {
+  .site-header { padding: 1rem 1.2rem; }
+  .nav-toggle { display: block; }
+  .site-header nav { position: absolute; top: 100%; left: 0; width: 100%; display: none; flex-direction: column; align-items: stretch; gap: 0; padding: 1rem 1.2rem 1.5rem; background: rgba(8, 10, 12, .96); }
+  .site-header nav a { padding: .9rem 0; border-bottom: 1px solid var(--line); }
+  .site-header.menu-open nav { display: flex; }
+  .hero-image { background-position: 57% center; }
+  .hero-copy { left: 1.2rem; bottom: 12vh; }
+  .hero h1 { display: block; font-size: clamp(4.8rem, 24vw, 7.5rem); white-space: normal; }
+  .hero h1 span { display: block; }
+  .scroll-cue { display: none; }
+  .section { padding-inline: 1.2rem; }
+  .music-section { min-height: 64vh; padding-inline: .8rem; }
+  .music-content h2 { margin-bottom: 1.4rem; font-size: 1.25rem; }
+  .merch { grid-template-columns: 1fr; }
+  .live { gap: 3rem; }
+  .merch-product { min-height: auto; padding: 3rem 1.2rem 1rem; }
+  .merch-copy { padding: 3rem 1.2rem 5rem; }
+  footer { display: flex; justify-content: space-between; flex-wrap: wrap; gap: .35rem 1rem; padding: 1rem 1.2rem; }
+  footer p { display: none; }
+  footer > div { margin-left: auto; gap: 1rem; }
+}
+
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } * { transition: none !important; } }
