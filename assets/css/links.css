@@ -1,21 +1,7 @@
-@font-face {
-            font-family: 'Roabla';
-            src: url('../fonts/Roabla-DemoVersion-Regular.ttf') format('truetype'),
-                url('../fonts/Roabla-DemoVersion-Regular.otf') format('opentype');
-            font-weight: normal;
-            
-      font-display: swap;
-        }
-
-        :root {
-            --bg: #0a0a0a;
+:root {
+            --bg: var(--ink);
             --panel: rgba(12, 12, 12, 0.72);
             --panel-soft: rgba(255, 255, 255, 0.04);
-            --line: rgba(255, 255, 255, 0.1);
-            --line-strong: rgba(255, 255, 255, 0.18);
-            --text: #f2eee7;
-            --muted: #b7b0a6;
-            --accent: #e1d2be;
             --accent-soft: #8f948d;
             --shadow: 0 28px 60px rgba(0, 0, 0, 0.34);
         }
@@ -31,7 +17,7 @@
         body {
             margin: 0;
             min-height: 100vh;
-            font-family: 'Source Sans Pro', sans-serif;
+            font-family: var(--font-body);
             color: var(--text);
             background:
                 linear-gradient(180deg, rgba(5, 5, 5, 0.42) 0%, rgba(5, 5, 5, 0.78) 100%),
@@ -102,7 +88,7 @@
 
         .title {
             margin: 0;
-            font-family: 'Roabla', 'Oswald', sans-serif;
+            font-family: var(--font-display);
             text-transform: uppercase;
             color: var(--accent);
             font-size: clamp(2.4rem, 8vw, 3.8rem);
@@ -298,9 +284,11 @@
         .section-heading {
             margin: 0;
             text-align: center;
-            font-family: 'Source Sans Pro', sans-serif;
+            font-family: var(--font-label);
             font-size: 1.28rem;
-            font-weight: 700;
+            font-weight: 400;
+            letter-spacing: 0.13em;
+            text-transform: uppercase;
             color: var(--text);
         }
 
@@ -366,7 +354,7 @@
             display: grid;
             place-items: center;
             color: var(--accent);
-            font-family: 'Roabla', 'Oswald', sans-serif;
+            font-family: var(--font-display);
             font-size: 1rem;
             letter-spacing: 0.06em;
             text-transform: uppercase;
@@ -405,7 +393,7 @@
         .kicker {
             display: block;
             margin-bottom: 0.18rem;
-            font-family: 'Roabla', 'Oswald', sans-serif;
+            font-family: var(--font-label);
             text-transform: uppercase;
             color: var(--muted);
             font-size: 0.72rem;
@@ -416,7 +404,7 @@
             display: block;
             color: var(--text);
             font-size: 1.08rem;
-            font-weight: 700;
+            font-weight: 600;
             line-height: 1.2;
         }
 
@@ -460,7 +448,7 @@
             flex-wrap: wrap;
             margin-top: 1rem;
             color: var(--muted);
-            font-size: 0.8rem;
+            font-size: 0.72rem;
         }
 
         .footer a {

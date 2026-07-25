@@ -1,0 +1,23 @@
+@font-face {
+  font-family: Roabla;
+  src:
+    url("../fonts/Roabla-DemoVersion-Regular.ttf") format("truetype"),
+    url("../fonts/Roabla-DemoVersion-Regular.otf") format("opentype");
+  font-weight: 400;
+  font-display: swap;
+}
+
+:root {
+  --ink: #080a0c;
+  --paper: #e7e4dc;
+  --text: var(--paper);
+  --muted: #a6a49e;
+  --line: rgba(231, 228, 220, 0.16);
+  --line-strong: rgba(231, 228, 220, 0.32);
+  --blue: #3d78a4;
+  --accent: var(--paper);
+  --accent-strong: #f4f1e9;
+  --font-body: "Source Sans 3", sans-serif;
+  --font-label: "Oswald", sans-serif;
+  --font-display: "Roabla", "Oswald", sans-serif;
+}

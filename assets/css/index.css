@@ -33,19 +33,12 @@
             justify-content: center;
             padding: 6.5rem 1.4rem 3.2rem;
             background:
-                linear-gradient(180deg, rgba(8, 8, 8, 0.1) 0%, rgba(8, 8, 8, 0.08) 26%, rgba(8, 8, 8, 0.78) 100%),
-                linear-gradient(90deg, rgba(8, 8, 8, 0.72) 0%, rgba(8, 8, 8, 0.12) 44%, rgba(8, 8, 8, 0.54) 100%),
+                radial-gradient(circle at center, transparent 30%, rgba(5, 7, 9, 0.55) 100%),
+                linear-gradient(90deg, rgba(5, 7, 9, 0.78) 0%, rgba(5, 7, 9, 0.12) 60%),
+                linear-gradient(0deg, rgba(5, 7, 9, 0.72), transparent 45%),
                 url('../images/HalfAwakeEyes-annicmrn-07798.jpg') center center / cover no-repeat;
             border-bottom: 1px solid #222;
             overflow: hidden;
-        }
-
-        header::before {
-            content: "";
-            position: absolute;
-            inset: 0;
-            background: radial-gradient(circle at 50% 20%, rgba(196, 126, 93, 0.18), transparent 32%);
-            pointer-events: none;
         }
 
         .hero-panel {
@@ -377,12 +370,6 @@
         }
 
         #release {
-            background:
-                radial-gradient(circle at 20% 20%, rgba(196, 126, 93, 0.12), transparent 26%),
-                linear-gradient(180deg, rgba(10, 10, 10, 0.82), rgba(10, 10, 10, 0.88));
-        }
-
-        #release {
             min-height: auto;
         }
 
@@ -402,6 +389,7 @@
                 linear-gradient(180deg, rgba(10, 10, 10, 0.94), rgba(10, 10, 10, 0.88));
         }
 
+        #release,
         section#videos,
         section#resources {
             background:
@@ -975,17 +963,70 @@
             scroll-behavior: smooth;
         }
 
-        footer {
-            text-align: center;
-            padding: 2rem 1rem;
-            font-size: 0.9rem;
-            background: #111;
-            border-top: 1px solid #222;
-            color: #777;
+        .site-footer {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            align-items: center;
+            gap: 2rem;
+            padding: 1.4rem 4vw;
+            border-top: 1px solid var(--line);
+            background: var(--ink);
+            color: var(--muted);
+            font-family: var(--font-body);
+            font-size: 0.72rem;
+            line-height: 1.55;
         }
 
-        footer a {
-            margin-left: 0.4rem;
+        .site-footer p {
+            margin: 0;
+            text-align: center;
+        }
+
+        .site-footer > div {
+            display: flex;
+            justify-content: end;
+            gap: 1.5rem;
+        }
+
+        .site-footer a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        .site-footer a:hover {
+            color: var(--paper);
+            text-decoration: none;
+        }
+
+        .site-footer .wordmark {
+            margin: 0;
+            color: var(--paper);
+            font-family: var(--font-display);
+            font-size: 1.2rem;
+            font-weight: 400;
+            letter-spacing: 0.03em;
+            line-height: 0.85;
+            text-decoration: none;
+            text-transform: uppercase;
+        }
+
+        @media (max-width: 800px) {
+            .site-footer {
+                display: flex;
+                justify-content: space-between;
+                flex-wrap: wrap;
+                gap: 0.35rem 1rem;
+                padding: 1rem 1.2rem;
+            }
+
+            .site-footer p {
+                display: none;
+            }
+
+            .site-footer > div {
+                margin-left: auto;
+                gap: 1rem;
+            }
         }
 
         .content-warning {
