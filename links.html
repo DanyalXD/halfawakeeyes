@@ -14,6 +14,9 @@
     <meta property="og:image" content="https://halfawakeeyes.co.uk/assets/images/HalfAwakeEyes-annicmrn-07798.jpg">
     <meta name="twitter:card" content="summary_large_image">
     <link rel="icon" type="image/x-icon" href="assets/images/favicon.ico">
+    <link rel="preload" as="image" href="assets/images/links-background.jpg" fetchpriority="high">
+    <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600&family=Source+Sans+Pro:wght@400;600;700&display=swap" rel="stylesheet">
       <link rel="stylesheet" href="assets/css/links.css" />
 </head>
@@ -23,17 +26,32 @@
         <section class="profile-shell">
             <div class="profile-top">
                 <div class="avatar">
-                    <img src="assets/images/HalfAwakeEyes-annicmrn-07798.jpg" alt="Half Awake Eyes band photo">
+                    <img src="assets/images/links-avatar.jpg" alt="Half Awake Eyes band photo" width="320" height="320" fetchpriority="high">
                 </div>
                 <div>
                     <h1 class="title">Half Awake Eyes</h1>
                     <p class="subtitle">Alternative Metal | Glasgow, Scotland</p>
                 </div>
                 <br />
-                <div class="social-row" id="social-links"></div>
+                <div class="social-row" id="social-links">
+                    <a class="social-link" href="https://open.spotify.com/album/1McajSMOYTvWAYRFi19CG2?si=QpD9D5NfTAClj6vfGi3mow" target="_blank" rel="noopener noreferrer" aria-label="Spotify"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.75a10.25 10.25 0 1 0 0 20.5 10.25 10.25 0 0 0 0-20.5Zm4.43 14.77a.9.9 0 0 1-1.24.3c-2.42-1.48-5.46-1.82-9.05-1.02a.9.9 0 1 1-.39-1.76c4.06-.9 7.57-.49 10.38 1.23a.9.9 0 0 1 .3 1.25Zm1.24-2.76a1.13 1.13 0 0 1-1.55.37c-2.78-1.71-7.01-2.2-10.3-1.18a1.13 1.13 0 0 1-.67-2.16c3.77-1.17 8.46-.61 12.15 1.66.53.33.7 1.02.37 1.56Zm.15-2.87C14.5 8.91 8.97 8.74 5.8 9.7a1.35 1.35 0 1 1-.77-2.59c3.64-1.08 9.69-.87 14.18 1.78a1.35 1.35 0 0 1-1.39 2.3Z"/></svg></a>
+                    <a class="social-link" href="https://instagram.com/halfawakeeyes" target="_blank" rel="noopener noreferrer" aria-label="Instagram"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.25 2h9.5A5.25 5.25 0 0 1 22 7.25v9.5A5.25 5.25 0 0 1 16.75 22h-9.5A5.25 5.25 0 0 1 2 16.75v-9.5A5.25 5.25 0 0 1 7.25 2Zm0 1.8A3.45 3.45 0 0 0 3.8 7.25v9.5a3.45 3.45 0 0 0 3.45 3.45h9.5a3.45 3.45 0 0 0 3.45-3.45v-9.5a3.45 3.45 0 0 0-3.45-3.45h-9.5Zm9.95 1.6a1.05 1.05 0 1 1 0 2.1 1.05 1.05 0 0 1 0-2.1ZM12 7a5 5 0 1 1 0 10 5 5 0 0 1 0-10Zm0 1.8A3.2 3.2 0 1 0 12 15.2 3.2 3.2 0 0 0 12 8.8Z"/></svg></a>
+                    <a class="social-link" href="https://www.facebook.com/halfawakeeyes" target="_blank" rel="noopener noreferrer" aria-label="Facebook"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13.4 21v-7.95h2.67l.4-3.1H13.4V7.97c0-.9.25-1.5 1.54-1.5h1.65V3.7c-.29-.04-1.28-.12-2.44-.12-2.42 0-4.08 1.48-4.08 4.2v2.17H7.33v3.1h2.74V21h3.33Z"/></svg></a>
+                    <a class="social-link" href="mailto:halfawakeeyes@gmail.com" aria-label="Email"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.75 5.5h16.5a1.75 1.75 0 0 1 1.75 1.75v9.5A1.75 1.75 0 0 1 20.25 18.5H3.75A1.75 1.75 0 0 1 2 16.75v-9.5A1.75 1.75 0 0 1 3.75 5.5Zm0 1.8v.16L12 12.74l8.25-5.28V7.3H3.75Zm16.5 9.4v-7.1L12.48 14.6a.9.9 0 0 1-.96 0L3.8 9.6v7.1h16.45Z"/></svg></a>
+                </div>
             </div>
 
-            <div class="link-stack" id="main-links"></div>
+            <div class="link-stack" id="main-links">
+                <section class="links-section">
+                    <h2 class="section-heading">Releases</h2>
+                    <div class="section-links">
+                        <a class="link-card primary" href="https://open.spotify.com/album/1McajSMOYTvWAYRFi19CG2?si=QpD9D5NfTAClj6vfGi3mow" target="_blank" rel="noopener noreferrer">
+                            <div class="link-thumb"><img src="assets/images/logo.jpg" alt="Stream the Debut EP" width="500" height="500"></div>
+                            <div class="link-copy"><span class="kicker">Listen</span><span class="link-title">Stream the Debut EP</span><div class="link-meta">Open the current release on Spotify.</div></div><span class="link-arrow" aria-hidden="true">+</span>
+                        </a>
+                    </div>
+                </section>
+            </div>
 
             <div class="footer">
                 <span>&copy; <span data-current-year></span> Half Awake Eyes</span>
@@ -43,7 +61,7 @@
     </main>
 
   <script src="assets/js/current-year.js"></script>
-  <script type="module" src="assets/js/links.js?v=20260423-public-paging"></script>
+  <script type="module" src="assets/js/links.js?v=20260725-public-json"></script>
 </body>
 
 </html>

@@ -13,6 +13,15 @@
   ],
   "hosting": {
     "public": ".",
+    "rewrites": [
+      {
+        "source": "/api/public-links",
+        "function": {
+          "functionId": "getPublicLinksJson",
+          "region": "us-central1"
+        }
+      }
+    ],
     "ignore": [
       "firebase.json",
       "**/.*",

@@ -4,7 +4,7 @@ const crypto = require("crypto");
 const { initializeApp } = require("firebase-admin/app");
 const { getFirestore, FieldValue } = require("firebase-admin/firestore");
 const { getMessaging } = require("firebase-admin/messaging");
-const { HttpsError, onCall } = require("firebase-functions/v2/https");
+const { HttpsError, onCall, onRequest } = require("firebase-functions/v2/https");
 const { onDocumentCreated } = require("firebase-functions/v2/firestore");
 const { onSchedule } = require("firebase-functions/v2/scheduler");
 const { defineSecret } = require("firebase-functions/params");
@@ -15,6 +15,35 @@ const nodemailer = require("nodemailer");
 initializeApp();
 
 const db = getFirestore();
+
+exports.getPublicLinksJson = onRequest({
+  region: "us-central1",
+  maxInstances: 2,
+  timeoutSeconds: 15,
+  memory: "128MiB"
+}, async (request, response) => {
+  if (request.method !== "GET") {
+    response.set("Allow", "GET");
+    response.status(405).json({ error: "Method not allowed." });
+    return;
+  }
+
+  const [linksSnapshot, gigsSnapshot] = await Promise.all([
+    db.doc("links/public-index").get(),
+    db.doc("gigs/public-index").get()
+  ]);
+  const links = linksSnapshot.data()?.items;
+  const gigs = gigsSnapshot.data()?.items;
+  const publicLinks = (Array.isArray(links) ? links : []).filter((link) =>
+    String(link?.section || "").trim().toLowerCase() !== "resources"
+  );
+
+  response.set("Cache-Control", "public, max-age=60, s-maxage=300, stale-while-revalidate=86400");
+  response.status(200).json({
+    links: publicLinks,
+    gigs: Array.isArray(gigs) ? gigs : []
+  });
+});
 
 const IONOS_EMAIL = defineSecret("IONOS_EMAIL");
 const IONOS_PASSWORD = defineSecret("IONOS_PASSWORD");

@@ -1,0 +1,161 @@
+[debug] [2026-07-25T19:20:13.633Z] ----------------------------------------------------------------------
+[debug] [2026-07-25T19:20:13.643Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\danyal.butt\AppData\Local\npm-cache\_npx\7750544ccf494d8b\node_modules\firebase-tools\lib\bin\firebase.js deploy --only functions:getPublicLinksJson,hosting
+[debug] [2026-07-25T19:20:13.643Z] CLI Version:   15.24.0
+[debug] [2026-07-25T19:20:13.644Z] Platform:      win32
+[debug] [2026-07-25T19:20:13.644Z] Node Version:  v24.18.0
+[debug] [2026-07-25T19:20:13.644Z] Detected Agent: unknown
+[debug] [2026-07-25T19:20:13.644Z] Time:          Sat Jul 25 2026 20:20:13 GMT+0100 (British Summer Time)
+[debug] [2026-07-25T19:20:13.644Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-07-25T19:20:22.304Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-07-25T19:20:22.304Z] > authorizing via signed-in user (danyalc95@gmail.com)
+[debug] [2026-07-25T19:20:22.304Z] [iam] checking project half-awake-eyes for permissions ["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get","firebasehosting.sites.update"]
+[debug] [2026-07-25T19:20:22.326Z] Checked if tokens are valid: true, expires at: 1785010791913
+[debug] [2026-07-25T19:20:22.327Z] Checked if tokens are valid: true, expires at: 1785010791913
+[debug] [2026-07-25T19:20:22.329Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/half-awake-eyes:testIamPermissions [none]
+[debug] [2026-07-25T19:20:22.329Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/half-awake-eyes:testIamPermissions  x-goog-user-project=half-awake-eyes
+[debug] [2026-07-25T19:20:22.330Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/half-awake-eyes:testIamPermissions {"permissions":["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get","firebasehosting.sites.update"]}
+[debug] [2026-07-25T19:20:22.759Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/half-awake-eyes:testIamPermissions 200
+[debug] [2026-07-25T19:20:22.759Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/half-awake-eyes:testIamPermissions {"permissions":["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get","firebasehosting.sites.update"]}
+[debug] [2026-07-25T19:20:22.760Z] Checked if tokens are valid: true, expires at: 1785010791913
+[debug] [2026-07-25T19:20:22.760Z] Checked if tokens are valid: true, expires at: 1785010791913
+[debug] [2026-07-25T19:20:22.760Z] >>> [apiv2][query] POST https://iam.googleapis.com/v1/projects/half-awake-eyes/serviceAccounts/half-awake-eyes@appspot.gserviceaccount.com:testIamPermissions [none]
+[debug] [2026-07-25T19:20:22.761Z] >>> [apiv2][body] POST https://iam.googleapis.com/v1/projects/half-awake-eyes/serviceAccounts/half-awake-eyes@appspot.gserviceaccount.com:testIamPermissions {"permissions":["iam.serviceAccounts.actAs"]}
+[debug] [2026-07-25T19:20:23.484Z] <<< [apiv2][status] POST https://iam.googleapis.com/v1/projects/half-awake-eyes/serviceAccounts/half-awake-eyes@appspot.gserviceaccount.com:testIamPermissions 404
+[debug] [2026-07-25T19:20:23.484Z] <<< [apiv2][body] POST https://iam.googleapis.com/v1/projects/half-awake-eyes/serviceAccounts/half-awake-eyes@appspot.gserviceaccount.com:testIamPermissions {"error":{"code":404,"message":"Unknown service account","status":"NOT_FOUND"}}
+[debug] [2026-07-25T19:20:23.485Z] [functions] service account IAM check errored, deploy may fail: Request to https://iam.googleapis.com/v1/projects/half-awake-eyes/serviceAccounts/half-awake-eyes@appspot.gserviceaccount.com:testIamPermissions had HTTP Error: 404, Unknown service account {"name":"FirebaseError","children":[],"context":{"body":{"error":{"code":404,"message":"Unknown service account","status":"NOT_FOUND"}},"response":{"statusCode":404}},"exit":1,"message":"Request to https://iam.googleapis.com/v1/projects/half-awake-eyes/serviceAccounts/half-awake-eyes@appspot.gserviceaccount.com:testIamPermissions had HTTP Error: 404, Unknown service account","status":404}
+[debug] [2026-07-25T19:20:23.486Z] Checked if tokens are valid: true, expires at: 1785010791913
+[debug] [2026-07-25T19:20:23.486Z] Checked if tokens are valid: true, expires at: 1785010791913
+[debug] [2026-07-25T19:20:23.486Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/half-awake-eyes [none]
+[debug] [2026-07-25T19:20:23.944Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/half-awake-eyes 200
+[debug] [2026-07-25T19:20:23.944Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/half-awake-eyes {"projectId":"half-awake-eyes","projectNumber":"1002821452473","displayName":"Half Awake Eyes","name":"projects/half-awake-eyes","resources":{"hostingSite":"half-awake-eyes"},"state":"ACTIVE","labels":{"firebase":"enabled"},"etag":"1_4f228186-0512-4151-be42-282f4b8bc351"}
+[info] 
+[info] === Deploying to 'half-awake-eyes'...
+[info] 
+[info] i  deploying functions, hosting 
+[debug] [2026-07-25T19:20:23.952Z] Checked if tokens are valid: true, expires at: 1785010791913
+[debug] [2026-07-25T19:20:23.952Z] Checked if tokens are valid: true, expires at: 1785010791913
+[debug] [2026-07-25T19:20:23.952Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/half-awake-eyes/services/cloudresourcemanager.googleapis.com [none]
+[debug] [2026-07-25T19:20:23.952Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/half-awake-eyes/services/cloudresourcemanager.googleapis.com  x-goog-user-project=half-awake-eyes
+[debug] [2026-07-25T19:20:24.889Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/half-awake-eyes/services/cloudresourcemanager.googleapis.com 200
+[debug] [2026-07-25T19:20:24.889Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/half-awake-eyes/services/cloudresourcemanager.googleapis.com [omitted]
+[debug] [2026-07-25T19:20:24.904Z] Checked if tokens are valid: true, expires at: 1785010791913
+[debug] [2026-07-25T19:20:24.904Z] Checked if tokens are valid: true, expires at: 1785010791913
+[debug] [2026-07-25T19:20:24.905Z] >>> [apiv2][query] GET https://cloudresourcemanager.googleapis.com/v1/projects/half-awake-eyes [none]
+[debug] [2026-07-25T19:20:25.117Z] <<< [apiv2][status] GET https://cloudresourcemanager.googleapis.com/v1/projects/half-awake-eyes 200
+[debug] [2026-07-25T19:20:25.118Z] <<< [apiv2][body] GET https://cloudresourcemanager.googleapis.com/v1/projects/half-awake-eyes {"projectNumber":"1002821452473","projectId":"half-awake-eyes","lifecycleState":"ACTIVE","name":"Half Awake Eyes","labels":{"firebase":"enabled","firebase-core":"disabled"},"createTime":"2025-05-25T15:17:07.055492Z"}
+[info] i  functions: preparing codebase default for deployment 
+[info] i  functions: ensuring required API cloudfunctions.googleapis.com is enabled... 
+[debug] [2026-07-25T19:20:25.138Z] Checked if tokens are valid: true, expires at: 1785010791913
+[debug] [2026-07-25T19:20:25.138Z] Checked if tokens are valid: true, expires at: 1785010791913
+[debug] [2026-07-25T19:20:25.145Z] Checked if tokens are valid: true, expires at: 1785010791913
+[debug] [2026-07-25T19:20:25.145Z] Checked if tokens are valid: true, expires at: 1785010791913
+[info] i  functions: ensuring required API cloudbuild.googleapis.com is enabled... 
+[debug] [2026-07-25T19:20:25.150Z] Checked if tokens are valid: true, expires at: 1785010791913
+[debug] [2026-07-25T19:20:25.150Z] Checked if tokens are valid: true, expires at: 1785010791913
+[info] i  artifactregistry: ensuring required API artifactregistry.googleapis.com is enabled... 
+[debug] [2026-07-25T19:20:25.153Z] Checked if tokens are valid: true, expires at: 1785010791913
+[debug] [2026-07-25T19:20:25.153Z] Checked if tokens are valid: true, expires at: 1785010791913
+[debug] [2026-07-25T19:20:25.153Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/half-awake-eyes/services/cloudfunctions.googleapis.com [none]
+[debug] [2026-07-25T19:20:25.153Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/half-awake-eyes/services/cloudfunctions.googleapis.com  x-goog-user-project=half-awake-eyes
+[debug] [2026-07-25T19:20:25.154Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/half-awake-eyes/services/runtimeconfig.googleapis.com [none]
+[debug] [2026-07-25T19:20:25.154Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/half-awake-eyes/services/runtimeconfig.googleapis.com  x-goog-user-project=half-awake-eyes
+[debug] [2026-07-25T19:20:25.158Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/half-awake-eyes/services/cloudbuild.googleapis.com [none]
+[debug] [2026-07-25T19:20:25.158Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/half-awake-eyes/services/cloudbuild.googleapis.com  x-goog-user-project=half-awake-eyes
+[debug] [2026-07-25T19:20:25.160Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/half-awake-eyes/services/artifactregistry.googleapis.com [none]
+[debug] [2026-07-25T19:20:25.160Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/half-awake-eyes/services/artifactregistry.googleapis.com  x-goog-user-project=half-awake-eyes
+[debug] [2026-07-25T19:20:25.951Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/half-awake-eyes/services/cloudfunctions.googleapis.com 200
+[debug] [2026-07-25T19:20:25.951Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/half-awake-eyes/services/cloudfunctions.googleapis.com [omitted]
+[info] +  functions: required API cloudfunctions.googleapis.com is enabled 
+[debug] [2026-07-25T19:20:25.981Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/half-awake-eyes/services/cloudbuild.googleapis.com 200
+[debug] [2026-07-25T19:20:25.981Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/half-awake-eyes/services/cloudbuild.googleapis.com [omitted]
+[info] +  functions: required API cloudbuild.googleapis.com is enabled 
+[debug] [2026-07-25T19:20:26.003Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/half-awake-eyes/services/runtimeconfig.googleapis.com 200
+[debug] [2026-07-25T19:20:26.004Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/half-awake-eyes/services/runtimeconfig.googleapis.com [omitted]
+[debug] [2026-07-25T19:20:26.029Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/half-awake-eyes/services/artifactregistry.googleapis.com 200
+[debug] [2026-07-25T19:20:26.029Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/half-awake-eyes/services/artifactregistry.googleapis.com [omitted]
+[info] +  artifactregistry: required API artifactregistry.googleapis.com is enabled 
+[debug] [2026-07-25T19:20:26.047Z] Checked if tokens are valid: true, expires at: 1785010791913
+[debug] [2026-07-25T19:20:26.047Z] Checked if tokens are valid: true, expires at: 1785010791913
+[debug] [2026-07-25T19:20:26.047Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/half-awake-eyes/adminSdkConfig [none]
+[debug] [2026-07-25T19:20:26.354Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/half-awake-eyes/adminSdkConfig 200
+[debug] [2026-07-25T19:20:26.355Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/half-awake-eyes/adminSdkConfig {"projectId":"half-awake-eyes","storageBucket":"half-awake-eyes.firebasestorage.app"}
+[debug] [2026-07-25T19:20:26.355Z] Checked if tokens are valid: true, expires at: 1785010791913
+[debug] [2026-07-25T19:20:26.356Z] Checked if tokens are valid: true, expires at: 1785010791913
+[debug] [2026-07-25T19:20:26.356Z] >>> [apiv2][query] GET https://runtimeconfig.googleapis.com/v1beta1/projects/half-awake-eyes/configs [none]
+[debug] [2026-07-25T19:20:26.751Z] <<< [apiv2][status] GET https://runtimeconfig.googleapis.com/v1beta1/projects/half-awake-eyes/configs 200
+[debug] [2026-07-25T19:20:26.752Z] <<< [apiv2][body] GET https://runtimeconfig.googleapis.com/v1beta1/projects/half-awake-eyes/configs {}
+[debug] [2026-07-25T19:20:26.756Z] Validating nodejs source
+[warn] !  functions: Runtime Node.js 20 was deprecated on 2026-04-30 and will be decommissioned on 2026-10-30, after which you will not be able to deploy without upgrading. Consider upgrading now to avoid disruption. See https://cloud.google.com/functions/docs/runtime-support for full details on the lifecycle policy 
+[warn] !  functions: Couldn't find firebase-functions package in your source code. Have you run 'npm install'? 
+[debug] [2026-07-25T19:20:26.758Z] getFunctionsSDKVersion encountered error: Cannot find module 'firebase-functions'
+Require stack:
+- C:\Users\danyal.butt\AppData\Local\npm-cache\_npx\7750544ccf494d8b\node_modules\firebase-tools\lib\deploy\functions\runtimes\node\versioning.js
+- C:\Users\danyal.butt\AppData\Local\npm-cache\_npx\7750544ccf494d8b\node_modules\firebase-tools\lib\deploy\functions\runtimes\node\index.js
+- C:\Users\danyal.butt\AppData\Local\npm-cache\_npx\7750544ccf494d8b\node_modules\firebase-tools\lib\deploy\functions\runtimes\index.js
+- C:\Users\danyal.butt\AppData\Local\npm-cache\_npx\7750544ccf494d8b\node_modules\firebase-tools\lib\deploy\functions\prepare.js
+- C:\Users\danyal.butt\AppData\Local\npm-cache\_npx\7750544ccf494d8b\node_modules\firebase-tools\lib\emulator\functionsEmulatorShared.js
+- C:\Users\danyal.butt\AppData\Local\npm-cache\_npx\7750544ccf494d8b\node_modules\firebase-tools\lib\frameworks\index.js
+- C:\Users\danyal.butt\AppData\Local\npm-cache\_npx\7750544ccf494d8b\node_modules\firebase-tools\lib\deploy\hosting\prepare.js
+- C:\Users\danyal.butt\AppData\Local\npm-cache\_npx\7750544ccf494d8b\node_modules\firebase-tools\lib\deploy\hosting\index.js
+- C:\Users\danyal.butt\AppData\Local\npm-cache\_npx\7750544ccf494d8b\node_modules\firebase-tools\lib\deploy\index.js
+- C:\Users\danyal.butt\AppData\Local\npm-cache\_npx\7750544ccf494d8b\node_modules\firebase-tools\lib\checkValidTargetFilters.js
+- C:\Users\danyal.butt\AppData\Local\npm-cache\_npx\7750544ccf494d8b\node_modules\firebase-tools\lib\commands\deploy.js
+- C:\Users\danyal.butt\AppData\Local\npm-cache\_npx\7750544ccf494d8b\node_modules\firebase-tools\lib\commands\index.js
+- C:\Users\danyal.butt\AppData\Local\npm-cache\_npx\7750544ccf494d8b\node_modules\firebase-tools\lib\index.js
+- C:\Users\danyal.butt\AppData\Local\npm-cache\_npx\7750544ccf494d8b\node_modules\firebase-tools\lib\bin\cli.js
+- C:\Users\danyal.butt\AppData\Local\npm-cache\_npx\7750544ccf494d8b\node_modules\firebase-tools\lib\bin\firebase.js {"code":"MODULE_NOT_FOUND","requireStack":["C:\\Users\\danyal.butt\\AppData\\Local\\npm-cache\\_npx\\7750544ccf494d8b\\node_modules\\firebase-tools\\lib\\deploy\\functions\\runtimes\\node\\versioning.js","C:\\Users\\danyal.butt\\AppData\\Local\\npm-cache\\_npx\\7750544ccf494d8b\\node_modules\\firebase-tools\\lib\\deploy\\functions\\runtimes\\node\\index.js","C:\\Users\\danyal.butt\\AppData\\Local\\npm-cache\\_npx\\7750544ccf494d8b\\node_modules\\firebase-tools\\lib\\deploy\\functions\\runtimes\\index.js","C:\\Users\\danyal.butt\\AppData\\Local\\npm-cache\\_npx\\7750544ccf494d8b\\node_modules\\firebase-tools\\lib\\deploy\\functions\\prepare.js","C:\\Users\\danyal.butt\\AppData\\Local\\npm-cache\\_npx\\7750544ccf494d8b\\node_modules\\firebase-tools\\lib\\emulator\\functionsEmulatorShared.js","C:\\Users\\danyal.butt\\AppData\\Local\\npm-cache\\_npx\\7750544ccf494d8b\\node_modules\\firebase-tools\\lib\\frameworks\\index.js","C:\\Users\\danyal.butt\\AppData\\Local\\npm-cache\\_npx\\7750544ccf494d8b\\node_modules\\firebase-tools\\lib\\deploy\\hosting\\prepare.js","C:\\Users\\danyal.butt\\AppData\\Local\\npm-cache\\_npx\\7750544ccf494d8b\\node_modules\\firebase-tools\\lib\\deploy\\hosting\\index.js","C:\\Users\\danyal.butt\\AppData\\Local\\npm-cache\\_npx\\7750544ccf494d8b\\node_modules\\firebase-tools\\lib\\deploy\\index.js","C:\\Users\\danyal.butt\\AppData\\Local\\npm-cache\\_npx\\7750544ccf494d8b\\node_modules\\firebase-tools\\lib\\checkValidTargetFilters.js","C:\\Users\\danyal.butt\\AppData\\Local\\npm-cache\\_npx\\7750544ccf494d8b\\node_modules\\firebase-tools\\lib\\commands\\deploy.js","C:\\Users\\danyal.butt\\AppData\\Local\\npm-cache\\_npx\\7750544ccf494d8b\\node_modules\\firebase-tools\\lib\\commands\\index.js","C:\\Users\\danyal.butt\\AppData\\Local\\npm-cache\\_npx\\7750544ccf494d8b\\node_modules\\firebase-tools\\lib\\index.js","C:\\Users\\danyal.butt\\AppData\\Local\\npm-cache\\_npx\\7750544ccf494d8b\\node_modules\\firebase-tools\\lib\\bin\\cli.js","C:\\Users\\danyal.butt\\AppData\\Local\\npm-cache\\_npx\\7750544ccf494d8b\\node_modules\\firebase-tools\\lib\\bin\\firebase.js"]}
+[debug] [2026-07-25T19:20:26.759Z] checkFunctionsSDKVersion encountered error: Invalid Version:  {}
+[debug] [2026-07-25T19:20:26.762Z] > [functions] package.json contents: {
+  "name": "hae-admin-functions",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Firebase callable functions for the Half Awake Eyes admin dashboard.",
+  "main": "index.js",
+  "engines": {
+    "node": "20"
+  },
+  "scripts": {
+    "lint": "node --check index.js"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.7.0",
+    "firebase-functions": "^6.4.0",
+    "imapflow": "^1.0.187",
+    "mailparser": "^3.7.4",
+    "nodemailer": "^6.9.16"
+  },
+  "devDependencies": {}
+}
+[debug] [2026-07-25T19:20:26.762Z] Building nodejs source
+[info] i  functions: Loading and analyzing source code for codebase default to determine what to deploy 
+[debug] [2026-07-25T19:20:26.763Z] Could not parse firebase-functions version '' into semver.
+[debug] [2026-07-25T19:20:26.764Z] Could not find functions.yaml. Must use http discovery
+[debug] [2026-07-25T19:20:26.931Z] Error: Cannot find module 'firebase-functions'
+Require stack:
+- C:\Users\danyal.butt\AppData\Local\npm-cache\_npx\7750544ccf494d8b\node_modules\firebase-tools\lib\deploy\functions\runtimes\node\index.js
+- C:\Users\danyal.butt\AppData\Local\npm-cache\_npx\7750544ccf494d8b\node_modules\firebase-tools\lib\deploy\functions\runtimes\index.js
+- C:\Users\danyal.butt\AppData\Local\npm-cache\_npx\7750544ccf494d8b\node_modules\firebase-tools\lib\deploy\functions\prepare.js
+- C:\Users\danyal.butt\AppData\Local\npm-cache\_npx\7750544ccf494d8b\node_modules\firebase-tools\lib\emulator\functionsEmulatorShared.js
+- C:\Users\danyal.butt\AppData\Local\npm-cache\_npx\7750544ccf494d8b\node_modules\firebase-tools\lib\frameworks\index.js
+- C:\Users\danyal.butt\AppData\Local\npm-cache\_npx\7750544ccf494d8b\node_modules\firebase-tools\lib\deploy\hosting\prepare.js
+- C:\Users\danyal.butt\AppData\Local\npm-cache\_npx\7750544ccf494d8b\node_modules\firebase-tools\lib\deploy\hosting\index.js
+- C:\Users\danyal.butt\AppData\Local\npm-cache\_npx\7750544ccf494d8b\node_modules\firebase-tools\lib\deploy\index.js
+- C:\Users\danyal.butt\AppData\Local\npm-cache\_npx\7750544ccf494d8b\node_modules\firebase-tools\lib\checkValidTargetFilters.js
+- C:\Users\danyal.butt\AppData\Local\npm-cache\_npx\7750544ccf494d8b\node_modules\firebase-tools\lib\commands\deploy.js
+- C:\Users\danyal.butt\AppData\Local\npm-cache\_npx\7750544ccf494d8b\node_modules\firebase-tools\lib\commands\index.js
+- C:\Users\danyal.butt\AppData\Local\npm-cache\_npx\7750544ccf494d8b\node_modules\firebase-tools\lib\index.js
+- C:\Users\danyal.butt\AppData\Local\npm-cache\_npx\7750544ccf494d8b\node_modules\firebase-tools\lib\bin\cli.js
+- C:\Users\danyal.butt\AppData\Local\npm-cache\_npx\7750544ccf494d8b\node_modules\firebase-tools\lib\bin\firebase.js
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1517:15)
+    at wrapResolveFilename (node:internal/modules/cjs/loader:1071:27)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1122:12)
+    at require.resolve (node:internal/modules/helpers:171:31)
+    at Delegate.findFunctionsBinary (C:\Users\danyal.butt\AppData\Local\npm-cache\_npx\7750544ccf494d8b\node_modules\firebase-tools\lib\deploy\functions\runtimes\node\index.js:100:33)
+    at Delegate.spawnFunctionsProcess (C:\Users\danyal.butt\AppData\Local\npm-cache\_npx\7750544ccf494d8b\node_modules\firebase-tools\lib\deploy\functions\runtimes\node\index.js:130:30)
+    at Delegate.serveAdmin (C:\Users\danyal.butt\AppData\Local\npm-cache\_npx\7750544ccf494d8b\node_modules\firebase-tools\lib\deploy\functions\runtimes\node\index.js:151:35)
+    at Delegate.discoverBuild (C:\Users\danyal.butt\AppData\Local\npm-cache\_npx\7750544ccf494d8b\node_modules\firebase-tools\lib\deploy\functions\runtimes\node\index.js:191:41)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async loadCodebases (C:\Users\danyal.butt\AppData\Local\npm-cache\_npx\7750544ccf494d8b\node_modules\firebase-tools\lib\deploy\functions\prepare.js:488:33)
+[error] 
+[error] Error: An unexpected error has occurred.

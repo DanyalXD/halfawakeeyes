@@ -36,7 +36,7 @@
             background:
                 linear-gradient(180deg, rgba(5, 5, 5, 0.42) 0%, rgba(5, 5, 5, 0.78) 100%),
                 linear-gradient(90deg, rgba(6, 6, 6, 0.88) 0%, rgba(6, 6, 6, 0.4) 45%, rgba(6, 6, 6, 0.78) 100%),
-                url('../images/HalfAwakeEyes-annicmrn-07798.jpg') center center / cover no-repeat fixed;
+                url('../images/links-background.jpg') center center / cover no-repeat fixed;
         }
 
         body::before {

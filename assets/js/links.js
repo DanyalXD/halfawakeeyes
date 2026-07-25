@@ -1,5 +1,5 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-        import { collection, doc, getDoc, getDocs, getFirestore, limit, orderBy, query, setDoc, startAfter, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import { doc, getFirestore, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
         import {
             createEmailSignupService,
             createSiteAnalytics,
@@ -7,8 +7,7 @@
             getTrackingParams,
             isValidEmailAddress,
             normalizeImageUrl,
-            normalizePublicUrl,
-            PUBLIC_MIRROR_DOC_ID
+            normalizePublicUrl
         } from "./public-site-utils.js";
 
         const isLocal =
@@ -31,89 +30,7 @@
         const emailSignupSubmit = document.getElementById("email-signup-submit");
         const emailSignupStatus = document.getElementById("email-signup-status");
 
-        const getDefaultLinks = () => ([
-            {
-                group: "social",
-                title: "Spotify",
-                url: "https://open.spotify.com/album/1McajSMOYTvWAYRFi19CG2?si=QpD9D5NfTAClj6vfGi3mow",
-                kicker: "",
-                description: "",
-                featured: false,
-                hidden: false,
-                sortOrder: 10
-            },
-            {
-                group: "social",
-                title: "Instagram",
-                url: "https://instagram.com/halfawakeeyes",
-                kicker: "",
-                description: "",
-                featured: false,
-                hidden: false,
-                sortOrder: 20
-            },
-            {
-                group: "social",
-                title: "Facebook",
-                url: "https://www.facebook.com/halfawakeeyes",
-                kicker: "",
-                description: "",
-                featured: false,
-                hidden: false,
-                sortOrder: 30
-            },
-            {
-                group: "social",
-                title: "Email",
-                url: "mailto:halfawakeeyes@gmail.com",
-                kicker: "",
-                description: "",
-                featured: false,
-                hidden: false,
-                sortOrder: 40
-            },
-            {
-                group: "main",
-                title: "Stream the Debut EP",
-                url: "https://open.spotify.com/album/1McajSMOYTvWAYRFi19CG2?si=QpD9D5NfTAClj6vfGi3mow",
-                imageUrl: "assets/images/logo.jpg",
-                section: "Releases",
-                kicker: "Listen",
-                description: "Open the current release on Spotify.",
-                featured: true,
-                hidden: false,
-                sortOrder: 100
-            },
-            {
-                group: "main",
-                title: "Press Kit",
-                url: "https://drive.google.com/drive/folders/1dFLq35JkF_NyhJypMFzKlsc7iXehKnWJ?usp=sharing",
-                imageUrl: "assets/images/HalfAwakeEyes-annicmrn-07798.jpg",
-                section: "Resources",
-                kicker: "Press",
-                description: "Promo photos for posters, listings, and announcements.",
-                featured: false,
-                hidden: false,
-                sortOrder: 110
-            },
-            {
-                group: "main",
-                title: "Technical Requirements",
-                url: "https://drive.google.com/file/d/17e3-Qarq7WukVpIeMCu_jQhFZtXjb_Uu/view?usp=drive_link",
-                imageUrl: "assets/images/logo.jpg",
-                section: "Resources",
-                kicker: "Shows",
-                description: "Stage plot and input list for promoters and venues.",
-                featured: false,
-                hidden: false,
-                sortOrder: 120
-            }
-        ]);
-
         const AUTO_SHOW_SORT_BASE = 105;
-        const PUBLIC_FIRESTORE_PAGE_SIZE = 40;
-        const PUBLIC_LINKS_MAX_DOCS = 240;
-        const PUBLIC_GIGS_MAX_DOCS = 160;
         const PUBLIC_GIG_TICKET_LINK_LIMIT = 24;
 
         const { logEvent, logPageViewOnce } = createSiteAnalytics({
@@ -316,135 +233,6 @@
             return a.title.localeCompare(b.title);
         });
 
-        const loadPublicMirrorItems = async (collectionName, itemNormalizer = (item) => item) => {
-            try {
-                const mirrorSnapshot = await getDoc(doc(db, collectionName, PUBLIC_MIRROR_DOC_ID));
-                if (!mirrorSnapshot.exists()) {
-                    return { found: false, items: [] };
-                }
-
-                const items = mirrorSnapshot.data()?.items;
-                if (!Array.isArray(items)) {
-                    return { found: false, items: [] };
-                }
-
-                return {
-                    found: true,
-                    items: items.map((item, index) => itemNormalizer(item, index))
-                };
-            } catch (error) {
-                console.warn(`Could not load public ${collectionName} mirror.`, error);
-                return { found: false, items: [] };
-            }
-        };
-
-        const formatIsoDateOnly = (value = new Date()) => {
-            const date = value instanceof Date ? new Date(value) : new Date(value);
-            if (Number.isNaN(date.getTime())) {
-                return "";
-            }
-
-            date.setHours(0, 0, 0, 0);
-            const year = String(date.getFullYear());
-            const month = String(date.getMonth() + 1).padStart(2, "0");
-            const day = String(date.getDate()).padStart(2, "0");
-            return `${year}-${month}-${day}`;
-        };
-
-        const fetchCollectionPages = async ({
-            collectionName,
-            maxDocs,
-            buildQuery,
-            buildFallbackQuery
-        }) => {
-            const loadedDocs = [];
-            let lastDoc = null;
-            let useFallback = false;
-
-            while (loadedDocs.length < maxDocs) {
-                const pageSize = Math.min(PUBLIC_FIRESTORE_PAGE_SIZE, maxDocs - loadedDocs.length);
-                const queryBuilder = useFallback ? buildFallbackQuery : buildQuery;
-                const activeQuery = queryBuilder({ lastDoc, pageSize });
-                let snapshot;
-
-                try {
-                    snapshot = await getDocs(activeQuery);
-                } catch (error) {
-                    if (useFallback || typeof buildFallbackQuery !== "function") {
-                        throw error;
-                    }
-
-                    useFallback = true;
-                    console.warn(`Falling back to simpler ${collectionName} query for public page.`, error);
-                    continue;
-                }
-
-                if (snapshot.empty) {
-                    break;
-                }
-
-                const visibleDocs = snapshot.docs.filter((item) => item.id !== PUBLIC_MIRROR_DOC_ID);
-                loadedDocs.push(...visibleDocs);
-
-                if (snapshot.docs.length < pageSize) {
-                    break;
-                }
-
-                lastDoc = snapshot.docs[snapshot.docs.length - 1];
-            }
-
-            return loadedDocs;
-        };
-
-        const loadUpcomingGigTicketLinks = async () => {
-            try {
-                const mirroredGigs = await loadPublicMirrorItems("gigs", (gig, index) =>
-                    normalizeGigEntry(gig, String(gig?.id || `gig-${index + 1}`))
-                );
-                let gigEntries = mirroredGigs.items;
-
-                if (!mirroredGigs.found) {
-                    const todayIso = formatIsoDateOnly(new Date());
-                    const collectionDocs = await fetchCollectionPages({
-                        collectionName: "gigs",
-                        maxDocs: PUBLIC_GIGS_MAX_DOCS,
-                        buildQuery: ({ lastDoc, pageSize }) => query(
-                            collection(db, "gigs"),
-                            where("date", ">=", todayIso),
-                            orderBy("date", "asc"),
-                            ...(lastDoc ? [startAfter(lastDoc)] : []),
-                            limit(pageSize)
-                        ),
-                        buildFallbackQuery: ({ lastDoc, pageSize }) => query(
-                            collection(db, "gigs"),
-                            orderBy("date", "asc"),
-                            ...(lastDoc ? [startAfter(lastDoc)] : []),
-                            limit(pageSize)
-                        )
-                    });
-
-                    gigEntries = collectionDocs.map((gigDoc) => normalizeGigEntry(gigDoc.data(), gigDoc.id));
-                }
-
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
-
-                return gigEntries
-                    .filter((gig) => !isGigHiddenFromLinks(gig) && hasGigTicketLink(gig))
-                    .map((gig) => ({
-                        gig,
-                        dateOnly: getGigDateOnly(gig?.date)
-                    }))
-                    .filter(({ dateOnly }) => dateOnly && dateOnly >= today)
-                    .sort((a, b) => a.dateOnly.getTime() - b.dateOnly.getTime())
-                    .slice(0, PUBLIC_GIG_TICKET_LINK_LIMIT)
-                    .map(({ gig }, index) => buildGigTicketLink(gig, AUTO_SHOW_SORT_BASE + index));
-            } catch (error) {
-                console.error("Could not load gig ticket links.", error);
-                return [];
-            }
-        };
-
         const attachLinkTracking = (element, label, sectionName = "links") => {
             if (!element) {
                 return;
@@ -619,7 +407,14 @@
         };
 
         const renderManagedLinks = (links, gigTicketLinks = []) => {
-            const visibleLinks = sortManagedLinks(links.filter((link) => link.hidden !== true && link.url));
+            const visibleLinks = sortManagedLinks(
+                links.filter(
+                    (link) =>
+                        link.hidden !== true &&
+                        link.url &&
+                        getLinkSection(link) !== "Resources"
+                )
+            );
             const socialLinks = visibleLinks.filter((link) => link.group === "social");
             const socialUrls = new Set(socialLinks.map((link) => link.url));
             const mainLinks = visibleLinks.filter((link) => {
@@ -703,57 +498,36 @@
         };
 
         const loadManagedLinks = async () => {
-            const gigTicketLinksPromise = loadUpcomingGigTicketLinks();
-
             try {
-                const mirroredLinks = await loadPublicMirrorItems("links", (link, index) =>
-                    normalizeManagedLink(link, (index + 1) * 10)
-                );
-
-                if (mirroredLinks.found) {
-                    if (!mirroredLinks.items.length) {
-                        renderManagedLinks(getDefaultLinks(), await gigTicketLinksPromise);
-                        return;
-                    }
-
-                    renderManagedLinks(mirroredLinks.items, await gigTicketLinksPromise);
-                    return;
-                }
-
-                const collectionDocs = await fetchCollectionPages({
-                    collectionName: "links",
-                    maxDocs: PUBLIC_LINKS_MAX_DOCS,
-                    buildQuery: ({ lastDoc, pageSize }) => query(
-                        collection(db, "links"),
-                        orderBy("sortOrder", "asc"),
-                        ...(lastDoc ? [startAfter(lastDoc)] : []),
-                        limit(pageSize)
-                    ),
-                    buildFallbackQuery: ({ lastDoc, pageSize }) => query(
-                        collection(db, "links"),
-                        orderBy("__name__", "asc"),
-                        ...(lastDoc ? [startAfter(lastDoc)] : []),
-                        limit(pageSize)
-                    )
+                const response = await fetch("/api/public-links", {
+                    headers: { Accept: "application/json" }
                 });
-
-                if (!collectionDocs.length) {
-                    renderManagedLinks(getDefaultLinks(), await gigTicketLinksPromise);
-                    return;
+                if (!response.ok) {
+                    throw new Error(`Public links request failed (${response.status}).`);
                 }
 
-                const managedLinks = collectionDocs.map((linkDoc, index) => normalizeManagedLink(linkDoc.data(), (index + 1) * 10));
-                renderManagedLinks(managedLinks, await gigTicketLinksPromise);
+                const payload = await response.json();
+                const links = Array.isArray(payload?.links)
+                    ? payload.links.map((link, index) => normalizeManagedLink(link, (index + 1) * 10))
+                    : [];
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const gigTicketLinks = (Array.isArray(payload?.gigs) ? payload.gigs : [])
+                    .map((gig, index) => normalizeGigEntry(gig, String(gig?.id || `gig-${index + 1}`)))
+                    .filter((gig) => !isGigHiddenFromLinks(gig) && hasGigTicketLink(gig))
+                    .map((gig) => ({ gig, dateOnly: getGigDateOnly(gig.date) }))
+                    .filter(({ dateOnly }) => dateOnly && dateOnly >= today)
+                    .sort((a, b) => a.dateOnly.getTime() - b.dateOnly.getTime())
+                    .slice(0, PUBLIC_GIG_TICKET_LINK_LIMIT)
+                    .map(({ gig }, index) => buildGigTicketLink(gig, AUTO_SHOW_SORT_BASE + index));
+
+                if (links.length) {
+                    renderManagedLinks(links, gigTicketLinks);
+                }
             } catch (error) {
-                console.error("Could not load managed links, using defaults instead.", error);
-                renderManagedLinks(getDefaultLinks(), await gigTicketLinksPromise);
+                console.warn("Using the links already rendered in the page.", error);
             }
         };
-
-        logPageViewOnce({
-            label: document.title,
-            target: pageName
-        });
 
         if (emailSignupForm && emailSignupInput && emailSignupSubmit) {
             emailSignupForm.addEventListener("submit", async (event) => {
@@ -790,3 +564,7 @@
 
         attachLinkTracking(document.querySelector('.footer a[data-link-label]'), "Privacy policy");
         loadManagedLinks();
+        logPageViewOnce({
+            label: document.title,
+            target: pageName
+        });
