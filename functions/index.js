@@ -17,6 +17,7 @@ initializeApp();
 const db = getFirestore();
 
 exports.getPublicLinksJson = onRequest({
+  cors: true,
   region: "us-central1",
   maxInstances: 2,
   timeoutSeconds: 15,
