@@ -526,6 +526,11 @@
                 }
             } catch (error) {
                 console.warn("Using the links already rendered in the page.", error);
+            } finally {
+                requestAnimationFrame(() => {
+                    document.documentElement.classList.remove("links-loading");
+                    document.documentElement.classList.add("links-ready");
+                });
             }
         };
 

@@ -165,6 +165,21 @@
             margin-top: 1.25rem;
         }
 
+        .links-loading .page {
+            opacity: 0;
+        }
+
+        .links-ready .page {
+            opacity: 1;
+            transition: opacity 0.16s ease;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .links-ready .page {
+                transition: none;
+            }
+        }
+
         .signup-shell {
             display: grid;
             gap: 0.4rem;
