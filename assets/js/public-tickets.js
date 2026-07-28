@@ -33,7 +33,10 @@ try {
     const year = date.toLocaleDateString("en-GB", { year: "numeric" });
     const ticketUrl = normalizePublicUrl(show.ticketUrl);
     row.innerHTML = `<time class="show-date" datetime="${show.date}"><span>${day}</span><small>${month} ${year}</small></time><div class="show-info"><h3></h3><p></p></div>`;
-    row.querySelector("h3").textContent = show.event || "Half Awake Eyes live";
+    const eventLink = document.createElement("a");
+    eventLink.href = "/shows/" + encodeURIComponent(show.id);
+    eventLink.textContent = show.event || "Half Awake Eyes live";
+    row.querySelector("h3").appendChild(eventLink);
     row.querySelector("p").textContent = [show.venue, show.city].filter(Boolean).join(" - ");
     if (ticketUrl) {
       const link = document.createElement("a");

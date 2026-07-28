@@ -13,7 +13,26 @@
   ],
   "hosting": {
     "public": ".",
+    "redirects": [
+      {
+        "source": "/index.html",
+        "destination": "/",
+        "type": 301
+      },
+      {
+        "source": "/tickets/index.html",
+        "destination": "/tickets/",
+        "type": 301
+      }
+    ],
     "rewrites": [
+      {
+        "source": "/shows/**",
+        "function": {
+          "functionId": "getPublicEventPage",
+          "region": "us-central1"
+        }
+      },
       {
         "source": "/api/public-links",
         "function": {

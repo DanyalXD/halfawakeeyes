@@ -47,6 +47,114 @@ exports.getPublicLinksJson = onRequest({
   });
 });
 
+function escapePublicHtml(value = "") {
+  return String(value).replace(/[&<>"]/g, (character) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    "\"": "&quot;"
+  })[character]);
+}
+
+function normalizePublicHttpUrl(value = "") {
+  try {
+    const parsed = new URL(String(value).trim());
+    return ["http:", "https:"].includes(parsed.protocol) ? parsed.href : "";
+  } catch (error) {
+    return "";
+  }
+}
+
+exports.getPublicEventPage = onRequest({
+  region: "us-central1",
+  maxInstances: 2,
+  timeoutSeconds: 15,
+  memory: "128MiB"
+}, async (request, response) => {
+  if (request.method !== "GET" && request.method !== "HEAD") {
+    response.set("Allow", "GET, HEAD");
+    response.status(405).send("Method not allowed.");
+    return;
+  }
+
+  const rawId = String(request.path || "").split("/").filter(Boolean).pop() || "";
+  let eventId = "";
+  try {
+    eventId = decodeURIComponent(rawId);
+  } catch (error) {
+    eventId = "";
+  }
+
+  const gigsSnapshot = await db.doc("gigs/public-index").get();
+  const gigs = gigsSnapshot.data()?.items;
+  const gig = (Array.isArray(gigs) ? gigs : []).find((item) =>
+    String(item?.id || "") === eventId &&
+    /^\d{4}-\d{2}-\d{2}$/.test(String(item?.date || "")) &&
+    item?.hideFromLinks !== true &&
+    String(item?.hideFromLinks || "").toLowerCase() !== "true"
+  );
+
+  if (!gig) {
+    response.set("Cache-Control", "public, max-age=60, s-maxage=300");
+    response.status(404).send("<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><meta name=\"robots\" content=\"noindex, follow\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><title>Show Not Found | Half Awake Eyes</title></head><body><main><h1>Show not found</h1><p><a href=\"/tickets/\">View all live dates</a></p></main></body></html>");
+    return;
+  }
+
+  const eventName = String(gig.event || "Half Awake Eyes live").trim();
+  const venue = String(gig.venue || "Venue to be announced").trim();
+  const city = String(gig.city || "Glasgow").trim();
+  const date = /^\d{4}-\d{2}-\d{2}$/.test(String(gig.date || "")) ? String(gig.date) : "";
+  const ticketUrl = normalizePublicHttpUrl(gig.ticketUrl);
+  const imageUrl = normalizePublicHttpUrl(gig.imageUrl) || `${ADMIN_SITE_URL}/assets/images/gig-photo.jpeg`;
+  const canonicalUrl = `${ADMIN_SITE_URL}/shows/${encodeURIComponent(eventId)}`;
+  const dateLabel = date ? new Intl.DateTimeFormat("en-GB", {day: "numeric", month: "long", year: "numeric", timeZone: "Europe/London"}).format(new Date(`${date}T12:00:00Z`)) : "Date to be announced";
+  const description = `${eventName} at ${venue}, ${city}. Official Half Awake Eyes live show information${date ? ` for ${dateLabel}` : ""}.`;
+  const eventSchema = {
+    "@context": "https://schema.org",
+    "@type": "MusicEvent",
+    name: eventName,
+    description,
+    url: canonicalUrl,
+    image: [imageUrl],
+    startDate: date,
+    eventStatus: "https://schema.org/EventScheduled",
+    eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
+    location: {
+      "@type": "Place",
+      name: venue,
+      address: {
+        "@type": "PostalAddress",
+        addressLocality: city
+      }
+    },
+    performer: {"@type": "MusicGroup", "@id": `${ADMIN_SITE_URL}/#band`, name: "Half Awake Eyes", url: `${ADMIN_SITE_URL}/`}
+  };
+
+  if (ticketUrl) {
+    eventSchema.offers = {
+      "@type": "Offer",
+      url: ticketUrl,
+      availability: "https://schema.org/InStock"
+    };
+    const price = Number.parseFloat(String(gig.ticketPrice || "").replace(/[^0-9.]/g, ""));
+    if (Number.isFinite(price)) {
+      eventSchema.offers.price = price.toFixed(2);
+      eventSchema.offers.priceCurrency = "GBP";
+    }
+  }
+
+  const schemaJson = JSON.stringify(eventSchema).replace(/</g, "\\u003c");
+  const ticketAction = ticketUrl ? `<a class="button button-solid" href="${escapePublicHtml(ticketUrl)}" target="_blank" rel="noopener noreferrer">Official tickets</a>` : "<p>Ticket information will be announced soon.</p>";
+  const html = `<!doctype html>
+<html lang="en-GB"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>${escapePublicHtml(eventName)} Tickets | Half Awake Eyes</title><meta name="description" content="${escapePublicHtml(description)}"><meta name="robots" content="index, follow">
+<link rel="canonical" href="${escapePublicHtml(canonicalUrl)}"><meta property="og:type" content="website"><meta property="og:site_name" content="Half Awake Eyes"><meta property="og:title" content="${escapePublicHtml(eventName)} Tickets"><meta property="og:description" content="${escapePublicHtml(description)}"><meta property="og:url" content="${escapePublicHtml(canonicalUrl)}"><meta property="og:image" content="${escapePublicHtml(imageUrl)}"><meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/assets/images/favicon.ico" sizes="32x32"><link rel="apple-touch-icon" href="/assets/images/apple-touch-icon.png"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600&family=Source+Sans+3:wght@400;500;600&display=swap" rel="stylesheet"><link rel="stylesheet" href="/assets/css/theme.css"><link rel="stylesheet" href="/assets/css/site.css"><link rel="stylesheet" href="/assets/css/site-pages.css"><script type="application/ld+json">${schemaJson}</script></head>
+<body><header class="site-header scrolled"><a class="wordmark" href="/">Half Awake Eyes</a><nav aria-label="Main navigation"><a href="/#music">Music</a><a href="/tickets/">Tickets</a><a href="/#contact">Contact</a></nav></header><main class="inner-page"><section class="inner-section"><div class="shows"><div class="shows-heading"><p class="eyebrow">Live</p><h1>${escapePublicHtml(eventName)}</h1></div><article class="show-row"><time class="show-date"${date ? ` datetime="${date}"` : ""}><span>${escapePublicHtml(dateLabel)}</span></time><div class="show-info"><h2>${escapePublicHtml(venue)}</h2><p>${escapePublicHtml(city)}</p></div>${ticketAction}</article><p class="show-state"><a href="/tickets/">View all Half Awake Eyes live dates</a></p></div></section></main><footer><a class="wordmark" href="/">Half Awake Eyes</a><p>Glasgow, Scotland</p><div><a href="/privacy.html">Privacy</a></div></footer><script src="/assets/js/site.js"></script></body></html>`;
+
+  response.set("Cache-Control", "public, max-age=60, s-maxage=300, stale-while-revalidate=86400");
+  response.status(200).type("html").send(request.method === "HEAD" ? "" : html);
+});
 const IONOS_EMAIL = defineSecret("IONOS_EMAIL");
 const IONOS_PASSWORD = defineSecret("IONOS_PASSWORD");
 

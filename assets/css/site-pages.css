@@ -15,6 +15,8 @@ body > footer { flex: 0 0 auto; }
 .show-date small { color: var(--muted); font-size: .7rem; letter-spacing: .16em; }
 .show-info h3, .show-info p { margin: 0; }
 .show-info h3 { font-size: clamp(1.25rem, 1.7vw, 1.85rem); font-weight: 400; }
+.show-info h3 a { color: inherit; text-decoration: none; }
+.show-info h3 a:hover, .show-info h3 a:focus-visible { text-decoration: underline; text-underline-offset: .2em; }
 .show-info p, .show-state { color: #cfccc4; }
 .show-state { margin: 0; padding: 3rem 0; text-align: center; font-size: 1.05rem; }
 .show-row .button { min-width: 120px; padding-block: .65rem; font-size: .7rem; }
