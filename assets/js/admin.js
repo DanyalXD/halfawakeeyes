@@ -4628,7 +4628,7 @@
       const requestedFolder = state.activeEmailFolder;
       const requestedSearch = state.emailSearchTerm.trim();
       let cachedMessages = requestedSearch ? [] : await readCachedEmailFolder(requestedFolder);
-      if (!cachedMessages.length && !requestedSearch && requestedFolder === "inbox") {
+      if (!cachedMessages.length && !requestedSearch) {
         cachedMessages = await readServerCachedEmailFolder(requestedFolder);
         if (cachedMessages.length) {
           await writeCachedEmailFolder(requestedFolder, cachedMessages);

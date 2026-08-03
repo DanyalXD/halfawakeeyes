@@ -996,21 +996,41 @@ exports.checkInboxForPushNotifications = onSchedule(EMAIL_NOTIFICATION_SCHEDULE_
   console.log("checkInboxForPushNotifications running", { deployMarker: DEPLOY_MARKER });
 
   const stateRef = db.collection(EMAIL_NOTIFICATION_STATE_COLLECTION).doc(EMAIL_NOTIFICATION_STATE_DOC);
-  const cacheRef = db.collection(EMAIL_CACHE_COLLECTION).doc("inbox");
   const mailboxConfig = getMailboxConfig();
-  const [stateSnapshot, { messages }] = await Promise.all([
+  const folders = Object.keys(EMAIL_FOLDER_CONFIG);
+  const [stateSnapshot, folderSnapshots] = await Promise.all([
     stateRef.get(),
-    fetchMailboxMessages("inbox", EMAIL_INBOX_SNAPSHOT_LIMIT, {
-      hosts: [mailboxConfig.imapHost]
-    })
+    (async () => {
+      const snapshots = [];
+      for (const folder of folders) {
+        try {
+          snapshots.push(await fetchMailboxMessages(folder, EMAIL_INBOX_SNAPSHOT_LIMIT, {
+            hosts: [mailboxConfig.imapHost]
+          }));
+        } catch (error) {
+          console.warn("Could not refresh mailbox folder snapshot", {
+            folder,
+            message: error?.message || ""
+          });
+        }
+      }
+      return snapshots;
+    })()
   ]);
   const lastSeenUid = Number.parseInt(String(stateSnapshot.data()?.lastSeenUid || "0"), 10) || 0;
+  const inboxSnapshot = folderSnapshots.find((snapshot) => snapshot.folder === "inbox");
+  if (!inboxSnapshot) {
+    throw new Error("Inbox snapshot could not be refreshed.");
+  }
+  const messages = inboxSnapshot.messages || [];
 
-  await cacheRef.set({
-    folder: "inbox",
-    messages,
-    updatedAt: FieldValue.serverTimestamp()
-  });
+  await Promise.all(folderSnapshots.map((snapshot) => (
+    db.collection(EMAIL_CACHE_COLLECTION).doc(snapshot.folder).set({
+      folder: snapshot.folder,
+      messages: snapshot.messages,
+      updatedAt: FieldValue.serverTimestamp()
+    })
+  )));
 
   console.log("Inbox push check fetched messages", {
     messageCount: messages.length,
