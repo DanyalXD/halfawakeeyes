@@ -190,11 +190,13 @@ const EMAIL_NOTIFICATION_SCHEDULE_OPTIONS = {
   memory: "256MiB"
 };
 
-const DEPLOY_MARKER = "email-functions-20260604-secret-check";
+const DEPLOY_MARKER = "email-functions-20260803-inbox-snapshot";
 const PUSH_TOKENS_COLLECTION = "admin-email-push-tokens";
 const NOTIFICATION_SETTINGS_COLLECTION = "admin-notification-settings";
 const EMAIL_NOTIFICATION_STATE_COLLECTION = "admin-email-notification-state";
 const EMAIL_NOTIFICATION_STATE_DOC = "inbox";
+const EMAIL_CACHE_COLLECTION = "admin-email-cache";
+const EMAIL_INBOX_SNAPSHOT_LIMIT = 25;
 const MAX_EMAIL_ATTACHMENT_COUNT = 5;
 const MAX_EMAIL_ATTACHMENT_BYTES = 6 * 1024 * 1024;
 const DEFAULT_NOTIFICATION_SETTINGS = {
@@ -265,20 +267,6 @@ function getMailboxConfig() {
     smtpSecure: String(process.env.SMTP_SECURE || "false").toLowerCase() === "true",
     fromName: process.env.MAIL_FROM_NAME || "Half Awake Eyes"
   };
-}
-
-function logMailboxCredentialDiagnostic(source) {
-  const rawEmail = IONOS_EMAIL.value();
-  const rawPassword = IONOS_PASSWORD.value();
-
-  console.log("Mailbox credential diagnostic", {
-    source,
-    email: rawEmail.trim(),
-    emailLength: rawEmail.length,
-    passwordLength: rawPassword.length,
-    emailTrimmed: rawEmail !== rawEmail.trim(),
-    passwordTrimmed: rawPassword !== rawPassword.trim()
-  });
 }
 
 function getImapHosts() {
@@ -915,7 +903,6 @@ async function fetchMailboxMessages(folder, limit, options = {}) {
 exports.listInboxMessages = onCall(EMAIL_FUNCTION_OPTIONS, async (request) => {
   assertAdmin(request);
   console.log("listInboxMessages running", { deployMarker: DEPLOY_MARKER });
-  logMailboxCredentialDiagnostic("listInboxMessages");
 
   const requestedLimit = Number.parseInt(String(request.data?.limit || "25"), 10);
   const limit = Math.min(Math.max(requestedLimit || 25, 1), 50);
@@ -925,6 +912,60 @@ exports.listInboxMessages = onCall(EMAIL_FUNCTION_OPTIONS, async (request) => {
   const search = normalizeMailboxSearch(request.data?.search);
 
   return fetchMailboxMessages(folder, limit, { sinceUid, beforeUid, search });
+});
+
+exports.prefetchEmailMessages = onCall(EMAIL_FUNCTION_OPTIONS, async (request) => {
+  assertAdmin(request);
+
+  const folder = normalizeEmailFolder(request.data?.folder);
+  const ids = [...new Set(Array.isArray(request.data?.ids) ? request.data.ids : [])]
+    .map(normalizeOptionalUid)
+    .filter(Boolean)
+    .slice(0, 3);
+
+  if (!ids.length) {
+    return { messages: [] };
+  }
+
+  return withMailbox(folder, async (client) => {
+    const messages = [];
+
+    for (const uid of ids) {
+      const message = await client.fetchOne(uid, {
+        uid: true,
+        envelope: true,
+        flags: true,
+        internalDate: true,
+        source: true
+      }, { uid: true });
+
+      if (!message?.source) {
+        continue;
+      }
+
+      const parsed = await simpleParser(message.source);
+      const envelope = message.envelope || {};
+      const flags = Array.from(message.flags || []);
+
+      messages.push({
+        id: String(message.uid || uid),
+        from: formatAddress(envelope.from) || parsed.from?.text || "",
+        to: formatAddress(envelope.to) || parsed.to?.text || "",
+        subject: parsed.subject || envelope.subject || "(No subject)",
+        date: serializeDate(parsed.date || envelope.date || message.internalDate),
+        preview: getTextPreview(parsed.text || parsed.html || ""),
+        text: parsed.text || "",
+        html: parsed.html || "",
+        attachments: [],
+        hasRemoteAttachments: Boolean(parsed.attachments?.length),
+        isPrefetched: true,
+        folder,
+        unread: !flags.includes("\\Seen")
+      });
+    }
+
+    return { messages };
+  });
 });
 
 exports.registerEmailPushToken = onCall(PUSH_FUNCTION_OPTIONS, async (request) => {
@@ -953,14 +994,22 @@ exports.registerEmailPushToken = onCall(PUSH_FUNCTION_OPTIONS, async (request) =
 
 exports.checkInboxForPushNotifications = onSchedule(EMAIL_NOTIFICATION_SCHEDULE_OPTIONS, async () => {
   console.log("checkInboxForPushNotifications running", { deployMarker: DEPLOY_MARKER });
-  logMailboxCredentialDiagnostic("checkInboxForPushNotifications");
 
   const stateRef = db.collection(EMAIL_NOTIFICATION_STATE_COLLECTION).doc(EMAIL_NOTIFICATION_STATE_DOC);
-  const stateSnapshot = await stateRef.get();
-  const lastSeenUid = Number.parseInt(String(stateSnapshot.data()?.lastSeenUid || "0"), 10) || 0;
+  const cacheRef = db.collection(EMAIL_CACHE_COLLECTION).doc("inbox");
   const mailboxConfig = getMailboxConfig();
-  const { messages } = await fetchMailboxMessages("inbox", 10, {
-    hosts: [mailboxConfig.imapHost]
+  const [stateSnapshot, { messages }] = await Promise.all([
+    stateRef.get(),
+    fetchMailboxMessages("inbox", EMAIL_INBOX_SNAPSHOT_LIMIT, {
+      hosts: [mailboxConfig.imapHost]
+    })
+  ]);
+  const lastSeenUid = Number.parseInt(String(stateSnapshot.data()?.lastSeenUid || "0"), 10) || 0;
+
+  await cacheRef.set({
+    folder: "inbox",
+    messages,
+    updatedAt: FieldValue.serverTimestamp()
   });
 
   console.log("Inbox push check fetched messages", {
@@ -1134,6 +1183,8 @@ exports.getEmailMessage = onCall(EMAIL_FUNCTION_OPTIONS, async (request) => {
         text: parsed.text || "",
         html: parsed.html || "",
         attachments: normalizeParsedAttachments(parsed.attachments || []),
+        hasRemoteAttachments: false,
+        isPrefetched: false,
         folder,
         unread: !flags.includes("\\Seen")
       }

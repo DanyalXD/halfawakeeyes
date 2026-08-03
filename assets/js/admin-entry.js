@@ -124,7 +124,7 @@ async function bootAdmin() {
     return;
   }
 
-  const assetVersion = isLocalAdminHost() ? String(Date.now()) : "20260725-push-reconnect";
+  const assetVersion = isLocalAdminHost() ? String(Date.now()) : "20260803-email-prefetch";
 
   if (!window.HAEAdminComponents?.load) {
     showComponentLoadError(new Error("Admin component loader is unavailable."));

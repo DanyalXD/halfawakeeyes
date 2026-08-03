@@ -120,17 +120,19 @@
     const ADMIN_LOG_CACHE_META_STORE = "analyticsMeta";
     const ADMIN_EMAIL_CACHE_STORE = "emailFolders";
     const ADMIN_EMAIL_MESSAGE_CACHE_STORE = "emailMessages";
+    const ADMIN_EMAIL_SERVER_CACHE_COLLECTION = "admin-email-cache";
     const EMAIL_PUSH_PROMPT_DISMISSED_KEY = "hae-email-push-prompt-dismissed";
     const MAX_EMAIL_ATTACHMENT_COUNT = 5;
     const MAX_EMAIL_ATTACHMENT_BYTES = 6 * 1024 * 1024;
     const EMAIL_FOLDER_PAGE_SIZE = 25;
-    const EMAIL_FOLDER_CACHE_TTL_MS = 30 * 60 * 1000;
+    const EMAIL_FOLDER_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
     const EMAIL_MESSAGE_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
     const EMAIL_MESSAGE_ATTACHMENT_CACHE_BYTES = 2 * 1024 * 1024;
     const PUBLIC_MIRROR_DOC_ID = "public-index";
     const PUBLIC_MIRROR_KIND = "public-mirror";
     let adminLogCachePromise = null;
     let emailSearchTimer = null;
+    const prefetchedEmailIds = new Set();
 
     const elements = {
       dashboard: document.getElementById("dashboard"),
@@ -3301,6 +3303,8 @@
             content: String(attachment?.content || "")
           }))
           : [],
+        hasRemoteAttachments: Boolean(message.hasRemoteAttachments),
+        isPrefetched: Boolean(message.isPrefetched),
         unread: Boolean(message.unread || message.isUnread),
         raw: message
       };
@@ -3315,6 +3319,8 @@
         subject: String(message.subject || "(No subject)"),
         date: message.date || "",
         preview: String(message.preview || ""),
+        hasRemoteAttachments: Boolean(message.hasRemoteAttachments),
+        isPrefetched: Boolean(message.isPrefetched),
         unread: Boolean(message.unread)
       };
     }
@@ -3334,6 +3340,8 @@
         ...serializeEmailSummaryForCache(message),
         text: String(message.text || ""),
         html: String(message.html || ""),
+        hasRemoteAttachments: Boolean(message.hasRemoteAttachments),
+        isPrefetched: Boolean(message.isPrefetched),
         attachments: attachments.map((attachment, index) => ({
           id: String(attachment?.id || `attachment-${index + 1}`),
           filename: String(attachment?.filename || `attachment-${index + 1}`),
@@ -3374,6 +3382,19 @@
           };
         });
       } catch (error) {
+        return [];
+      }
+    }
+
+    async function readServerCachedEmailFolder(folder = state.activeEmailFolder) {
+      try {
+        const snapshot = await getDoc(doc(db, ADMIN_EMAIL_SERVER_CACHE_COLLECTION, String(folder || "inbox")));
+        const messages = snapshot.data()?.messages;
+        return Array.isArray(messages)
+          ? messages.map(normalizeEmailMessage).filter((message) => message.id)
+          : [];
+      } catch (error) {
+        console.warn("Could not read the server mailbox snapshot.", error);
         return [];
       }
     }
@@ -3506,6 +3527,90 @@
 
     function getEmailMessageById(messageId) {
       return state.emailMessages.find((message) => message.id === messageId) || null;
+    }
+
+    async function hydratePrefetchedEmailMessage(summary) {
+      const requestedFolder = summary.folder || state.activeEmailFolder;
+      try {
+        const data = await callAdminEmailFunction("getEmailMessage", {
+          id: summary.id,
+          folder: requestedFolder
+        });
+        const fullMessage = normalizeEmailMessage({
+          ...summary.raw,
+          ...summary,
+          ...(data.message || data),
+          hasRemoteAttachments: false,
+          isPrefetched: false,
+          unread: false
+        });
+        if (state.activeEmailFolder === requestedFolder) {
+          state.emailMessages = state.emailMessages.map((message) => message.id === summary.id ? fullMessage : message);
+          if (state.activeEmailMessage?.id === summary.id) {
+            state.activeEmailMessage = fullMessage;
+            renderEmailReader();
+          }
+          renderEmailInbox();
+        }
+        await writeCachedEmailMessage(fullMessage);
+      } catch (error) {
+        console.warn("Could not finish loading the prefetched email.", error);
+      }
+    }
+
+    async function prefetchRecentEmailMessages(messages = state.emailMessages) {
+      const candidates = messages
+        .filter((message) => {
+          const cacheId = getEmailMessageCacheId(message.folder || state.activeEmailFolder, message.id);
+          return message?.id && !message.text && !message.html && !prefetchedEmailIds.has(cacheId);
+        })
+        .slice(0, 3);
+
+      if (!candidates.length) {
+        return;
+      }
+
+      const uncached = [];
+      for (const candidate of candidates) {
+        const cacheId = getEmailMessageCacheId(candidate.folder || state.activeEmailFolder, candidate.id);
+        prefetchedEmailIds.add(cacheId);
+        const cached = await readCachedEmailMessage(candidate.folder || state.activeEmailFolder, candidate.id);
+        if (cached?.text || cached?.html) {
+          const merged = normalizeEmailMessage({ ...candidate.raw, ...candidate, ...cached });
+          state.emailMessages = state.emailMessages.map((message) => message.id === candidate.id ? merged : message);
+        } else {
+          uncached.push(candidate);
+        }
+      }
+
+      if (!uncached.length) {
+        return;
+      }
+
+      try {
+        const folder = uncached[0].folder || state.activeEmailFolder;
+        const data = await callAdminEmailFunction("prefetchEmailMessages", {
+          folder,
+          ids: uncached.map((message) => message.id)
+        });
+        const prefetched = Array.isArray(data.messages)
+          ? data.messages.map(normalizeEmailMessage).filter((message) => message.id)
+          : [];
+
+        prefetched.forEach((message) => {
+          const existing = state.activeEmailFolder === folder ? getEmailMessageById(message.id) : null;
+          const merged = normalizeEmailMessage({ ...existing?.raw, ...existing, ...message });
+          if (state.activeEmailFolder === folder) {
+            state.emailMessages = state.emailMessages.map((entry) => entry.id === message.id ? merged : entry);
+          }
+          writeCachedEmailMessage(merged);
+        });
+      } catch (error) {
+        uncached.forEach((message) => {
+          prefetchedEmailIds.delete(getEmailMessageCacheId(message.folder || state.activeEmailFolder, message.id));
+        });
+        console.warn("Could not prefetch recent email messages.", error);
+      }
     }
 
     function getEmailFolderLabel(folder = state.activeEmailFolder) {
@@ -4516,9 +4621,19 @@
         return;
       }
 
+      if (state.isLoadingEmail) {
+        return;
+      }
+
       const requestedFolder = state.activeEmailFolder;
       const requestedSearch = state.emailSearchTerm.trim();
-      const cachedMessages = requestedSearch ? [] : await readCachedEmailFolder(requestedFolder);
+      let cachedMessages = requestedSearch ? [] : await readCachedEmailFolder(requestedFolder);
+      if (!cachedMessages.length && !requestedSearch && requestedFolder === "inbox") {
+        cachedMessages = await readServerCachedEmailFolder(requestedFolder);
+        if (cachedMessages.length) {
+          await writeCachedEmailFolder(requestedFolder, cachedMessages);
+        }
+      }
       const hasCachedMessages = cachedMessages.length > 0;
       if (hasCachedMessages) {
         state.emailMessages = cachedMessages;
@@ -4532,6 +4647,7 @@
           elements.collectionNote.textContent = `${getEmailFolderLabel(requestedFolder)} ready. Refreshing...`;
           updateHeroMeta("Refreshing...");
         }
+        prefetchRecentEmailMessages(cachedMessages);
       }
 
       state.isLoadingEmail = true;
@@ -4576,6 +4692,7 @@
         }
         if (!requestedSearch) {
           await writeCachedEmailFolder(requestedFolder, state.emailMessages);
+          prefetchRecentEmailMessages(state.emailMessages);
         }
         if (state.activeEmailMessage && !getEmailMessageById(state.activeEmailMessage.id)) {
           state.activeEmailMessage = null;
@@ -4682,22 +4799,31 @@
       }
 
       if (summary.text || summary.html) {
-        state.activeEmailMessage = summary;
+        const shouldHydrate = summary.isPrefetched;
+        const openedMessage = normalizeEmailMessage({ ...summary.raw, ...summary, unread: false });
+        state.emailMessages = state.emailMessages.map((message) => message.id === messageId ? openedMessage : message);
+        state.activeEmailMessage = openedMessage;
         renderEmailInbox();
         renderEmailReader();
         document.body.classList.add("email-reader-mobile-open");
-        writeCachedEmailMessage(summary);
+        writeCachedEmailMessage(openedMessage);
+        if (shouldHydrate) {
+          hydratePrefetchedEmailMessage(openedMessage);
+        }
         return;
       }
 
       const cachedMessage = await readCachedEmailMessage(summary.folder || state.activeEmailFolder, messageId);
       if (cachedMessage?.text || cachedMessage?.html) {
-        const mergedCachedMessage = normalizeEmailMessage({ ...summary.raw, ...summary, ...cachedMessage });
+        const mergedCachedMessage = normalizeEmailMessage({ ...summary.raw, ...summary, ...cachedMessage, unread: false });
         state.emailMessages = state.emailMessages.map((message) => message.id === messageId ? mergedCachedMessage : message);
         state.activeEmailMessage = mergedCachedMessage;
         renderEmailInbox();
         renderEmailReader();
         document.body.classList.add("email-reader-mobile-open");
+        if (mergedCachedMessage.isPrefetched) {
+          hydratePrefetchedEmailMessage(mergedCachedMessage);
+        }
         return;
       }
 
@@ -4714,7 +4840,7 @@
           id: messageId,
           folder: summary.folder || state.activeEmailFolder
         });
-        const fullMessage = normalizeEmailMessage({ ...summary.raw, ...summary, ...(data.message || data) });
+        const fullMessage = normalizeEmailMessage({ ...summary.raw, ...summary, ...(data.message || data), unread: false });
         state.isLoadingEmailMessage = false;
         state.emailMessages = state.emailMessages.map((message) => message.id === messageId ? fullMessage : message);
         state.activeEmailMessage = fullMessage;
@@ -6881,6 +7007,14 @@
 
       if (shouldLoadData) {
         loadActivePageData({ forceSync: state.activePage === "analytics" });
+      }
+
+      if (state.activePage !== "email" && !state.emailMessages.length) {
+        window.setTimeout(() => {
+          if (!state.isLoadingEmail && !state.emailMessages.length) {
+            loadEmailInbox();
+          }
+        }, 1200);
       }
     }
 
