@@ -1,9 +1,10 @@
 :root {
             --bg: var(--ink);
-            --panel: rgba(12, 12, 12, 0.72);
+            --panel: rgba(10, 12, 14, 0.76);
             --panel-soft: rgba(255, 255, 255, 0.04);
             --accent-soft: #8f948d;
-            --shadow: 0 28px 60px rgba(0, 0, 0, 0.34);
+            --brand-glow: #4d88b4;
+            --shadow: 0 32px 90px rgba(0, 0, 0, 0.5);
         }
 
         * {
@@ -20,8 +21,8 @@
             font-family: var(--font-body);
             color: var(--text);
             background:
-                linear-gradient(180deg, rgba(5, 5, 5, 0.42) 0%, rgba(5, 5, 5, 0.78) 100%),
-                linear-gradient(90deg, rgba(6, 6, 6, 0.88) 0%, rgba(6, 6, 6, 0.4) 45%, rgba(6, 6, 6, 0.78) 100%),
+                linear-gradient(180deg, rgba(3, 5, 7, 0.3) 0%, rgba(3, 5, 7, 0.9) 100%),
+                linear-gradient(90deg, rgba(4, 6, 8, 0.88) 0%, rgba(4, 6, 8, 0.38) 48%, rgba(4, 6, 8, 0.84) 100%),
                 url('../images/links-background.jpg') center center / cover no-repeat fixed;
         }
 
@@ -30,9 +31,9 @@
             position: fixed;
             inset: 0;
             background:
-                radial-gradient(circle at 18% 16%, rgba(193, 132, 96, 0.16), transparent 22%),
-                radial-gradient(circle at 78% 12%, rgba(73, 102, 146, 0.18), transparent 24%),
-                rgba(0, 0, 0, 0.18);
+                radial-gradient(circle at 16% 10%, rgba(61, 120, 164, 0.28), transparent 28%),
+                radial-gradient(circle at 84% 28%, rgba(193, 132, 96, 0.15), transparent 26%),
+                rgba(0, 0, 0, 0.12);
             pointer-events: none;
         }
 
@@ -45,38 +46,49 @@
             position: relative;
             z-index: 1;
             width: min(100%, calc(100% - 1.25rem));
-            max-width: 620px;
+            max-width: 680px;
             margin: 0 auto;
             min-height: 100vh;
             display: grid;
             align-items: center;
-            padding: 2rem 0;
+            padding: 3rem 0;
         }
 
         .profile-shell {
-            border: 1px solid rgba(255, 255, 255, 0.11);
-            border-radius: 34px;
-            background: rgba(4, 4, 4, 0.86);
-            backdrop-filter: blur(16px);
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.13);
+            border-radius: 32px;
+            background: linear-gradient(155deg, rgba(15, 18, 21, 0.88), rgba(5, 7, 9, 0.94));
+            backdrop-filter: blur(26px) saturate(120%);
             box-shadow: var(--shadow);
-            padding: 1.55rem 1.25rem 1.2rem;
+            padding: 2rem 1.6rem 1.35rem;
+        }
+
+        .profile-shell::before {
+            content: "";
+            position: absolute;
+            inset: 0 0 auto;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.62), transparent);
+            pointer-events: none;
         }
 
         .profile-top {
             display: grid;
             justify-items: center;
             text-align: center;
-            gap: 0.85rem;
-            padding: 0.15rem 0 1.1rem;
+            gap: 1.15rem;
+            padding: 0.15rem 0 1.4rem;
         }
 
         .avatar {
-            width: 96px;
-            height: 96px;
+            width: 92px;
+            height: 92px;
             border-radius: 999px;
             overflow: hidden;
-            border: 1px solid rgba(255, 255, 255, 0.16);
-            box-shadow: 0 18px 34px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            box-shadow: 0 16px 36px rgba(0, 0, 0, 0.38);
         }
 
         .avatar img {
@@ -91,16 +103,24 @@
             font-family: var(--font-display);
             text-transform: uppercase;
             color: var(--accent);
-            font-size: clamp(2.4rem, 8vw, 3.8rem);
+            font-size: clamp(2.4rem, 7vw, 3.55rem);
             font-weight: 400;
             line-height: 0.94;
             letter-spacing: 0.02em;
         }
 
         .subtitle {
-            margin: 0;
-            color: #e2ddd5;
-            font-size: 1rem;
+            margin: 0.55rem 0 0;
+            color: rgba(231, 228, 220, 0.58);
+            font-size: 0.76rem;
+            font-weight: 500;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+
+        .profile-copy {
+            display: grid;
+            justify-items: center;
         }
 
         .bio {
@@ -123,19 +143,20 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            width: 48px;
-            height: 48px;
+            width: 46px;
+            height: 46px;
             border-radius: 999px;
             border: 1px solid rgba(255, 255, 255, 0.12);
-            background: rgba(255, 255, 255, 0.025);
-            color: var(--text);
-            transition: transform 0.16s ease, border-color 0.16s ease, background 0.16s ease;
+            background: rgba(255, 255, 255, 0.045);
+            color: rgba(255, 255, 255, 0.88);
+            transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
         }
 
         .social-link:hover {
-            transform: translateY(-1px);
-            border-color: var(--line-strong);
-            background: rgba(255, 255, 255, 0.08);
+            transform: translateY(-3px);
+            border-color: rgba(255, 255, 255, 0.32);
+            background: rgba(255, 255, 255, 0.11);
+            box-shadow: 0 10px 24px rgba(0, 0, 0, 0.24);
         }
 
         .social-link svg {
@@ -147,8 +168,8 @@
 
         .link-stack {
             display: grid;
-            gap: 1.2rem;
-            margin-top: 1.25rem;
+            gap: 1.5rem;
+            margin-top: 1.1rem;
         }
 
         .signup-shell {
@@ -268,13 +289,14 @@
 
         .section-heading {
             margin: 0;
-            text-align: center;
+            text-align: left;
             font-family: var(--font-label);
-            font-size: 1.28rem;
-            font-weight: 400;
-            letter-spacing: 0.13em;
+            font-size: 0.76rem;
+            font-weight: 500;
+            letter-spacing: 0.18em;
             text-transform: uppercase;
-            color: var(--text);
+            color: rgba(255, 255, 255, 0.52);
+            padding-left: 0.25rem;
         }
 
         .section-links {
@@ -303,21 +325,24 @@
             align-items: center;
             min-height: 86px;
             padding: 0.8rem 0.95rem;
-            border-radius: 22px;
-            border: 1px solid rgba(255, 255, 255, 0.18);
-            background: rgba(255, 255, 255, 0.035);
-            transition: transform 0.16s ease, border-color 0.16s ease, background 0.16s ease;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.11);
+            background: linear-gradient(110deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.025));
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
+            transition: transform 0.22s ease, border-color 0.22s ease, background 0.22s ease, box-shadow 0.22s ease;
         }
 
         .link-card:hover {
-            transform: translateY(-1px);
-            border-color: rgba(255, 255, 255, 0.34);
-            background: rgba(255, 255, 255, 0.06);
+            transform: translateY(-3px);
+            border-color: rgba(255, 255, 255, 0.27);
+            background: linear-gradient(110deg, rgba(255, 255, 255, 0.115), rgba(255, 255, 255, 0.045));
+            box-shadow: 0 16px 34px rgba(0, 0, 0, 0.24), inset 0 1px 0 rgba(255, 255, 255, 0.06);
         }
 
         .link-card.primary {
-            background: linear-gradient(135deg, rgba(225, 210, 190, 0.1), rgba(255, 255, 255, 0.04));
-            border-color: rgba(225, 210, 190, 0.26);
+            background: linear-gradient(125deg, rgba(61, 120, 164, 0.3), rgba(255, 255, 255, 0.055));
+            border-color: rgba(105, 163, 207, 0.38);
+            box-shadow: 0 14px 34px rgba(18, 58, 88, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.08);
         }
 
         .link-card.compact {
@@ -415,11 +440,19 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            width: 18px;
-            height: 18px;
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.055);
             color: rgba(255, 255, 255, 0.72);
-            font-size: 1.05rem;
+            font-size: 0.9rem;
             flex: 0 0 auto;
+            transition: transform 0.2s ease, background 0.2s ease;
+        }
+
+        .link-card:hover .link-arrow {
+            transform: translate(2px, -2px);
+            background: rgba(255, 255, 255, 0.12);
         }
 
         .link-card.compact .link-arrow {
@@ -431,7 +464,9 @@
             justify-content: center;
             gap: 0.9rem;
             flex-wrap: wrap;
-            margin-top: 1rem;
+            margin-top: 1.3rem;
+            padding-top: 1rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.07);
             color: var(--muted);
             font-size: 0.72rem;
         }
@@ -455,8 +490,8 @@
             }
 
             .profile-shell {
-                border-radius: 26px;
-                padding: 1.15rem 0.95rem 0.95rem;
+                border-radius: 24px;
+                padding: 1.35rem 0.9rem 1rem;
             }
 
             .avatar {
@@ -489,7 +524,7 @@
             }
 
             .section-heading {
-                font-size: 1.12rem;
+                font-size: 0.7rem;
             }
 
             .link-card {
@@ -529,8 +564,8 @@
             }
 
             .link-arrow {
-                width: 16px;
-                height: 16px;
+                width: 30px;
+                height: 30px;
             }
 
             .signup-copy {
