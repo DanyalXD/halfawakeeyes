@@ -1,5 +1,5 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-        import { doc, getFirestore, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import { doc, getDoc, getFirestore, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
         import {
             createEmailSignupService,
             createSiteAnalytics,
@@ -32,6 +32,7 @@
 
         const AUTO_SHOW_SORT_BASE = 105;
         const PUBLIC_GIG_TICKET_LINK_LIMIT = 24;
+        const PUBLIC_LINKS_CACHE_KEY = "hae-public-links-v1";
 
         const { logEvent, logPageViewOnce } = createSiteAnalytics({
             db,
@@ -497,40 +498,77 @@
             });
         };
 
-        const loadManagedLinks = async () => {
+        const renderPublicSnapshot = (payload) => {
+            const links = Array.isArray(payload?.links)
+                ? payload.links.map((link, index) => normalizeManagedLink(link, (index + 1) * 10))
+                : [];
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const gigTicketLinks = (Array.isArray(payload?.gigs) ? payload.gigs : [])
+                .map((gig, index) => normalizeGigEntry(gig, String(gig?.id || `gig-${index + 1}`)))
+                .filter((gig) => !isGigHiddenFromLinks(gig) && hasGigTicketLink(gig))
+                .map((gig) => ({ gig, dateOnly: getGigDateOnly(gig.date) }))
+                .filter(({ dateOnly }) => dateOnly && dateOnly >= today)
+                .sort((a, b) => a.dateOnly.getTime() - b.dateOnly.getTime())
+                .slice(0, PUBLIC_GIG_TICKET_LINK_LIMIT)
+                .map(({ gig }, index) => buildGigTicketLink(gig, AUTO_SHOW_SORT_BASE + index));
+
+            if (!links.length) {
+                return false;
+            }
+
+            renderManagedLinks(links, gigTicketLinks);
+            return true;
+        };
+
+        const readCachedPublicSnapshot = () => {
             try {
-                const response = await fetch("https://half-awake-eyes.web.app/api/public-links", {
+                return JSON.parse(localStorage.getItem(PUBLIC_LINKS_CACHE_KEY) || "null");
+            } catch (error) {
+                return null;
+            }
+        };
+
+        const cachePublicSnapshot = (payload) => {
+            try {
+                localStorage.setItem(PUBLIC_LINKS_CACHE_KEY, JSON.stringify(payload));
+            } catch (error) {
+                // The fresh snapshot is still usable when browser storage is unavailable.
+            }
+        };
+
+        const fetchPublicSnapshot = async () => {
+            try {
+                const [linksSnapshot, gigsSnapshot] = await Promise.all([
+                    getDoc(doc(db, "links", "public-index")),
+                    getDoc(doc(db, "gigs", "public-index"))
+                ]);
+                return {
+                    links: linksSnapshot.data()?.items || [],
+                    gigs: gigsSnapshot.data()?.items || []
+                };
+            } catch (firestoreError) {
+                console.warn("Direct public snapshot read failed; using the compatibility endpoint.", firestoreError);
+                const response = await fetch("/api/public-links", {
                     headers: { Accept: "application/json" }
                 });
                 if (!response.ok) {
                     throw new Error(`Public links request failed (${response.status}).`);
                 }
+                return response.json();
+            }
+        };
 
-                const payload = await response.json();
-                const links = Array.isArray(payload?.links)
-                    ? payload.links.map((link, index) => normalizeManagedLink(link, (index + 1) * 10))
-                    : [];
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
-                const gigTicketLinks = (Array.isArray(payload?.gigs) ? payload.gigs : [])
-                    .map((gig, index) => normalizeGigEntry(gig, String(gig?.id || `gig-${index + 1}`)))
-                    .filter((gig) => !isGigHiddenFromLinks(gig) && hasGigTicketLink(gig))
-                    .map((gig) => ({ gig, dateOnly: getGigDateOnly(gig.date) }))
-                    .filter(({ dateOnly }) => dateOnly && dateOnly >= today)
-                    .sort((a, b) => a.dateOnly.getTime() - b.dateOnly.getTime())
-                    .slice(0, PUBLIC_GIG_TICKET_LINK_LIMIT)
-                    .map(({ gig }, index) => buildGigTicketLink(gig, AUTO_SHOW_SORT_BASE + index));
+        const loadManagedLinks = async () => {
+            renderPublicSnapshot(readCachedPublicSnapshot());
 
-                if (links.length) {
-                    renderManagedLinks(links, gigTicketLinks);
+            try {
+                const payload = await fetchPublicSnapshot();
+                if (renderPublicSnapshot(payload)) {
+                    cachePublicSnapshot(payload);
                 }
             } catch (error) {
-                console.warn("Using the links already rendered in the page.", error);
-            } finally {
-                requestAnimationFrame(() => {
-                    document.documentElement.classList.remove("links-loading");
-                    document.documentElement.classList.add("links-ready");
-                });
+                console.warn("Using cached links while the latest snapshot is unavailable.", error);
             }
         };
 
