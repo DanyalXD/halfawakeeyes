@@ -1,0 +1,44 @@
+/* Campaign workspace: an ordered editor beside a fan-facing preview. */
+.admin-refresh #campaigns-page .admin-split-workspace { grid-template-columns:minmax(340px,1.1fr) minmax(300px,1fr); }
+.admin-refresh #campaign-form { display:grid; gap:26px; }
+.admin-refresh .campaign-editor-section { margin:0; padding:0; border:0; min-width:0; }
+.admin-refresh .campaign-editor-section legend { float:none; width:auto; margin:0 0 8px; font-size:14px; font-weight:600; color:#eee; }
+.admin-refresh .campaign-editor-section legend span { color:#777; font-size:11px; margin-right:8px; font-variant-numeric:tabular-nums; }
+.admin-refresh .campaign-editor-section > p { margin:0 0 18px; color:#929292; font-size:12px; }
+.admin-refresh .campaign-editor-section + .campaign-editor-section { border-top:1px solid #292929; padding-top:24px; }
+.admin-refresh #campaign-form .campaign-publish-toggle { display:flex; align-items:center; gap:12px; padding:16px; border:1px solid #383838; border-radius:8px; background:#181818; color:#eee; margin:0; }
+.admin-refresh .campaign-publish-toggle input { width:18px; height:18px; accent-color:#eee; flex-shrink:0; }
+.admin-refresh .campaign-publish-toggle small { display:block; color:#999; font-size:12px; margin-top:4px; }
+.admin-refresh .campaign-save-bar { display:flex; flex-wrap:wrap; gap:12px; padding:14px 0; border-top:1px solid #303030; background:#101010; position:sticky; bottom:0; z-index:2; }
+.admin-refresh .campaign-save-bar #save-campaign { flex:1; }
+.admin-refresh .campaign-save-bar #campaign-delete { background:transparent; border-color:transparent; font-size:12px; }
+.admin-refresh #campaigns-page .admin-results-panel > .section-title { flex-wrap:wrap; gap:8px; }
+.admin-refresh #campaigns-page .manager-toolbar { display:grid; }
+.admin-refresh #campaigns-page .manager-toolbar-actions { flex-wrap:wrap; }
+.admin-refresh #campaign-preview { border:1px solid #353535; border-radius:12px; overflow:hidden; background:#080808; }
+.admin-refresh .campaign-preview-card { display:flex; flex-direction:column; gap:16px; padding:26px; background:#080808; border:0; box-shadow:none; border-radius:0; }
+.admin-refresh .campaign-preview-artwork { width:100%; max-width:320px; aspect-ratio:1; object-fit:cover; align-self:center; border-radius:6px; margin:4px 0 8px; }
+.admin-refresh .campaign-preview-top { width:100%; margin:0; }
+.admin-refresh .campaign-preview-kicker { font-size:10px; letter-spacing:.12em; color:#aaa; }
+.admin-refresh .campaign-preview-kicker::before { display:none; }
+.admin-refresh .campaign-preview-status.is-draft { background:#202020; border-color:#444; color:#ccc; }
+.admin-refresh .campaign-preview-kicker { background:transparent; border:0; padding:0; box-shadow:none; }
+.admin-refresh .campaign-preview-title { font-size:30px; line-height:1.1; margin:0; overflow-wrap:anywhere; }
+.admin-refresh .campaign-preview-subtitle { margin:0; color:#ddd; font-size:14px; }
+.admin-refresh .campaign-preview-description { color:#aaa; font-size:13px; line-height:1.7; white-space:pre-line; overflow-wrap:anywhere; }
+.admin-refresh .campaign-preview-meta:empty { display:none; }
+.admin-refresh .campaign-preview-links { display:grid; grid-template-columns:1fr; width:100%; gap:10px; margin:0; }
+.admin-refresh .campaign-preview-link { display:flex; justify-content:space-between; border:1px solid #393939; background:#181818; border-radius:6px; color:#eee; padding:14px 16px; font-size:13px; }
+.admin-refresh .campaign-preview-link::after { content:'↗'; color:#888; }
+.admin-refresh .campaign-preview-link:hover { border-color:#888; background:#222; }
+.admin-refresh .campaign-library-item { padding:16px; border:1px solid #333; border-radius:8px; background:#111; }
+.admin-refresh .campaign-library-item.is-active { border-color:#888; background:#1b1b1b; }
+.admin-refresh .campaign-library-actions { gap:8px; flex-wrap:wrap; }
+.admin-refresh .campaign-library-meta { overflow-wrap:anywhere; }
+.admin-refresh #campaign-open-link[hidden] { display:none; }
+@media(max-width:1100px) { .admin-refresh #campaigns-page .campaign-form-grid { grid-template-columns:1fr; } }
+@media(max-width:900px) {
+  .admin-refresh #campaigns-page .admin-split-workspace { grid-template-columns:minmax(0,1fr); }
+  .admin-refresh .campaign-preview-card { padding:20px; }
+  .admin-refresh .campaign-save-bar { padding-bottom:max(14px,env(safe-area-inset-bottom)); }
+}

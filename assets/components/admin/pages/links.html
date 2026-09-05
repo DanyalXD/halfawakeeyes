@@ -1,8 +1,8 @@
-﻿      <div id="links-page" class="dashboard-page">
+      <div id="links-page" class="dashboard-page">
         <div class="summary-panel">
           <div class="section-title">
             <h3>Links Manager</h3>
-            <span>Manage the `links` collection</span>
+            <span>Public links</span>
           </div>
           <div class="helper-copy">Control the public link-in-bio page, including socials, sections, featured links, ordering, and hidden entries.</div>
         </div>
@@ -11,15 +11,15 @@
           <div class="manager-card">
             <div class="section-title">
               <h3>Add Link</h3>
-              <span>Write to Firestore</span>
+              <span>Add details</span>
             </div>
-            <p class="manager-subcopy">Create either a top social icon or a main section card for the public `links.html` page. If you leave the image blank, the links page will try to use the destination site's icon automatically.</p>
+            <p class="manager-subcopy">Add a social profile or a featured link. Leave the artwork blank to use the destination’s icon.</p>
             <form id="link-form">
               <div class="link-form-grid">
                 <div>
                   <select id="link-group" class="form-select" aria-label="Link group">
-                    <option value="social">Social Row</option>
-                    <option value="main" selected>Main Link Stack</option>
+                    <option value="social">Social profiles</option>
+                    <option value="main" selected>Featured links</option>
                   </select>
                 </div>
                 <div>
@@ -63,15 +63,15 @@
               <span id="link-count">No links loaded</span>
             </div>
             <div class="manager-toolbar">
-              <div class="helper-copy">Edit, hide, drag to reorder, or move links between the `Social` row and the `Main` stack.</div>
+              <div class="helper-copy">Edit, hide or drag links into the order you want.</div>
               <button type="button" id="seed-links" class="btn ghost-button">Import Current Defaults</button>
             </div>
             <div class="link-admin-groups">
               <section class="link-admin-group">
                 <div class="link-admin-group-header">
                   <div>
-                    <h4 class="link-admin-group-title">Social Row</h4>
-                    <p class="link-admin-group-copy">These render as icon buttons at the top of `links.html`.</p>
+                    <h4 class="link-admin-group-title">Social profiles</h4>
+                    <p class="link-admin-group-copy">Social icons at the top of your links page.</p>
                   </div>
                   <span id="social-link-count" class="link-admin-group-meta">No social links</span>
                 </div>
@@ -82,8 +82,8 @@
               <section class="link-admin-group">
                 <div class="link-admin-group-header">
                   <div>
-                    <h4 class="link-admin-group-title">Main Links</h4>
-                    <p class="link-admin-group-copy">These render as the main grouped cards, using sections like `Releases` or `Resources`.</p>
+                    <h4 class="link-admin-group-title">Featured links</h4>
+                    <p class="link-admin-group-copy">Featured destinations, organised into the sections you choose.</p>
                   </div>
                   <span id="main-link-count" class="link-admin-group-meta">No main links</span>
                 </div>

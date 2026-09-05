@@ -1,6 +1,6 @@
 ﻿        <div class="tabs-meta">
           <div class="dashboard-topbar-copy">
-            <div class="dashboard-topbar-kicker">Current View</div>
+            <h1 id="admin-page-title">Overview</h1>
             <div class="collection-note" id="collection-note">Viewing recent events from site-actions.</div>
             <div class="cache-note" id="cache-status">Analytics cache: not loaded yet.</div>
           </div>
@@ -10,7 +10,15 @@
               <span class="mobile-nav-toggle-label">Menu</span>
             </button>
             <button type="button" id="refresh-data" class="btn ghost-button header-action-button">Refresh</button>
-            <button type="button" id="sign-out" class="btn ghost-button header-action-button">Sign Out</button>
+            <details class="admin-account">
+              <summary>Account</summary>
+              <div class="admin-account-menu">
+                <div id="auth-status">Signed out.</div>
+                <div id="hero-collection">Overview</div>
+                <div id="hero-updated">Waiting for login</div>
+                <button type="button" id="sign-out" class="btn ghost-button">Sign out</button>
+              </div>
+            </details>
           </div>
         </div>
 

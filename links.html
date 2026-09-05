@@ -25,7 +25,7 @@
     <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600&family=Source+Sans+3:wght@400;500;600&display=swap" rel="stylesheet">
       <link rel="stylesheet" href="assets/css/theme.css?v=20260725-public-theme" />
-      <link rel="stylesheet" href="assets/css/links.css?v=20260803-refined-links" />
+      <link rel="stylesheet" href="assets/css/links.css?v=20260905-links-polish" />
 </head>
 
 <body>
@@ -44,6 +44,22 @@
 
             <div class="link-stack" id="main-links"></div>
 
+            <section class="signup-shell" aria-labelledby="links-signup-title">
+                <div class="signup-copy">
+                    <h2 class="signup-title" id="links-signup-title">Stay in the loop</h2>
+                    <p class="signup-description" id="links-signup-description">New music, live dates and news from the band.</p>
+                </div>
+                <form class="signup-form" id="email-signup-form">
+                    <label class="signup-label" for="email-signup-input">Email address</label>
+                    <div class="signup-form-row">
+                        <input class="signup-input" id="email-signup-input" type="email" name="email" autocomplete="email" inputmode="email" autocapitalize="none" spellcheck="false" placeholder="you@example.com" aria-describedby="links-signup-description" maxlength="254" required>
+                        <button class="signup-submit" id="email-signup-submit" type="submit" disabled>Join the list</button>
+                    </div>
+                    <p class="signup-status" id="email-signup-status" role="status" aria-live="polite" aria-atomic="true"></p>
+                </form>
+                <noscript><p class="signup-description">Enable JavaScript to join the mailing list.</p></noscript>
+            </section>
+
             <div class="footer">
                 <span>&copy; <span data-current-year></span> Half Awake Eyes</span>
                 <a href="privacy.html" data-link-label="Privacy policy">Privacy Policy</a>
@@ -52,7 +68,7 @@
     </main>
 
   <script src="assets/js/current-year.js"></script>
-  <script type="module" src="assets/js/links.js?v=20260803-instant-public-snapshot"></script>
+  <script type="module" src="assets/js/links.js?v=20260905-links-polish"></script>
 </body>
 
 </html>

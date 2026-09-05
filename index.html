@@ -28,21 +28,22 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600&family=Source+Sans+3:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/css/theme.css?v=20260725-public-theme">
-  <link rel="stylesheet" href="assets/css/site.css?v=20260727-promoter-cta">
+  <link rel="stylesheet" href="assets/css/site.css?v=20260905-home">
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
     "@graph": [
       {"@type":"WebSite","@id":"https://halfawakeeyes.co.uk/#website","url":"https://halfawakeeyes.co.uk/","name":"Half Awake Eyes","description":"Official website of Glasgow alternative metal band Half Awake Eyes","publisher":{"@id":"https://halfawakeeyes.co.uk/#band"},"inLanguage":"en-GB"},
-      {"@type":"MusicGroup","@id":"https://halfawakeeyes.co.uk/#band","name":"Half Awake Eyes","url":"https://halfawakeeyes.co.uk/","description":"Alternative metal band from Glasgow, Scotland.","image":"https://halfawakeeyes.co.uk/assets/images/HalfAwakeEyes-annicmrn-07798.jpg","logo":"https://halfawakeeyes.co.uk/assets/images/logo.jpg","genre":["Alternative Metal","Metal"],"foundingLocation":{"@type":"Place","name":"Glasgow, Scotland","address":{"@type":"PostalAddress","addressLocality":"Glasgow","addressRegion":"Scotland","addressCountry":"GB"}},"sameAs":["https://instagram.com/halfawakeeyes","https://www.facebook.com/halfawakeeyes"],"album":{"@type":"MusicAlbum","@id":"https://open.spotify.com/album/1McajSMOYTvWAYRFi19CG2","name":"Half Awake Eyes","byArtist":{"@id":"https://halfawakeeyes.co.uk/#band"},"url":"https://open.spotify.com/album/1McajSMOYTvWAYRFi19CG2"}}
+      {"@type":"MusicGroup","@id":"https://halfawakeeyes.co.uk/#band","name":"Half Awake Eyes","url":"https://halfawakeeyes.co.uk/","description":"Glasgow alternative metal band blending crushing riffs, intricate rhythms, atmospheric tension and emotive vocals.","image":"https://halfawakeeyes.co.uk/assets/images/HalfAwakeEyes-annicmrn-07798.jpg","logo":"https://halfawakeeyes.co.uk/assets/images/logo.jpg","genre":["Alternative Metal","Metal"],"foundingDate":"2024","foundingLocation":{"@type":"Place","name":"Glasgow, Scotland","address":{"@type":"PostalAddress","addressLocality":"Glasgow","addressRegion":"Scotland","addressCountry":"GB"}},"member":[{"@type":"Person","name":"Christopher Winstone","roleName":"Vocals"},{"@type":"Person","name":"Danyal Butt","roleName":"Guitar"},{"@type":"Person","name":"Iain McCreath","roleName":"Drums"},{"@type":"Person","name":"Byron Hope Grant","roleName":"Bass and backing vocals"}],"sameAs":["https://instagram.com/halfawakeeyes","https://www.facebook.com/halfawakeeyes"],"album":{"@type":"MusicAlbum","@id":"https://open.spotify.com/album/1McajSMOYTvWAYRFi19CG2","name":"Half Awake Eyes","datePublished":"2026-02-11","albumProductionType":"https://schema.org/EPRelease","byArtist":{"@id":"https://halfawakeeyes.co.uk/#band"},"url":"https://open.spotify.com/album/1McajSMOYTvWAYRFi19CG2"}}
     ]
   }
   </script>
 </head>
 <body>
+  <a class="skip-link" href="#main">Skip to content</a>
   <header class="site-header" id="top">
     <a class="wordmark" href="#top">Half Awake Eyes</a>
-    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav"><span></span><span></span></button>
+    <button class="nav-toggle" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="site-nav"><span></span><span></span></button>
     <nav id="site-nav" aria-label="Main navigation">
       <a href="#music">Music</a>
       <a href="tickets/">Tickets</a>
@@ -51,7 +52,7 @@
     </nav>
   </header>
 
-  <main>
+  <main id="main">
     <section class="hero" aria-labelledby="hero-title">
       <picture class="hero-image">
         <source type="image/webp" srcset="assets/images/hero-640.webp 640w, assets/images/hero-1280.webp 1280w, assets/images/hero-1920.webp 1920w" sizes="100vw">
@@ -59,32 +60,39 @@
       </picture>
       <div class="hero-shade"></div>
       <div class="hero-copy">
-        <p class="eyebrow">Glasgow, Scotland</p>
+        <p class="eyebrow">Alternative metal · Glasgow, Scotland</p>
         <h1 id="hero-title"><span>Half</span><span>Awake</span><span>Eyes</span></h1>
         <div class="hero-actions">
           <a class="button button-solid" href="#music">Listen now</a>
           <a class="button" href="tickets/">Live dates</a>
-          <a class="button promoter-button" href="epk.html">View EPK →</a>
         </div>
       </div>
-      <a class="scroll-cue" href="#music">Debut EP out now <span>↓</span></a>
+      <a class="scroll-cue" href="#music">Explore the music <span>↓</span></a>
     </section>
 
-    <section class="music-section" id="music">
+    <section class="next-show" aria-labelledby="next-show-title">
+      <p class="eyebrow" id="next-show-title">Next show</p>
+      <div id="next-show-details" aria-live="polite"><p>Find your next night with Half Awake Eyes.</p></div>
+      <a class="button" id="next-show-link" href="tickets/">View live dates</a>
+    </section>
+
+    <section class="music-section" id="music" aria-labelledby="music-title">
       <div class="music-content">
-        <h2>Music</h2>
+        <div class="release-feature">
+          <img src="assets/images/ep-cover-800.webp" width="800" height="800" alt="Half Awake Eyes self-titled EP artwork" loading="lazy" decoding="async">
+          <div class="release-copy">
+            <p class="eyebrow">The debut EP · Out now</p>
+            <h2 id="music-title">Half Awake Eyes</h2>
+            <p>Our first six tracks, all in one place. Play the EP below or listen wherever you usually find us.</p>
+            <p class="first-listen">First listen? Try <strong>The Taste of Death</strong>.</p>
+            <div class="streaming-links" aria-label="Listen to Half Awake Eyes">
+              <a href="https://open.spotify.com/album/1McajSMOYTvWAYRFi19CG2" target="_blank" rel="noopener noreferrer">Spotify ↗</a>
+              <a href="https://halfawakeeyes.bandcamp.com/" target="_blank" rel="noopener noreferrer">Bandcamp ↗</a>
+              <a href="https://www.youtube.com/@halfawakeeyes" target="_blank" rel="noopener noreferrer">YouTube ↗</a>
+            </div>
+          </div>
+        </div>
         <iframe title="Half Awake Eyes debut EP on Spotify" src="https://open.spotify.com/embed/album/1McajSMOYTvWAYRFi19CG2?utm_source=generator&theme=0" width="100%" height="352" loading="lazy" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>
-      </div>
-    </section>
-
-    <section class="tour section" id="tour">
-      <div class="tour-image" role="img" aria-label="Audience at a Half Awake Eyes show"></div>
-      <div class="tour-shade"></div>
-      <div class="tour-copy">
-        <p class="eyebrow">Live</p>
-        <h2>See Half Awake Eyes</h2>
-        <p>Find upcoming shows and ticket information.</p>
-        <a class="button button-solid" href="tickets/">View live dates</a>
       </div>
     </section>
 
@@ -94,10 +102,10 @@
       </a>
       <div class="merch-copy">
         <p class="eyebrow">Official merch</p>
-        <span class="sale-label">On sale</span>
         <h2>The Taste<br>of Death<br>T-Shirt</h2>
         <p class="merch-price">£20.00</p>
-        <p>Available in four options from the official Half Awake Eyes store.</p>
+        <p>Limited run. Sizes XS, S, M and L. Ships from the UK.</p>
+        <p>Find your size in the store.</p>
         <a class="button button-solid" href="https://halfawakeeyes.bigcartel.com/product/the-taste-of-death-t-shirt" target="_blank" rel="noopener noreferrer">Shop now ↗</a>
       </div>
     </section>
@@ -105,6 +113,17 @@
     <section class="connect section" id="contact">
       <p class="eyebrow">Keep in touch</p>
       <h2>Stay up to date.</h2>
+      <p class="signup-intro">Get new music and show announcements straight to your inbox.</p>
+      <form id="home-signup" class="signup-form">
+        <label for="signup-email">Email address</label>
+        <div class="signup-fields">
+          <input id="signup-email" name="email" type="email" autocomplete="email" maxlength="254" placeholder="you@example.com" required aria-describedby="signup-note signup-status">
+          <button class="button button-solid" type="submit" disabled>Join the list</button>
+        </div>
+        <p id="signup-note">By joining, you agree to receive Half Awake Eyes updates. You can ask to leave at any time. <a href="privacy.html">Privacy policy</a>.</p>
+        <p id="signup-status" role="status">Loading signup…</p>
+      </form>
+      <noscript><p>To join the list, <a href="mailto:halfawakeeyes@gmail.com?subject=Mailing%20list%20signup">email us</a>.</p></noscript>
       <div class="connect-links">
         <a href="https://instagram.com/halfawakeeyes" target="_blank" rel="noopener noreferrer">Instagram ↗</a>
         <a href="https://www.facebook.com/halfawakeeyes" target="_blank" rel="noopener noreferrer">Facebook ↗</a>
@@ -116,10 +135,11 @@
   <footer>
     <a class="wordmark" href="#top">Half Awake Eyes</a>
     <p>Glasgow, Scotland</p>
-    <div><a href="privacy.html">Privacy</a><span>© <span data-current-year></span></span></div>
+    <div><a href="epk.html">Press &amp; bookings</a><a href="privacy.html">Privacy</a><span>© <span data-current-year></span></span></div>
   </footer>
   <script src="assets/js/current-year.js"></script>
   <script src="assets/js/site.js"></script>
+  <script type="module" src="assets/js/home.js?v=20260905-admin-content"></script>
   <script type="module" src="assets/js/public-analytics.js"></script>
 </body>
 </html>

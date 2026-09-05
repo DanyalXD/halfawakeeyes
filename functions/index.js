@@ -1,6 +1,7 @@
 "use strict";
 
 const crypto = require("crypto");
+const {sendNewsletterBatch,createUnsubscribeHandler,withUnsubscribe} = require("./newsletter");
 const { initializeApp } = require("firebase-admin/app");
 const { getFirestore, FieldValue } = require("firebase-admin/firestore");
 const { getMessaging } = require("firebase-admin/messaging");
@@ -104,7 +105,10 @@ exports.getPublicEventPage = onRequest({
   const venue = String(gig.venue || "Venue to be announced").trim();
   const city = String(gig.city || "Glasgow").trim();
   const date = /^\d{4}-\d{2}-\d{2}$/.test(String(gig.date || "")) ? String(gig.date) : "";
-  const ticketUrl = normalizePublicHttpUrl(gig.ticketUrl);
+  const status = ['sold_out', 'cancelled', 'postponed'].includes(gig.status) ? gig.status : 'available';
+  const statusLabel = {available:'', sold_out:'Sold out', cancelled:'Cancelled', postponed:'Postponed'}[status];
+  const showDetails = [statusLabel, /^([01]\d|2[0-3]):[0-5]\d$/.test(gig.doorsTime || '') ? `Doors ${gig.doorsTime}` : '', String(gig.ageRestriction || '').slice(0,100)].filter(Boolean).join(' · ');
+  const ticketUrl = status === 'available' ? normalizePublicHttpUrl(gig.ticketUrl) : '';
   const imageUrl = normalizePublicHttpUrl(gig.imageUrl) || `${ADMIN_SITE_URL}/assets/images/gig-photo.jpeg`;
   const canonicalUrl = `${ADMIN_SITE_URL}/shows/${encodeURIComponent(eventId)}`;
   const dateLabel = date ? new Intl.DateTimeFormat("en-GB", {day: "numeric", month: "long", year: "numeric", timeZone: "Europe/London"}).format(new Date(`${date}T12:00:00Z`)) : "Date to be announced";
@@ -117,7 +121,7 @@ exports.getPublicEventPage = onRequest({
     url: canonicalUrl,
     image: [imageUrl],
     startDate: date,
-    eventStatus: "https://schema.org/EventScheduled",
+    eventStatus: `https://schema.org/${status === "cancelled" ? "EventCancelled" : status === "postponed" ? "EventPostponed" : "EventScheduled"}`,
     eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
     location: {
       "@type": "Place",
@@ -144,13 +148,14 @@ exports.getPublicEventPage = onRequest({
   }
 
   const schemaJson = JSON.stringify(eventSchema).replace(/</g, "\\u003c");
-  const ticketAction = ticketUrl ? `<a class="button button-solid" href="${escapePublicHtml(ticketUrl)}" target="_blank" rel="noopener noreferrer">Official tickets</a>` : "<p>Ticket information will be announced soon.</p>";
+  const pixelData = escapePublicHtml(JSON.stringify({id:eventId, event:eventName, date, venue, metaPixelId: /^\d+$/.test(String(gig.metaPixelId || '')) ? gig.metaPixelId : ''}));
+  const ticketAction = ticketUrl ? `<a data-gig-ticket="${pixelData}" class="button button-solid" href="${escapePublicHtml(ticketUrl)}" target="_blank" rel="noopener noreferrer">Official tickets</a>` : `<p>${escapePublicHtml(statusLabel || "Ticket information will be announced soon.")}</p>`;
   const html = `<!doctype html>
 <html lang="en-GB"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>${escapePublicHtml(eventName)} Tickets | Half Awake Eyes</title><meta name="description" content="${escapePublicHtml(description)}"><meta name="robots" content="index, follow">
 <link rel="canonical" href="${escapePublicHtml(canonicalUrl)}"><meta property="og:type" content="website"><meta property="og:site_name" content="Half Awake Eyes"><meta property="og:title" content="${escapePublicHtml(eventName)} Tickets"><meta property="og:description" content="${escapePublicHtml(description)}"><meta property="og:url" content="${escapePublicHtml(canonicalUrl)}"><meta property="og:image" content="${escapePublicHtml(imageUrl)}"><meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="/assets/images/favicon.ico" sizes="32x32"><link rel="apple-touch-icon" href="/assets/images/apple-touch-icon.png"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600&family=Source+Sans+3:wght@400;500;600&display=swap" rel="stylesheet"><link rel="stylesheet" href="/assets/css/theme.css"><link rel="stylesheet" href="/assets/css/site.css"><link rel="stylesheet" href="/assets/css/site-pages.css"><script type="application/ld+json">${schemaJson}</script></head>
-<body><header class="site-header scrolled"><a class="wordmark" href="/">Half Awake Eyes</a><nav aria-label="Main navigation"><a href="/#music">Music</a><a href="/tickets/">Tickets</a><a href="/#contact">Contact</a></nav></header><main class="inner-page"><section class="inner-section"><div class="shows"><div class="shows-heading"><p class="eyebrow">Live</p><h1>${escapePublicHtml(eventName)}</h1></div><article class="show-row"><time class="show-date"${date ? ` datetime="${date}"` : ""}><span>${escapePublicHtml(dateLabel)}</span></time><div class="show-info"><h2>${escapePublicHtml(venue)}</h2><p>${escapePublicHtml(city)}</p></div>${ticketAction}</article><p class="show-state"><a href="/tickets/">View all Half Awake Eyes live dates</a></p></div></section></main><footer><a class="wordmark" href="/">Half Awake Eyes</a><p>Glasgow, Scotland</p><div><a href="/privacy.html">Privacy</a></div></footer><script src="/assets/js/site.js"></script></body></html>`;
+<body><header class="site-header scrolled"><a class="wordmark" href="/">Half Awake Eyes</a><nav aria-label="Main navigation"><a href="/#music">Music</a><a href="/tickets/">Tickets</a><a href="/#contact">Contact</a></nav></header><main class="inner-page"><section class="inner-section"><div class="shows"><div class="shows-heading"><p class="eyebrow">Live</p><h1>${escapePublicHtml(eventName)}</h1></div><article class="show-row"><time class="show-date"${date ? ` datetime="${date}"` : ""}><span>${escapePublicHtml(dateLabel)}</span></time><div class="show-info"><h2>${escapePublicHtml(venue)}</h2><p>${escapePublicHtml(city)}</p><p>${escapePublicHtml(showDetails)}</p></div>${ticketAction}</article><p class="show-state"><a href="/tickets/">View all Half Awake Eyes live dates</a></p></div></section></main><footer><a class="wordmark" href="/">Half Awake Eyes</a><p>Glasgow, Scotland</p><div><a href="/privacy.html">Privacy</a></div></footer><script src="/assets/js/site.js"></script><script type="module" src="/assets/js/public-ticket-actions.js"></script></body></html>`;
 
   response.set("Cache-Control", "public, max-age=60, s-maxage=300, stale-while-revalidate=86400");
   response.status(200).type("html").send(request.method === "HEAD" ? "" : html);
@@ -1234,7 +1239,7 @@ exports.trashEmailMessage = onCall(EMAIL_FUNCTION_OPTIONS, async (request) => {
   });
 });
 
-exports.sendAdminEmail = onCall(EMAIL_FUNCTION_OPTIONS, async (request) => {
+async function handleAdminEmail(request) {
   const adminEmail = assertAdmin(request);
   const config = getMailboxConfig();
   const to = String(request.data?.to || "").trim();
@@ -1265,6 +1270,18 @@ exports.sendAdminEmail = onCall(EMAIL_FUNCTION_OPTIONS, async (request) => {
     }
   };
 
+  if (request.data?.newsletter === true) {
+    const recipients = bcc.split(',').map(value => value.trim()).filter(Boolean);
+    if (!recipients.length || recipients.length > 5) throw new HttpsError('invalid-argument','Choose one to five newsletter recipients per batch.');
+    return sendNewsletterBatch({db, recipients, message:mailOptions, send:deliverAdminMail, origin:ADMIN_SITE_URL});
+  }
+  return deliverAdminMail(request.data?.newsletterPreview === true ? withUnsubscribe(mailOptions, `${ADMIN_SITE_URL}/unsubscribe?preview=1`) : mailOptions);
+}
+
+exports.sendAdminEmail = onCall(EMAIL_FUNCTION_OPTIONS, handleAdminEmail);
+exports.sendAdminNewsletter = onCall({...EMAIL_FUNCTION_OPTIONS, timeoutSeconds:300}, request => handleAdminEmail({...request, data:{...request.data, newsletter:true}}));
+
+async function deliverAdminMail(mailOptions) {
   let result = null;
   let lastSmtpError = null;
 
@@ -1318,4 +1335,8 @@ exports.sendAdminEmail = onCall(EMAIL_FUNCTION_OPTIONS, async (request) => {
     ok: true,
     messageId: result.messageId || ""
   };
-});
+}
+
+exports.emailUnsubscribe = onRequest({region:'us-central1',maxInstances:3,timeoutSeconds:30},createUnsubscribeHandler(db));
+
+Object.assign(exports, require("./admin-tools")(db, assertAdmin));

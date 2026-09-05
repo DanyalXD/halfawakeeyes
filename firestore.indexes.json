@@ -1,0 +1,13 @@
+{
+  "indexes": [{
+    "collectionGroup": "content-history",
+    "queryScope": "COLLECTION",
+    "fields": [
+      { "fieldPath": "collection", "order": "ASCENDING" },
+      { "fieldPath": "savedAt", "order": "DESCENDING" }
+    ]
+  }],
+  "fieldOverrides": [
+    {"collectionGroup":"content-history", "fieldPath":"content", "indexes":[]}
+  ]
+}

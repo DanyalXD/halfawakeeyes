@@ -2,9 +2,9 @@
         <div class="summary-panel">
           <div class="section-title">
             <h3>Email</h3>
-            <span>IONOS mailbox via Firebase Functions</span>
+            <span>Band mailbox</span>
           </div>
-          <div class="helper-copy">Read and send domain email from the admin panel while keeping mailbox credentials server-side.</div>
+          <div class="helper-copy">Bookings, conversations and announcements, all in one place.</div>
         </div>
 
         <div class="email-workspace">
@@ -17,7 +17,7 @@
           </div>
 
           <aside class="email-folder-rail" aria-label="Mailbox folders">
-            <button type="button" id="email-new" class="btn btn-accent email-new-button">New Email</button>
+            <button type="button" id="email-new" class="btn btn-accent email-new-button">New message</button>
             <div class="email-account-name">halfawakeeyes.co.uk</div>
             <div class="email-view-tabs" role="tablist" aria-label="Email views">
               <button type="button" class="email-view-tab is-active" data-email-view="mail">Mail</button>
@@ -25,18 +25,23 @@
             </div>
             <nav class="email-folder-list">
               <button type="button" class="email-folder-item is-active" data-email-folder="inbox">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16v16H4zM4 14h4l2 3h4l2-3h4"/></svg>
                 <span>Inbox</span>
               </button>
               <button type="button" class="email-folder-item" data-email-folder="drafts">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h8l4 4v14H6zM14 3v5h4M9 12h6M9 16h4"/></svg>
                 <span>Drafts</span>
               </button>
               <button type="button" class="email-folder-item" data-email-folder="sent">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 11 18-8-8 18-2-8-8-2Zm8 2 10-10"/></svg>
                 <span>Sent</span>
               </button>
               <button type="button" class="email-folder-item" data-email-folder="spam">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 2 21h20L12 3Zm0 6v5m0 3v1"/></svg>
                 <span>Spam</span>
               </button>
               <button type="button" class="email-folder-item" data-email-folder="trash">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M9 6V3h6v3M6 6l1 15h10l1-15M10 10v7m4-7v7"/></svg>
                 <span>Trash</span>
               </button>
             </nav>
@@ -70,7 +75,7 @@
               <h3 id="email-reader-title">Message</h3>
               <div class="email-reader-title-actions">
                 <span id="email-reader-meta">Select a message</span>
-                <button type="button" id="email-reader-close" class="email-compose-icon-button email-reader-close" aria-label="Close message">x</button>
+                <button type="button" id="email-reader-close" class="email-compose-icon-button email-reader-close" aria-label="Close message">×</button>
               </div>
             </div>
             <div id="email-reader" class="email-reader">
@@ -84,11 +89,13 @@
               <span id="mailing-list-count">No signups loaded</span>
             </div>
             <div class="manager-toolbar mailing-list-toolbar">
-              <div class="helper-copy">Mailing list contacts collected from the site, ready to copy or export.</div>
+              <div class="helper-copy">Your subscribers, in one place.</div>
               <div class="manager-toolbar-actions">
-                <button type="button" id="send-mailing-list-emails" class="btn btn-accent">Send All</button>
+                <button type="button" id="send-mailing-list-emails" class="btn btn-accent">Write to all subscribers</button>
+                <details class="mailing-more"><summary>More</summary><div>
                 <button type="button" id="copy-mailing-list-emails" class="btn ghost-button">Copy Emails</button>
                 <button type="button" id="export-mailing-list-csv" class="btn ghost-button">Export CSV</button>
+                </div></details>
               </div>
             </div>
             <div id="mailing-list-summary" class="mailing-list-summary-grid">
@@ -98,6 +105,7 @@
                 <div class="detail">No mailing list data loaded yet.</div>
               </article>
             </div>
+            <div class="mailing-search-bar"><label for="mailing-search">Search contacts<input type="search" id="mailing-search" class="form-control" placeholder="Email, name, source or campaign"></label><label for="mailing-filter">Subscription<select id="mailing-filter" class="form-control"><option value="all">All contacts</option><option value="active">Subscribed</option><option value="unsubscribed">Unsubscribed</option></select></label></div>
             <div id="mailing-list-status" class="gig-manager-status" aria-live="polite"></div>
             <div class="mailing-contacts-layout">
               <div class="mailing-contacts-list-panel">
@@ -130,8 +138,8 @@
           <div id="email-compose-overlay" class="email-compose-overlay" hidden>
             <section class="email-compose-card" role="dialog" aria-modal="true" aria-labelledby="email-compose-title">
               <div class="email-compose-header">
-                <h3 id="email-compose-title">New Email</h3>
-                <button type="button" id="email-compose-close" class="email-compose-icon-button" aria-label="Close compose">x</button>
+                <h3 id="email-compose-title">New message</h3>
+                <button type="button" id="email-compose-close" class="email-compose-icon-button" aria-label="Close compose">×</button>
               </div>
               <form id="email-compose-form" class="email-compose-form">
                 <label class="email-compose-row">

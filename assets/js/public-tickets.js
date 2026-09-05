@@ -1,9 +1,11 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { canBuyTickets, gigDetailLabel } from './gig-tools.js';
+import { bindTicketAction } from './public-ticket-actions.js';
+import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { doc, getDoc, getFirestore } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { firebaseConfig, normalizePublicUrl, PUBLIC_MIRROR_DOC_ID } from "./public-site-utils.js";
 
 const list = document.getElementById("public-show-list");
-const db = getFirestore(initializeApp(firebaseConfig));
+const db = getFirestore(getApps()[0] || initializeApp(firebaseConfig));
 const today = new Date();
 today.setHours(0, 0, 0, 0);
 
@@ -38,13 +40,16 @@ try {
     eventLink.textContent = show.event || "Half Awake Eyes live";
     row.querySelector("h3").appendChild(eventLink);
     row.querySelector("p").textContent = [show.venue, show.city].filter(Boolean).join(" - ");
-    if (ticketUrl) {
+    const detail = document.createElement("p");
+    detail.textContent = gigDetailLabel(show); row.querySelector(".show-info").append(detail);
+    if (ticketUrl && canBuyTickets(show)) {
       const link = document.createElement("a");
       link.className = "button";
       link.href = ticketUrl;
       link.target = "_blank";
       link.rel = "noopener noreferrer";
       link.textContent = "Tickets";
+      bindTicketAction(link, show);
       row.appendChild(link);
     }
     list.appendChild(row);

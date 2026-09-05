@@ -1,0 +1,25 @@
+.workflow-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.25rem; margin: 1rem 0; }
+.workflow-grid > *, .newsletter-recipient > * { min-width: 0; }
+.workflow-grid label, #gig-form label, #gig-edit-form label { display: block; color: #ddd; font-size: .9rem; }
+.workflow-grid input { margin-top: .4rem; }
+.workflow-actions { display: flex; flex-wrap: wrap; gap: .75rem; margin: 1.25rem 0; }
+.workflow-advanced { grid-column: 1 / -1; border: 1px solid #414141; border-radius: .75rem; padding: 1rem; }
+.workflow-advanced summary { cursor: pointer; color: #eee; padding: .3rem; }
+.workflow-preview { border: 1px solid #666; background: #171717; padding: 1.25rem; border-radius: .75rem; margin: 1rem 0; overflow-wrap: anywhere; }
+.workflow-preview h3 { margin: .8rem 0; }
+.workflow-preview small, .workflow-visibility { color: #bcbcbc; }
+.workflow-visibility { font-size: .85rem; line-height: 1.65; margin: 1rem 0 0; }
+.workflow-art { width: 100%; max-width: 280px; aspect-ratio: 1; object-fit: contain; }
+.workflow-publish { margin-bottom: 1rem; }
+.workflow-publish p { margin: 0; }
+.newsletter-recipients { max-height: 420px; overflow: auto; }
+.newsletter-recipient { display: flex; justify-content: space-between; gap: 1rem; align-items: center; border-top: 1px solid #444; padding: .8rem 0; }
+.newsletter-recipient label { overflow-wrap: anywhere; }
+.newsletter-recipient input { margin-right: .4rem; }
+#overview-cards h3 { overflow-wrap: anywhere; }
+#homepage-form .form-control { width: 100%; }
+@media (max-width: 768px) {
+  .workflow-grid { grid-template-columns: 1fr; }
+  .newsletter-recipient { align-items: start; flex-direction: column; }
+  .workflow-actions > * { flex: 1 1 140px; }
+}

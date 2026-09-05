@@ -1,3 +1,4 @@
+import { requestedCampaignSlug as resolveCampaignSlug } from './campaign-route.js';
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { doc, getDoc, getFirestore, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
     import {
@@ -25,20 +26,16 @@
     const elements = {
       campaignLayout: document.getElementById("campaign-layout"),
       campaignBadge: document.getElementById("campaign-badge"),
-      campaignState: document.getElementById("campaign-state"),
       campaignTitle: document.getElementById("campaign-title"),
       campaignSubtitle: document.getElementById("campaign-subtitle"),
       campaignDescription: document.getElementById("campaign-description"),
       campaignDate: document.getElementById("campaign-date"),
-      campaignDestinationCount: document.getElementById("campaign-destination-count"),
       primaryCta: document.getElementById("primary-cta"),
       secondaryCta: document.getElementById("secondary-cta"),
       platformPanel: document.getElementById("platform-panel"),
       platformGrid: document.getElementById("platform-grid"),
       campaignArtwork: document.getElementById("campaign-artwork"),
       artworkFallback: document.getElementById("artwork-fallback"),
-      artCaptionTitle: document.getElementById("art-caption-title"),
-      artCaptionNote: document.getElementById("art-caption-note"),
       emailSignupForm: document.getElementById("email-signup-form"),
       emailSignupInput: document.getElementById("email-signup-input"),
       emailSignupSubmit: document.getElementById("email-signup-submit"),
@@ -53,16 +50,7 @@
     let activeMetaPixelId = "";
     let metaPageViewTracked = false;
 
-    function getRequestedCampaignSlug() {
-      if (queryCampaign) {
-        return queryCampaign.trim();
-      }
-
-      const match = window.location.pathname.match(/\/smartlink\/([^/?#]+)\/?$/i);
-      return match ? decodeURIComponent(match[1]).trim() : "";
-    }
-
-    const requestedCampaignSlug = getRequestedCampaignSlug();
+    const requestedCampaignSlug = resolveCampaignSlug(window.location.pathname, window.location.search);
 
     function normalizeCampaignDestinationUrl(value) {
       const normalizedValue = String(value || "").trim();
@@ -346,16 +334,16 @@
       elements.campaignLayout.hidden = false;
       elements.emptyWrap.classList.remove("show");
       setRetryVisibility(false);
-      elements.campaignBadge.textContent = campaign.badge || "Smart Link";
-      elements.campaignState.textContent = campaign.live ? "Live now" : "Draft";
+      elements.campaignBadge.textContent = campaign.badge || "";
+      elements.campaignBadge.parentElement.hidden = !campaign.badge;
       elements.campaignTitle.textContent = campaign.title;
-      elements.campaignSubtitle.textContent = campaign.subtitle || "Official release page";
-      elements.campaignDescription.textContent = campaign.description || "Choose a destination below to hear the latest Half Awake Eyes release.";
-      elements.campaignDestinationCount.textContent = `${destinations.length} destination${destinations.length === 1 ? "" : "s"} available`;
+      elements.campaignSubtitle.textContent = campaign.subtitle || "Half Awake Eyes";
+      elements.campaignDescription.textContent = campaign.description || "";
+      elements.campaignDescription.hidden = !campaign.description;
 
       if (releaseDate) {
         elements.campaignDate.hidden = false;
-        elements.campaignDate.textContent = `Release date: ${releaseDate}`;
+        elements.campaignDate.textContent = `Release: ${releaseDate}`;
       } else {
         elements.campaignDate.hidden = true;
         elements.campaignDate.textContent = "";
@@ -417,8 +405,6 @@
 
       applyArtwork(campaign.artworkUrl);
       elements.campaignArtwork.alt = campaign.title;
-      elements.artCaptionTitle.textContent = campaign.title;
-      elements.artCaptionNote.textContent = campaign.subtitle || "Official Half Awake Eyes release page";
     }
 
     function getCampaignPageViewKey() {
@@ -493,30 +479,30 @@
       if (typeof navigator !== "undefined" && navigator.onLine === false) {
         return {
           title: "You Appear To Be Offline",
-          copy: "The smart-link page could not reach Firestore because this device is offline right now. Reconnect and try again.",
+          copy: "You appear to be offline. Reconnect and try again.",
           allowRetry: true
         };
       }
 
       if (error?.code === "permission-denied") {
         return {
-          title: "Campaign Access Blocked",
-          copy: `The public smart-link page cannot read public-campaigns/${requestedCampaignSlug || "active"} from Firestore. If this page should be public, update your Firestore rules to allow read access for that document.`,
+          title: "Release unavailable",
+          copy: "This release is not available right now. Explore our other music below.",
           allowRetry: false
         };
       }
 
       if (error?.code === "unavailable") {
         return {
-          title: "Campaign Temporarily Unavailable",
-          copy: "Firestore could not be reached right now. Try again in a moment.",
+          title: "Please try again shortly",
+          copy: "We could not load this release. Try again in a moment.",
           allowRetry: true
         };
       }
 
       return {
-        title: "Campaign Unavailable",
-        copy: "The release page could not load from Firestore right now. Please try again shortly.",
+        title: "Release unavailable",
+        copy: "We could not load this release right now. Please try again shortly.",
         allowRetry: true
       };
     }
@@ -535,25 +521,25 @@
       try {
         const campaignId = requestedCampaignSlug;
         if (!campaignId) {
-          showFallback("Campaign not specified", "Open a specific release slug such as /smartlink/your-release-name to view a live campaign.");
+          showFallback("Find your next listen", "Explore our music, upcoming shows and latest releases.");
           return;
         }
 
         const campaignSnapshot = await getDoc(doc(db, "public-campaigns", campaignId));
         if (!campaignSnapshot.exists()) {
           showFallback(
-            "Campaign not found",
-            "That release page could not be found. Check the campaign URL or use the main site links below."
+            "Release not found",
+            "That release page could not be found. Explore our other releases using the links below."
           );
         } else {
           const campaign = normalizeCampaignEntry({ ...campaignSnapshot.data(), slug: campaignId });
           const destinations = getDestinations(campaign);
           if (!campaign.title) {
-            showFallback("Campaign incomplete", "A campaign exists, but it still needs a title before the page can go live.");
+            showFallback("Coming soon", "This release page is not ready yet. Check back soon.");
           } else if (!campaign.live) {
-            showFallback("Campaign currently in draft", "The smart-link page has been configured in the admin panel, but it is not marked live yet.");
+            showFallback("Coming soon", "This release page is not live yet. Find more music and show dates below.");
           } else if (!destinations.length) {
-            showFallback("Campaign incomplete", "This smart-link campaign is live, but it does not have any valid destination URLs yet.");
+            showFallback("Links coming soon", "We are getting everything ready. Check back soon, or explore more music below.");
           } else {
             renderCampaign(campaign);
             await logPageViewOnce();

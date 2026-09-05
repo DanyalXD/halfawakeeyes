@@ -11,6 +11,10 @@
       ]
     }
   ],
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
   "hosting": {
     "public": ".",
     "redirects": [
@@ -39,13 +43,30 @@
           "functionId": "getPublicLinksJson",
           "region": "us-central1"
         }
+      },
+      {
+        "source": "/smartlink",
+        "destination": "/smartlink.html"
+      },
+      {
+        "source": "/smartlink/**",
+        "destination": "/smartlink.html"
+      },
+      {
+        "source": "/unsubscribe",
+        "function": {
+          "functionId": "emailUnsubscribe",
+          "region": "us-central1"
+        }
       }
     ],
     "ignore": [
       "firebase.json",
       "**/.*",
       "**/node_modules/**",
-      "functions/**"
+      "functions/**",
+      "firestore.rules",
+      "firestore.indexes.json"
     ]
   }
 }

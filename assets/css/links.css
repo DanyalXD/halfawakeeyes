@@ -594,3 +594,20 @@
             }
         }
 
+
+/* Mailing-list card */
+.signup-shell { padding:20px; gap:12px; border-radius:12px; margin-top:24px; }
+.signup-copy { display:grid; gap:8px; }
+.signup-title { font-size:1rem; letter-spacing:.03em; }
+.signup-description { font-size:.85rem; line-height:1.5; text-align:left; }
+.signup-label { font-size:.8rem; color:var(--muted); margin:0; }
+.signup-form-row { margin:0; padding:4px; }
+.signup-input,.signup-submit { min-height:44px; font-size:16px; }
+.signup-input { min-width:0; }
+.signup-submit { font-size:13px; white-space:nowrap; }
+.signup-submit:disabled { opacity:.6; cursor:wait; }
+.signup-form-row:focus-within { border-color:var(--accent-strong); }
+.signup-submit:focus-visible { outline:2px solid var(--accent-strong); outline-offset:2px; }
+.signup-status { margin:0; font-size:.8rem; line-height:1.5; }
+.signup-status:empty { display:none; }
+@media(max-width:380px) { .signup-shell { padding:16px; } .signup-form-row { flex-direction:column; align-items:stretch; } }

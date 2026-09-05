@@ -1,3 +1,5 @@
+import { canBuyTickets, normalizeGigDetails } from './gig-tools.js';
+import { destinationKey, isSocialProfile, sectionPriority, sectionLabel, linkCopy } from './links-presentation.js';
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
         import { doc, getDoc, getFirestore, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
         import {
@@ -96,7 +98,7 @@
         const isGigHiddenFromLinks = (gig) =>
             gig?.hideFromLinks === true || String(gig?.hideFromLinks || "").toLowerCase() === "true";
 
-        const hasGigTicketLink = (gig) => Boolean(String(gig?.ticketUrl || "").trim());
+        const hasGigTicketLink = (gig) => canBuyTickets(gig) && Boolean(String(gig?.ticketUrl || "").trim());
 
         const normalizeGigEntry = (gig = {}, id = "") => {
             const legacyHidden = normalizeBooleanFlag(gig?.hidden);
@@ -111,6 +113,7 @@
                 venue: String(gig?.venue || "").trim(),
                 city: String(gig?.city || "").trim(),
                 ticketUrl: normalizePublicUrl(gig?.ticketUrl),
+                ...normalizeGigDetails(gig),
                 imageUrl: normalizeImageUrl(gig?.imageUrl),
                 hideFromLinks
             };
@@ -329,6 +332,7 @@
         };
 
         const createMainLink = (link, { compact = false, emphasize = false } = {}) => {
+            const display = linkCopy(link);
             const anchor = document.createElement("a");
             anchor.className = `link-card${link.featured || emphasize ? " primary" : ""}${compact ? " compact" : ""}`;
             anchor.href = link.url;
@@ -352,7 +356,7 @@
             if (link.imageUrl) {
                 const image = document.createElement("img");
                 image.src = link.imageUrl;
-                image.alt = link.title || "Link artwork";
+                image.alt = "";
                 image.loading = "lazy";
                 image.addEventListener("error", () => {
                     thumb.innerHTML = "";
@@ -376,22 +380,22 @@
             const copy = document.createElement("div");
             copy.className = "link-copy";
 
-            if (link.kicker) {
+            if (display.kicker) {
                 const kicker = document.createElement("span");
                 kicker.className = "kicker";
-                kicker.textContent = link.kicker;
+                kicker.textContent = display.kicker;
                 copy.appendChild(kicker);
             }
 
             const title = document.createElement("span");
             title.className = "link-title";
-            title.textContent = link.title || "Link";
+            title.textContent = display.title || "Link";
             copy.appendChild(title);
 
-            if (link.description) {
+            if (display.description) {
                 const meta = document.createElement("div");
                 meta.className = "link-meta";
-                meta.textContent = link.description;
+                meta.textContent = display.description;
                 copy.appendChild(meta);
             }
 
@@ -416,13 +420,19 @@
                         getLinkSection(link) !== "Resources"
                 )
             );
-            const socialLinks = visibleLinks.filter((link) => link.group === "social");
-            const socialUrls = new Set(socialLinks.map((link) => link.url));
+            const seenSocial = new Set();
+            const socialLinks = visibleLinks.filter(link => {
+                if (link.group !== 'social') return false;
+                const key = destinationKey(link.url);
+                if (seenSocial.has(key)) return false;
+                seenSocial.add(key); return true;
+            });
+            const socialUrls = new Set(socialLinks.map((link) => destinationKey(link.url)));
             const mainLinks = visibleLinks.filter((link) => {
                 if (link.group === "social") {
                     return false;
                 }
-                if (!link.section && socialUrls.has(link.url)) {
+                if (isSocialProfile(link.url) && socialUrls.has(destinationKey(link.url))) {
                     return false;
                 }
                 return true;
@@ -467,13 +477,13 @@
                 sections.get(sectionName).push(link);
             });
 
-            [...sections.entries()].forEach(([sectionName, sectionLinks]) => {
+            [...sections.entries()].sort((a,b) => sectionPriority(a[0]) - sectionPriority(b[0])).forEach(([sectionName, sectionLinks]) => {
                 const section = document.createElement("section");
                 section.className = "links-section";
 
                 const heading = document.createElement("h2");
                 heading.className = "section-heading";
-                heading.textContent = sectionName;
+                heading.textContent = sectionLabel(sectionName);
 
                 const list = document.createElement("div");
                 const isShowsSection = sectionName === "Shows";
@@ -488,7 +498,7 @@
                     });
                 } else {
                     sectionLinks.forEach((link) => {
-                        list.appendChild(createMainLink(link));
+                        list.appendChild(createMainLink(link, {compact: !link.featured}));
                     });
                 }
 
@@ -573,8 +583,10 @@
         };
 
         if (emailSignupForm && emailSignupInput && emailSignupSubmit) {
+            emailSignupSubmit.disabled = false;
             emailSignupForm.addEventListener("submit", async (event) => {
                 event.preventDefault();
+                if (emailSignupSubmit.disabled) return;
                 const email = emailSignupInput.value.trim();
 
                 if (!isValidEmailAddress(email)) {
@@ -583,11 +595,12 @@
                 }
 
                 emailSignupSubmit.disabled = true;
+                emailSignupSubmit.textContent = "Joining…";
                 setEmailSignupStatus("Joining mailing list...");
 
                 try {
                     await submitEmailSignup(email, { label: "Links signup" });
-                    await logEvent("email_signup", {
+                    void logEvent("email_signup", {
                         target: "mailing-list",
                         label: "Links signup",
                         elementType: "form",
@@ -598,9 +611,10 @@
                     emailSignupForm.reset();
                 } catch (error) {
                     console.error("Email signup failed:", error);
-                    setEmailSignupStatus(error?.message || "Could not save your signup right now.", "is-error");
+                    setEmailSignupStatus("We couldn’t save your signup. Please try again in a moment.", "is-error");
                 } finally {
                     emailSignupSubmit.disabled = false;
+                    emailSignupSubmit.textContent = "Join the list";
                 }
             });
         }

@@ -1,3 +1,4 @@
+import { normalizeGigDetails, canBuyTickets, gigDetailLabel } from './gig-tools.js';
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { doc, getDoc, getFirestore, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import {
@@ -256,6 +257,7 @@ function normalizeGigEntry(gig = {}, id = "") {
     autoRedirect: normalizeGigAutoRedirect(gig?.autoRedirect),
     imageUrl: normalizeImageUrl(gig?.imageUrl),
     metaPixelId: normalizeMetaPixelId(gig?.metaPixelId),
+    ...normalizeGigDetails(gig),
     hideFromLinks
   };
 }
@@ -531,7 +533,7 @@ function applyArtwork(url, title) {
 }
 
 function initializeMetaPixel(pixelId) {
-  if (!pixelId || activeMetaPixelId === pixelId) {
+  if (isLocalPreview || !/^\d+$/.test(pixelId) || activeMetaPixelId === pixelId) {
     return;
   }
 
@@ -568,7 +570,7 @@ function trackMetaPageView() {
     return;
   }
 
-  window.fbq("track", "PageView");
+  window.fbq("trackSingle", activeMetaPixelId, "PageView");
   metaPageViewTracked = true;
 }
 
@@ -577,7 +579,8 @@ function trackMetaEvent(eventName, details = {}) {
     return;
   }
 
-  window.fbq("trackCustom", eventName, {
+  window.fbq("trackSingleCustom", activeMetaPixelId, eventName, {
+    gig_id: activeGig?.id || gigId,
     gig_name: activeGig?.event || "",
     gig_date: formatGigDate(activeGig?.date),
     venue_name: activeGig?.venue || "",
@@ -615,7 +618,7 @@ function renderUnavailable(title, subtitle, description) {
 }
 
 async function redirectToTickets(type = "auto") {
-  if (redirectStarted || !activeGig?.ticketUrl) {
+  if (redirectStarted || !activeGig?.ticketUrl || !canBuyTickets(activeGig)) {
     return;
   }
 
@@ -627,6 +630,7 @@ async function redirectToTickets(type = "auto") {
   completeRedirectProgress();
 
   const ticketUrl = normalizePublicUrl(activeGig.ticketUrl);
+  if (type !== "auto") trackMetaEvent("GigTicketClick", { url: ticketUrl, type });
   trackMetaEvent("GigTicketRedirect", {
     label: activeGig.event || "Live show",
     url: ticketUrl,
@@ -689,7 +693,7 @@ function renderGig(gig) {
   const ticketUrl = normalizePublicUrl(gig.ticketUrl);
   const formattedDate = formatGigDate(gig.date);
   const venueLine = getVenueLine(gig);
-  const shouldAutoRedirect = gig.autoRedirect === true;
+  const shouldAutoRedirect = gig.autoRedirect === true && canBuyTickets(gig);
   const ticketProvider = getTicketProviderLabel(ticketUrl);
   const ticketPriceLine = getTicketPriceContextLine(gig);
   const priceChips = getTicketPriceChipLabels(gig);
@@ -707,12 +711,13 @@ function renderGig(gig) {
   setText(elements.ticketTitle, gig.event || "Live show");
   setPriceRail(priceChips);
   setOptionalText(elements.ticketSubtitle, ticketPriceLine);
-  setOptionalText(elements.ticketDescription, "");
+  setOptionalText(elements.ticketDescription, gigDetailLabel(gig));
   setMetaChip(elements.ticketDate, formattedDate);
   setMetaChip(elements.ticketVenue, venueLine);
   setSummaryValue(elements.ticketDateDetail, formattedDate, "Date TBC");
   setSummaryValue(elements.ticketVenueDetail, venueLine, "Venue TBC");
-  showTicketButtons(ticketUrl, ctaLabel);
+  if (canBuyTickets(gig)) showTicketButtons(ticketUrl, ctaLabel);
+  else { hideTicketButtons(); setStateChip(gigDetailLabel(gig)); }
   setTrustCopy("");
   setTicketNote(shouldAutoRedirect ? `Opening tickets on ${ticketProvider}...` : "");
   setText(elements.artOverlayChip, "Upcoming");
@@ -796,7 +801,7 @@ async function loadGig() {
       outbound: true
     });
 
-    if (gig.autoRedirect === true) {
+    if (gig.autoRedirect === true && canBuyTickets(gig)) {
       redirectTimer = window.setTimeout(() => {
         redirectToTickets("auto");
       }, REDIRECT_DELAY_MS);
@@ -808,7 +813,7 @@ async function loadGig() {
       "There was a problem fetching the gig details just now.",
       "Please try again in a moment."
     );
-    await redirectToLoadErrorFallback();
+    // Keep the error visible; never send visitors to an unrelated fallback show.
   }
 }
 

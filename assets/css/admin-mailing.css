@@ -1,0 +1,71 @@
+.admin-refresh #email-page #email-address-book { display:flex; flex-direction:column; gap:12px; padding:24px; overflow:auto; background:#111; }
+.admin-refresh #email-page #email-address-book[hidden] { display:none!important; }
+.admin-refresh #email-address-book > .section-title { margin:0; }
+.admin-refresh #email-page #email-address-book .mailing-list-toolbar { display:flex; flex-wrap:wrap; align-items:center; margin:0; gap:14px; }
+.admin-refresh #email-address-book .manager-toolbar-actions { flex-wrap:wrap; }
+.admin-refresh .mailing-more { position:relative; font-size:12px; }
+.admin-refresh .mailing-more summary { cursor:pointer; padding:10px 14px; border:1px solid #444; border-radius:6px; }
+.admin-refresh .mailing-more > div { position:absolute; right:0; top:100%; display:grid; gap:8px; padding:10px; border:1px solid #444; background:#191919; min-width:150px; z-index:5; }
+.admin-refresh #email-page #mailing-list-summary { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:0; margin:0; padding:12px 0; border-block:1px solid #303030; }
+.admin-refresh #mailing-list-summary > div { padding:0 16px; border-right:1px solid #303030; }
+.admin-refresh #mailing-list-summary > div:first-child { padding-left:0; }
+.admin-refresh #mailing-list-summary > div:last-child { border:0; }
+.admin-refresh #mailing-list-summary strong { display:block; font-size:25px; font-weight:600; color:#eee; }
+.admin-refresh #mailing-list-summary span { color:#999; font-size:12px; }
+.admin-refresh .mailing-search-bar { display:grid; grid-template-columns:minmax(0,1fr) 180px; gap:14px; }
+.admin-refresh .mailing-search-bar label { display:grid; gap:7px; margin:0; color:#aaa; font-size:12px; }
+.admin-refresh .mailing-search-bar .form-control { min-width:0; min-height:40px; background:#191919; color:#eee; border:1px solid #383838; border-radius:6px; font-size:13px; }
+.admin-refresh .mailing-selection-bar { padding-bottom:14px; border-bottom:1px solid #303030; }
+.admin-refresh .mailing-selection-bar .workflow-actions { align-items:center; flex-wrap:wrap; }
+.admin-refresh #newsletter-selection-count { color:#aaa; font-size:12px; }
+.admin-refresh #newsletter-status:empty,.admin-refresh #mailing-list-status:empty { display:none; }
+.admin-refresh #newsletter-status { font-size:12px; margin:10px 0 0; }
+.admin-refresh #email-page #email-address-book .mailing-contacts-layout { display:grid; grid-template-columns:minmax(260px,1fr) minmax(240px,.9fr); min-height:320px; max-height:none; height:auto; overflow:visible; gap:20px; }
+.admin-refresh #email-page #email-address-book :is(.mailing-contacts-list-panel,.mailing-list-table-panel,.table-responsive) { min-height:0; max-height:520px; height:auto; }
+.admin-refresh #email-page #email-address-book .mailing-contacts-list-panel { padding:0; border:0; }
+.admin-refresh #email-page #email-address-book .mailing-list-alphabet { display:none; }
+.admin-refresh #email-page #email-address-book .mailing-contact-cell { display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid #292929; }
+.admin-refresh .mailing-recipient-check { width:18px; height:18px; flex:none; accent-color:#ddd; margin:0 4px; }
+.admin-refresh #email-page #email-address-book .mailing-contact-button { flex:1; min-width:0; min-height:68px; padding:10px 12px; background:transparent; border:0; border-radius:6px; }
+.admin-refresh #email-page #email-address-book .mailing-contact-button:is(:hover,.is-active) { background:#232323; }
+.admin-refresh .mailing-contact-status { font-size:10px; color:#aaa; }
+.admin-refresh #email-page #email-address-book .mailing-contact-name { font-family:inherit; font-size:13px; font-weight:600; }
+.admin-refresh #email-page #email-address-book .mailing-contact-email { display:block; color:#aaa; font-size:12px; overflow-wrap:anywhere; }
+.admin-refresh #email-page #email-address-book .mailing-list-detail { min-height:0; background:#171717; border:1px solid #303030; border-radius:8px; padding:18px; }
+.admin-refresh #email-page #email-address-book .mailing-contact-profile { grid-template-columns:48px minmax(0,1fr); gap:12px; }
+.admin-refresh #email-page #email-address-book .mailing-contact-profile-avatar { width:48px; height:48px; border-radius:8px; background:#282828; color:#ddd; box-shadow:none; font-size:16px; }
+.admin-refresh #email-page #email-address-book .mailing-contact-profile-main h4 { font-size:17px; }
+.admin-refresh #email-page #email-address-book .mailing-contact-round-action { min-height:34px; padding:7px 12px; border-radius:5px; font-size:12px; background:#222; color:#ddd; }
+.admin-refresh .mailing-template-library { border:1px solid #333; border-radius:8px; background:#151515; }
+.admin-refresh .mailing-template-library > summary { cursor:pointer; padding:14px 16px; font-size:13px; color:#ddd; }
+.admin-refresh .mailing-template-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; padding:0 14px 14px; }
+.admin-refresh .mailing-template-card { display:flex; flex-direction:column; gap:6px; border:1px solid #393939; border-radius:6px; background:#1b1b1b; padding:14px; text-align:left; color:#eee; cursor:pointer; font:inherit; }
+.admin-refresh .mailing-template-card:hover { background:#252525; border-color:#666; }
+.admin-refresh .mailing-template-card strong { font-size:13px; }
+.admin-refresh .mailing-template-card span { font-size:12px; line-height:1.5; color:#aaa; }
+.admin-refresh .mailing-template-library > p { padding:0 14px; font-size:12px; }
+.admin-refresh .mailing-template-library > p:empty { display:none; }
+.admin-refresh .email-template-options { grid-column:1/-1; width:100%; font-size:12px; color:#aaa; }
+.admin-refresh .email-template-hint { grid-column:1/-1; margin:0; color:#bbb; font-size:12px; }
+.admin-refresh .email-template-options summary { cursor:pointer; padding:6px 0; }
+.admin-refresh .email-template-options > :not(summary) { margin:8px 0; }
+.admin-refresh .email-template-options .form-control { width:100%; background:#191919; border:1px solid #444; color:#eee; min-height:38px; }
+@media(max-width:1100px) { .admin-refresh .mailing-template-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+@media(max-width:760px) {
+ .admin-refresh.email-folders-mobile-open #email-page #email-address-book { display:none; }
+ .admin-refresh #email-page #email-address-book { padding:16px; gap:14px; }
+ .admin-refresh .mailing-search-bar { grid-template-columns:minmax(0,1fr) 125px; gap:10px; }
+ .admin-refresh #email-page #email-address-book .mailing-list-toolbar { gap:8px; }
+ .admin-refresh #email-page #email-address-book .mailing-selection-bar .btn { width:auto; flex:none; min-height:36px; font-size:11px; padding:8px 10px; }
+ .admin-refresh #email-page #email-address-book .mailing-list-toolbar .btn { width:auto; min-height:38px; }
+ .admin-refresh #email-page #email-address-book .mailing-contacts-layout { grid-template-columns:1fr; }
+ .admin-refresh #email-page #email-address-book .mailing-list-detail { display:none; }
+ .admin-refresh.mailing-contact-detail-open #email-page #email-address-book .mailing-list-detail { display:block; }
+ .admin-refresh.mailing-contact-detail-open #email-page #email-address-book .mailing-contacts-list-panel { display:none; }
+ .admin-refresh .mailing-template-grid { grid-template-columns:1fr; }
+ .admin-refresh #mailing-list-summary span { font-size:11px; }
+ .admin-refresh #mailing-list-summary > div { padding:0 10px; }
+}
+
+.admin-refresh .email-site-preview { white-space:pre-line; overflow-wrap:anywhere; max-height:150px; overflow:auto; padding:8px 0; }
+.admin-refresh .email-site-preview:empty { display:none; }

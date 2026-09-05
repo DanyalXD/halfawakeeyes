@@ -20,7 +20,7 @@ logPageViewOnce({ label: document.title, target: pageName });
 
 document.addEventListener("click", event => {
   const element = event.target.closest("a, button");
-  if (!element) return;
+  if (!element || element.dataset.ticketTracked === "true") return;
 
   const label = normalizeText(element.innerText || element.getAttribute("aria-label") || "");
   const href = element.tagName === "A" ? element.href : "";

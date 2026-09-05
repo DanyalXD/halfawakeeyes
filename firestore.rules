@@ -1,0 +1,71 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isAdmin() {
+      return request.auth != null
+        && request.auth.token.email in [
+          "danyal1995@hotmail.co.uk",
+          "danyalc95@gmail.com"
+        ];
+    }
+
+    match /site-actions/{docId} {
+      allow create: if true;
+      allow read, update, delete: if isAdmin();
+    }
+
+    match /ad-tracking/{docId} {
+      allow create: if true;
+      allow read, update, delete: if isAdmin();
+    }
+
+    match /gigs/{docId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /links/{docId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /campaigns/{docId} {
+      allow read, create, update, delete: if isAdmin();
+    }
+
+    match /public-campaigns/{docId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /site-content/homepage {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /mailing-list-signups/{docId} {
+      allow create: if !request.resource.data.keys().hasAny(['unsubscribed', 'unsubscribedAt']);
+      allow update: if isAdmin() || !request.resource.data.diff(resource.data).affectedKeys().hasAny(['unsubscribed', 'unsubscribedAt']);
+      allow read, delete: if isAdmin();
+    }
+
+    match /admin-notification-settings/{adminEmail} {
+      allow read, write: if isAdmin()
+        && request.auth.token.email == adminEmail;
+    }
+
+    match /admin-media/{id} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    match /content-history/{id} {
+      allow read, write: if false;
+    }
+
+    match /admin-email-cache/{folder} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+  }
+}

@@ -1,6 +1,12 @@
-﻿import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { filterMailingContacts } from './newsletter-templates.js';
+import { saveCampaignDocuments } from './campaign-store.js';
+import { setupAdminLayout, setAdminPagePresentation } from './admin-layout.js';
+import { mountGigTools, readGigTools, fillGigTools, setupAdminTools } from './admin-tools.js?v=20260905-site-fill';
+import { normalizeGigDetails } from './gig-tools.js';
+import { mountWorkflows, setupWorkflows } from './admin-workflows.js?v=20260905-site-fill';
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-    import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, getFirestore, orderBy, query, setDoc, updateDoc, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, getFirestore, orderBy, limit, query, runTransaction, writeBatch, setDoc, updateDoc, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
     import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-functions.js";
     import { getMessaging, getToken, isSupported as isMessagingSupported, onMessage } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging.js";
     import QRCode from "https://cdn.jsdelivr.net/npm/qrcode@1.5.4/+esm";
@@ -60,7 +66,7 @@
       isGeneratingCampaignQr: false,
       isLoadingNotificationSettings: false,
       isSavingNotificationSettings: false,
-      activePage: "analytics",
+      activePage: "overview",
       currentCollection: "site-actions",
       dynamicFields: [],
       page: 1,
@@ -109,7 +115,7 @@
     };
 
     const ADMIN_ACTIVE_PAGE_STORAGE_KEY = "hae-admin-active-page";
-    const VALID_ADMIN_PAGES = new Set(["analytics", "gigs", "links", "email", "campaigns", "settings"]);
+    const VALID_ADMIN_PAGES = new Set(["overview", "homepage", "analytics", "gigs", "links", "email", "campaigns", "settings"]);
     const ADMIN_EMAIL_ALLOWLIST = new Set([
       "danyal1995@hotmail.co.uk",
       "danyalc95@gmail.com"
@@ -133,6 +139,10 @@
     let adminLogCachePromise = null;
     let emailSearchTimer = null;
     const prefetchedEmailIds = new Set();
+
+    mountWorkflows();
+    mountGigTools();
+    let workflows;
 
     const elements = {
       dashboard: document.getElementById("dashboard"),
@@ -382,9 +392,9 @@
         if (storedValue === "mailing-list") {
           return "email";
         }
-        return VALID_ADMIN_PAGES.has(storedValue) ? storedValue : "analytics";
+        return VALID_ADMIN_PAGES.has(storedValue) ? storedValue : "overview";
       } catch (error) {
-        return "analytics";
+        return "overview";
       }
     }
 
@@ -621,6 +631,7 @@
         autoRedirect: gig?.autoRedirect === true || String(gig?.autoRedirect || "").toLowerCase() === "true",
         imageUrl: String(gig?.imageUrl || "").trim(),
         metaPixelId: normalizeMetaPixelId(gig?.metaPixelId),
+        ...normalizeGigDetails(gig),
         hidden: hideFromEpk,
         hideFromEpk,
         hideFromLinks
@@ -1818,7 +1829,9 @@
     }
 
     function updateHeroMeta(updatedAt = "Not loaded") {
-      elements.heroCollection.textContent = `Collection: ${getActiveCollectionLabel()}`;
+      elements.heroCollection.textContent = ['overview', 'homepage'].includes(state.activePage)
+        ? `View: ${state.activePage === 'overview' ? 'Overview' : 'Homepage'}`
+        : `Collection: ${getActiveCollectionLabel()}`;
       elements.heroUpdated.textContent = `Updated: ${updatedAt}`;
     }
 
@@ -1998,11 +2011,25 @@
     }
 
     async function syncPublicGigsMirror(gigs = state.gigs) {
-      await setDoc(doc(db, "gigs", PUBLIC_MIRROR_DOC_ID), buildPublicGigsMirrorPayload(gigs));
+      workflows?.publishStatus('gigs', 'Publishing public listings…');
+      try {
+        await setDoc(doc(db, "gigs", PUBLIC_MIRROR_DOC_ID), buildPublicGigsMirrorPayload(gigs));
+        workflows?.publishStatus('gigs', 'Published. Public listings are up to date.');
+      } catch (error) {
+        workflows?.publishStatus('gigs', 'Saved data could not be published. Retry publishing to update the public site.', true);
+        throw error;
+      }
     }
 
     async function syncPublicLinksMirror(links = state.links) {
-      await setDoc(doc(db, "links", PUBLIC_MIRROR_DOC_ID), buildPublicLinksMirrorPayload(links));
+      workflows?.publishStatus('links', 'Publishing public listings…');
+      try {
+        await setDoc(doc(db, "links", PUBLIC_MIRROR_DOC_ID), buildPublicLinksMirrorPayload(links));
+        workflows?.publishStatus('links', 'Published. Public listings are up to date.');
+      } catch (error) {
+        workflows?.publishStatus('links', 'Saved data could not be published. Retry publishing to update the public site.', true);
+        throw error;
+      }
     }
 
     function getLinksByGroup(group) {
@@ -2394,12 +2421,15 @@
     }
 
     function syncCampaignFormState() {
+      const busy = state.isSavingCampaign || state.isLoadingCampaign || state.isDeletingCampaign;
+      elements.campaignForm.querySelectorAll("input, textarea, select").forEach(field => { field.disabled = busy; });
+      if (elements.newCampaign) elements.newCampaign.disabled = busy;
       elements.saveCampaign.disabled = state.isSavingCampaign || state.isLoadingCampaign || state.isDeletingCampaign;
       elements.saveCampaign.textContent = state.isSavingCampaign
         ? "Saving..."
         : state.isLoadingCampaign
           ? "Loading..."
-          : "Save Campaign";
+          : (elements.campaignLive.checked ? "Save & publish" : "Save draft");
       elements.campaignDelete.disabled = state.isSavingCampaign || state.isLoadingCampaign || state.isDeletingCampaign || !state.campaign?.title;
       elements.campaignDelete.textContent = state.isDeletingCampaign ? "Deleting..." : "Delete Campaign";
     }
@@ -2421,6 +2451,7 @@
     }
 
     function closeGigSettingsPanel() {
+      if (!workflows?.allowClose('gig-form') && workflows) return;
       if (!elements.gigSettingsCard) {
         return;
       }
@@ -2504,6 +2535,7 @@
       elements.gigEditHidden.checked = false;
       elements.gigEditHideFromLinks.checked = false;
       elements.gigEditError.textContent = "";
+      workflows?.markSaved('gig-edit-form');
       syncGigEditState();
     }
 
@@ -2516,6 +2548,7 @@
       elements.linkEditHidden.checked = false;
       elements.linkEditFeatured.checked = false;
       elements.linkEditError.textContent = "";
+      workflows?.markSaved('link-edit-form');
       syncLinkEditState();
     }
 
@@ -2528,12 +2561,14 @@
     }
 
     function closeGigEditDialog() {
+      if (elements.gigEditDialog.open && !workflows?.allowClose('gig-edit-form')) return;
       if (elements.gigEditDialog.open) {
         elements.gigEditDialog.close();
       }
     }
 
     function closeLinkEditDialog() {
+      if (elements.linkEditDialog.open && !workflows?.allowClose('link-edit-form')) return;
       if (elements.linkEditDialog.open) {
         elements.linkEditDialog.close();
       }
@@ -2559,6 +2594,7 @@
       elements.gigEditAutoRedirect.checked = gig.autoRedirect === true;
       elements.gigEditImageUrl.value = gig.imageUrl || "";
       elements.gigEditMetaPixelId.value = normalizeMetaPixelId(gig.metaPixelId);
+      fillGigTools("gig-edit", gig);
       elements.gigEditHidden.checked = isGigHidden(gig);
       elements.gigEditHideFromLinks.checked = isGigHiddenFromLinks(gig);
       elements.gigEditError.textContent = "";
@@ -2728,6 +2764,7 @@
         item.appendChild(main);
         item.appendChild(meta);
         item.appendChild(actions);
+        workflows?.decorateGig(gig, item, actions);
         return item;
       };
 
@@ -2923,12 +2960,17 @@
       }
     }
 
+    function getVisibleMailingContacts() {
+      return filterMailingContacts(state.mailingListSignups, document.getElementById('mailing-search')?.value || '', document.getElementById('mailing-filter')?.value || 'all');
+    }
+
     function renderMailingListSignups() {
+      workflows?.renderRecipients();
       if (!elements.mailingListList || !elements.mailingListCount || !elements.mailingListSummary) {
         return;
       }
 
-      const signups = [...state.mailingListSignups].sort((a, b) => {
+      const signups = [...getVisibleMailingContacts()].sort((a, b) => {
         return getMailingContactName(a).localeCompare(getMailingContactName(b))
           || String(a?.email || "").localeCompare(String(b?.email || ""));
       });
@@ -2937,21 +2979,17 @@
         ? `${signups.length} contact${signups.length === 1 ? "" : "s"}`
         : "No contacts yet";
       elements.mailingListList.innerHTML = "";
-      const summary = getMailingListSummary(signups);
 
-      elements.mailingListSummary.innerHTML = `
-        <div class="mailing-list-topline">
-          <strong>Contacts</strong>
-          <span>${summary.total} saved from your site mailing list</span>
-        </div>
-        <button type="button" class="mailing-list-select-button">Select</button>
-      `;
+      const allContacts = state.mailingListSignups;
+      const activeCount = allContacts.filter(contact => !contact.unsubscribed).length;
+      elements.mailingListSummary.innerHTML = `<div><strong>${allContacts.length}</strong><span>Total contacts</span></div><div><strong>${activeCount}</strong><span>Subscribed</span></div><div><strong>${allContacts.length - activeCount}</strong><span>Unsubscribed</span></div>`;
+
 
       if (!signups.length) {
         elements.mailingListList.innerHTML = `
           <tr>
             <td>
-              <div class="gig-admin-empty">No mailing list contacts yet.</div>
+              <div class="gig-admin-empty">${state.mailingListSignups.length ? "No contacts match your search." : "Your first signup will appear here."}</div>
             </td>
           </tr>
         `;
@@ -2977,6 +3015,7 @@
         contactButton.innerHTML = `
           <span class="mailing-contact-name">${escapeHtml(getMailingContactName(signup))}</span>
           <span class="mailing-contact-email">${escapeHtml(String(signup.email || ""))}</span>
+          <span class="mailing-contact-status">${signup.unsubscribed ? "Unsubscribed" : "Subscribed"}</span>
         `;
         contactButton.addEventListener("click", () => {
           state.activeMailingListContactId = signup.id;
@@ -2984,6 +3023,9 @@
           document.body.classList.add("mailing-contact-detail-open");
         });
 
+        cell.className = "mailing-contact-cell";
+        const selection = workflows?.recipientCheckbox(signup);
+        if (selection) cell.appendChild(selection);
         cell.appendChild(contactButton);
         row.appendChild(cell);
         elements.mailingListList.appendChild(row);
@@ -3085,7 +3127,7 @@
             <h4>${escapeHtml(name)}</h4>
             <div class="mailing-contact-profile-actions">
               <button type="button" id="mailing-contact-email-action" class="mailing-contact-round-action"${email ? "" : " disabled"}>Email</button>
-              <button type="button" class="mailing-contact-round-action" disabled>Invite</button>
+              <button type="button" id="mailing-contact-unsubscribe" class="mailing-contact-round-action"${signup.unsubscribed ? " disabled" : ""}>${signup.unsubscribed ? "Unsubscribed" : "Unsubscribe"}</button>
             </div>
           </div>
         </div>
@@ -3117,6 +3159,7 @@
         </div>
       `;
 
+      elements.mailingListDetail.querySelector("#mailing-contact-unsubscribe")?.addEventListener("click", event => workflows?.unsubscribeContact(signup, event.currentTarget));
       elements.mailingListDetail.querySelector("#mailing-contact-back")?.addEventListener("click", () => {
         document.body.classList.remove("mailing-contact-detail-open");
       });
@@ -3135,6 +3178,7 @@
     function getMailingListEmails() {
       return [...new Set(
         state.mailingListSignups
+          .filter(signup => !signup.unsubscribed)
           .map((signup) => String(signup?.email || "").trim())
           .filter(Boolean)
       )].sort((a, b) => a.localeCompare(b));
@@ -3156,8 +3200,8 @@
       }
     }
 
-    function sendMailingListEmails() {
-      const emails = getMailingListEmails().map(extractEmailAddress).filter(Boolean);
+    function sendMailingListEmails(recipientEmails = getMailingListEmails()) {
+      const emails = recipientEmails.map(extractEmailAddress).filter(Boolean);
       if (!emails.length) {
         setMailingListStatus("No signup emails available to send.", "is-error");
         return;
@@ -3165,6 +3209,7 @@
 
       setEmailComposeStatus("");
       openEmailCompose();
+      state.isNewsletterDraft = true;
 
       if (elements.emailTo) {
         elements.emailTo.value = "contact@halfawakeeyes.co.uk";
@@ -3180,7 +3225,7 @@
 
       elements.emailSubject?.focus();
       setMailingListStatus(`Compose opened with ${emails.length} hidden recipient${emails.length === 1 ? "" : "s"} in BCC.`, "is-success");
-      setEmailComposeStatus("Mailing list recipients added as BCC so addresses stay private.", "is-success");
+      setEmailComposeStatus("Subscribers receive separate emails with a personal unsubscribe button added automatically.", "is-success");
     }
 
     function exportMailingListCsv() {
@@ -3189,7 +3234,7 @@
         return;
       }
 
-      const headers = ["email", "sourcePage", "campaignSlug", "source", "medium", "referrer", "signupCount", "updatedAt"];
+      const headers = ["email", "sourcePage", "campaignSlug", "source", "medium", "referrer", "signupCount", "updatedAt", "unsubscribed"];
       const rows = [...state.mailingListSignups]
         .sort((a, b) => {
           const timeA = getDateForFilter(a?.updatedAt)?.getTime() || 0;
@@ -4003,7 +4048,7 @@
         return;
       }
 
-      elements.emailReaderTitle.textContent = message.subject || "(No subject)";
+      elements.emailReaderTitle.textContent = "Message";
       elements.emailReaderMeta.textContent = formatTimestamp(message.date) || "No date";
 
       const header = document.createElement("div");
@@ -4171,6 +4216,7 @@
     }
 
     function clearEmailBcc() {
+      state.isNewsletterDraft = false;
       if (elements.emailBcc) {
         elements.emailBcc.value = "";
       }
@@ -4200,7 +4246,7 @@
     }
 
     async function callAdminEmailFunction(name, payload = {}) {
-      const callable = httpsCallable(functions, name);
+      const callable = httpsCallable(functions, name, name === "sendAdminNewsletter" ? {timeout:310000} : {});
       const result = await callable(payload);
       return result.data || {};
     }
@@ -5006,9 +5052,10 @@
 
     async function sendEmail(event) {
       event.preventDefault();
+      if (state.isSendingEmail) return;
 
       const to = elements.emailTo?.value.trim();
-      const bcc = elements.emailBcc?.value.trim() || "";
+      let bcc = elements.emailBcc?.value.trim() || "";
       const subject = elements.emailSubject?.value.trim();
       const body = getEmailBodyText();
       const html = getEmailBodyHtml();
@@ -5036,15 +5083,36 @@
       setEmailComposeStatus("Sending email...");
 
       try {
-        await callAdminEmailFunction("sendAdminEmail", {
-          to,
-          bcc,
-          subject,
-          text: body,
-          html,
-          attachments,
-          replyToMessageId: state.activeEmailMessage?.id || ""
-        });
+        if (state.isNewsletterDraft) {
+          const snapshot = await getDocs(collection(db, 'mailing-list-signups'));
+          const active = new Set(snapshot.docs.map(d => d.data()).filter(s => !s.unsubscribed).map(s => String(s.email).trim().toLowerCase()));
+          bcc = bcc.split(',').map(email => email.trim()).filter(email => active.has(email.toLowerCase())).join(', ');
+          if (!bcc) throw new Error('No active newsletter recipients remain. Close this draft and select recipients again.');
+        }
+        const emailPayload = {to, bcc, subject, text:body, html, attachments, replyToMessageId:state.activeEmailMessage?.id || ""};
+        if (state.isNewsletterDraft) {
+          let remaining = [...new Set(bcc.split(',').map(email => email.trim().toLowerCase()).filter(Boolean))];
+          const total = remaining.length;
+          let delivered = 0;
+          while (remaining.length) {
+            const batch = remaining.slice(0, 5);
+            setEmailComposeStatus(`Sending newsletter: ${delivered} of ${total} delivered...`);
+            const result = await callAdminEmailFunction("sendAdminNewsletter", {...emailPayload, newsletter:true, bcc:batch.join(', ')});
+            if (!Array.isArray(result.sent) || !Array.isArray(result.failed) || !Array.isArray(result.skipped)) {
+              throw new Error('Could not confirm newsletter delivery. Check the Sent folder before trying again.');
+            }
+            delivered += result.sent.length;
+            const completed = new Set([...result.sent, ...result.skipped]);
+            remaining = remaining.filter(email => !completed.has(email));
+            elements.emailBcc.value = remaining.join(', ');
+            elements.emailBcc.dispatchEvent(new Event('input', {bubbles:true}));
+            if (result.failed.length) throw new Error(`${delivered} sent. Some emails could not be sent. Only unsent recipients remain in BCC; try again for those recipients.`);
+            if (batch.some(email => !completed.has(email))) throw new Error('Could not confirm delivery for every recipient. Check the Sent folder before trying again.');
+          }
+        } else {
+          await callAdminEmailFunction("sendAdminEmail", emailPayload);
+        }
+        document.dispatchEvent(new Event("hae-email-sent"));
         resetEmailComposeForm();
         setEmailComposeStatus("Email sent.", "is-success");
         window.setTimeout(closeEmailCompose, 700);
@@ -5061,6 +5129,7 @@
       state.isLoadingGigs = true;
       syncRefreshButton();
       elements.gigCount.textContent = "Loading gigs...";
+      workflows?.publishStatus("gigs", "Checking current public listings…");
       elements.gigList.innerHTML = `<div class="gig-admin-empty">Loading gigs...</div>`;
       if (state.activePage === "gigs") {
         elements.collectionNote.textContent = "Loading gigs from Firestore...";
@@ -5091,6 +5160,7 @@
         }
       } catch (error) {
         console.error("Error loading gigs:", error);
+        workflows?.publishStatus("gigs", "Could not verify public listings. Retry to check and publish the latest saved data.", true);
         state.gigs = [];
         elements.gigCount.textContent = "Load failed";
         elements.gigList.innerHTML = `<div class="gig-admin-empty">Could not load gigs. Check the browser console for details.</div>`;
@@ -5112,6 +5182,7 @@
       syncRefreshButton();
       syncLinkFormState();
       elements.linkCount.textContent = "Loading links...";
+      workflows?.publishStatus("links", "Checking current public listings…");
       elements.socialLinkCount.textContent = "Loading...";
       elements.mainLinkCount.textContent = "Loading...";
       elements.socialLinkList.innerHTML = `<div class="gig-admin-empty">Loading links...</div>`;
@@ -5146,6 +5217,7 @@
         }
       } catch (error) {
         console.error("Error loading links:", error);
+        workflows?.publishStatus("links", "Could not verify public listings. Retry to check and publish the latest saved data.", true);
         state.links = [];
         elements.linkCount.textContent = "Load failed";
         elements.socialLinkCount.textContent = "Load failed";
@@ -5184,6 +5256,7 @@
         autoRedirect: elements.gigAutoRedirect.checked,
         imageUrl: elements.gigImageUrl.value.trim(),
         metaPixelId: normalizeMetaPixelId(elements.gigMetaPixelId.value),
+        ...readGigTools("gig"),
         hidden: false,
         hideFromEpk: false,
         hideFromLinks: false
@@ -5210,7 +5283,7 @@
       try {
         await addDoc(collection(db, "gigs"), payload);
         elements.gigForm.reset();
-        setGigStatus("Gig saved to Firestore.", "is-success");
+        setGigStatus("Gig saved. Updating public listings…", "is-success");
         await loadGigs();
         closeGigSettingsPanel();
       } catch (error) {
@@ -5254,7 +5327,7 @@
 
       try {
         await addDoc(collection(db, "links"), payload);
-        setLinkStatus("Link saved to Firestore.", "is-success");
+        setLinkStatus("Link saved. Updating public listings…", "is-success");
         resetLinkFormDefaults({ resetValues: true });
         await loadLinks();
       } catch (error) {
@@ -5308,6 +5381,7 @@
         autoRedirect: elements.gigEditAutoRedirect.checked,
         imageUrl: elements.gigEditImageUrl.value.trim(),
         metaPixelId: normalizeMetaPixelId(elements.gigEditMetaPixelId.value),
+        ...readGigTools("gig-edit"),
         hidden: hideFromEpk,
         hideFromEpk,
         hideFromLinks
@@ -5333,6 +5407,7 @@
 
       try {
         await updateDoc(doc(db, "gigs", state.activeGigId), payload);
+        workflows.markSaved('gig-edit-form');
         await loadGigs();
         closeGigEditDialog();
       } catch (error) {
@@ -5376,6 +5451,7 @@
 
       try {
         await updateDoc(doc(db, "links", state.activeLinkId), payload);
+        workflows.markSaved('link-edit-form');
         await loadLinks();
         closeLinkEditDialog();
       } catch (error) {
@@ -5387,14 +5463,15 @@
       }
     }
 
-    function renderCampaign() {
-      if (!state.campaign || !state.campaign.title) {
+    function renderCampaign(campaign = readCampaignDraft(), editing = false) {
+      elements.campaignOpenLink.hidden = !state.campaign?.live;
+      if (!campaign.title) {
         elements.campaignOpenLink.href = getCampaignPublicUrl();
         if (elements.openCampaignQr) {
           elements.openCampaignQr.disabled = true;
         }
         elements.campaignCount.textContent = "No campaign selected";
-        elements.campaignPreview.innerHTML = `<div class="campaign-preview-empty">No campaign loaded yet. Save a title and at least one destination URL to publish a first release page.</div>`;
+        elements.campaignPreview.innerHTML = `<div class="campaign-preview-empty">Start with a title, then add your artwork and links. Your preview will appear here.</div>`;
         renderCampaignAnalytics();
         if (state.activePage === "campaigns") {
           syncActivePageUI();
@@ -5402,15 +5479,14 @@
         return;
       }
 
-      const campaign = state.campaign;
       const destinations = getCampaignDestinations(campaign);
       const releaseDate = campaign.releaseDate ? formatGigDate(campaign.releaseDate) : "";
       elements.campaignOpenLink.href = getCampaignPublicUrl();
       if (elements.openCampaignQr) {
-        elements.openCampaignQr.disabled = false;
+        elements.openCampaignQr.disabled = !state.campaign?.live;
       }
 
-      elements.campaignCount.textContent = `${campaign.live ? "Live" : "Draft"} | /smartlink/${campaign.slug || "campaign"} | ${destinations.length} destination${destinations.length === 1 ? "" : "s"}`;
+      elements.campaignCount.textContent = editing ? "Unsaved changes" : (state.campaign?.live ? "Published" : "Draft - only visible here");
       elements.campaignPreview.innerHTML = "";
 
       const card = document.createElement("article");
@@ -5428,11 +5504,19 @@
 
       const status = document.createElement("span");
       status.className = `campaign-preview-status ${campaign.live ? "is-live" : "is-draft"}`;
-      status.textContent = campaign.live ? "Live" : "Draft";
+      status.textContent = editing ? "Preview" : (campaign.live ? "Live" : "Draft");
 
       top.appendChild(topCopy);
       top.appendChild(status);
       card.appendChild(top);
+      if (campaign.artworkUrl && normalizeCampaignDestinationUrl(campaign.artworkUrl)) {
+        const artwork = document.createElement("img");
+        artwork.className = "campaign-preview-artwork";
+        artwork.alt = "Release artwork";
+        artwork.src = campaign.artworkUrl;
+        artwork.addEventListener("error", () => { artwork.replaceWith(Object.assign(document.createElement("p"), {textContent: "Artwork could not load. Check the image address."})); });
+        card.appendChild(artwork);
+      }
 
       const title = document.createElement("h3");
       title.className = "campaign-preview-title";
@@ -5462,25 +5546,6 @@
         releaseChip.textContent = `Release: ${releaseDate}`;
         meta.appendChild(releaseChip);
       }
-
-      if (campaign.artworkUrl) {
-        const artworkChip = document.createElement("span");
-        artworkChip.className = "campaign-preview-chip";
-        artworkChip.textContent = "Artwork ready";
-        meta.appendChild(artworkChip);
-      }
-
-      if (campaign.metaPixelId) {
-        const pixelChip = document.createElement("span");
-        pixelChip.className = "campaign-preview-chip";
-        pixelChip.textContent = "Meta Pixel ready";
-        meta.appendChild(pixelChip);
-      }
-
-      const destinationChip = document.createElement("span");
-      destinationChip.className = "campaign-preview-chip";
-      destinationChip.textContent = `${destinations.length} destination${destinations.length === 1 ? "" : "s"}`;
-      meta.appendChild(destinationChip);
 
       card.appendChild(meta);
 
@@ -5542,7 +5607,7 @@
 
         const status = document.createElement("span");
         status.className = `campaign-library-status${campaign.live ? " is-live" : ""}`;
-        status.textContent = campaign.live ? "Live" : "Saved";
+        status.textContent = campaign.live ? "Live" : "Draft";
 
         top.append(title, status);
 
@@ -5557,6 +5622,7 @@
         selectButton.className = "campaign-library-open";
         selectButton.textContent = "Edit Campaign";
         selectButton.addEventListener("click", () => {
+          if (state.isSavingCampaign || state.isDeletingCampaign || state.isLoadingCampaign || !workflows?.allowClose("campaign-form")) return;
           state.activeCampaignId = campaign.slug;
           state.campaign = getCampaignById(campaign.slug);
           populateCampaignForm(state.campaign);
@@ -5589,7 +5655,8 @@
           openCampaignQrDialog(campaign.slug);
         });
 
-        actions.append(selectButton, publicLink, analyticsButton, qrButton);
+        actions.append(selectButton, analyticsButton);
+        if (campaign.live) actions.append(publicLink, qrButton);
         item.append(top, meta, actions);
 
         elements.campaignList.appendChild(item);
@@ -5597,6 +5664,11 @@
     }
 
     async function loadCampaign() {
+      if (state.isLoadingCampaign) return;
+      if (workflows?.isDirty("campaign-form")) {
+        setCampaignStatus("Save your current changes before refreshing campaigns.");
+        return;
+      }
       state.isLoadingCampaign = true;
       syncRefreshButton();
       syncCampaignFormState();
@@ -5611,12 +5683,7 @@
       }
 
       try {
-        let campaignSnapshot;
-        try {
-          campaignSnapshot = await getDocs(collection(db, "campaigns"));
-        } catch (error) {
-          campaignSnapshot = { docs: [] };
-        }
+        const campaignSnapshot = await getDocs(collection(db, "campaigns"));
 
         state.campaigns = campaignSnapshot.docs
           .filter((entry) => entry.id !== "active")
@@ -5642,15 +5709,9 @@
         }
       } catch (error) {
         console.error("Error loading campaign:", error);
-        state.campaign = null;
-        state.campaigns = [];
-        state.activeCampaignId = "";
-        populateCampaignForm(null);
-        elements.campaignCount.textContent = "Load failed";
-        elements.campaignPreview.innerHTML = `<div class="campaign-preview-empty">Could not load campaign settings. Check the browser console for details.</div>`;
-        if (elements.campaignList) {
-          elements.campaignList.innerHTML = `<div class="gig-admin-empty">Could not load campaigns.</div>`;
-        }
+        renderCampaign();
+        renderCampaignLibrary();
+        setCampaignStatus("Could not refresh campaigns. Your current campaign is still here. Try refreshing again.", "is-error");
         if (state.activePage === "campaigns") {
           updateHeroMeta("Load failed");
           syncActivePageUI();
@@ -5665,13 +5726,9 @@
       }
     }
 
-    async function saveCampaign(event) {
-      event.preventDefault();
-      if (state.isSavingCampaign || state.isLoadingCampaign) {
-        return;
-      }
-
-      const payload = normalizeCampaignEntry({
+    function readCampaignDraft() {
+      return normalizeCampaignEntry({
+        slug: normalizeCampaignSlug(elements.campaignSlug.value, elements.campaignTitle.value),
         badge: elements.campaignBadge.value,
         title: elements.campaignTitle.value,
         subtitle: elements.campaignSubtitle.value,
@@ -5690,6 +5747,15 @@
         live: elements.campaignLive.checked,
         updatedAt: new Date()
       });
+    }
+
+    async function saveCampaign(event) {
+      event.preventDefault();
+      if (state.isSavingCampaign || state.isLoadingCampaign || state.isDeletingCampaign) {
+        return;
+      }
+
+      const payload = readCampaignDraft();
 
       const invalidCampaignUrls = [];
       const validateCampaignUrl = (key, label) => {
@@ -5708,6 +5774,7 @@
         payload[key] = normalizedValue;
       };
 
+      validateCampaignUrl("artworkUrl", "Artwork URL");
       validateCampaignUrl("primaryUrl", "Primary button URL");
       validateCampaignUrl("secondaryUrl", "Secondary button URL");
       validateCampaignUrl("spotifyUrl", "Spotify URL");
@@ -5724,6 +5791,10 @@
       const slug = normalizeCampaignSlug(elements.campaignSlug.value, payload.title);
       if (!slug) {
         setCampaignStatus("Add a title or slug before saving this campaign.", "is-error");
+        return;
+      }
+      if (slug === "active" || slug.length > 100) {
+        setCampaignStatus("Choose a page address under 101 characters, other than 'active'.", "is-error");
         return;
       }
       payload.slug = slug;
@@ -5766,30 +5837,20 @@
       setCampaignStatus("");
 
       try {
-        await Promise.all([
-          setDoc(doc(db, "campaigns", slug), payload),
-          setDoc(doc(db, "public-campaigns", slug), payload)
-        ]);
-
-        if (previousCampaignId && previousCampaignId !== slug) {
-          await Promise.all([
-            deleteDoc(doc(db, "campaigns", previousCampaignId)),
-            deleteDoc(doc(db, "public-campaigns", previousCampaignId))
-          ]);
-        }
-
-        await Promise.allSettled([
-          deleteDoc(doc(db, "campaigns", "active")),
-          deleteDoc(doc(db, "public-campaigns", "active"))
-        ]);
-
+        await saveCampaignDocuments({ db, doc, runTransaction, payload, previousId: previousCampaignId });
+        state.campaigns = state.campaigns.filter(entry => entry.slug !== previousCampaignId && entry.slug !== slug);
+        state.campaigns.push(payload);
+        state.campaign = payload;
+        populateCampaignForm(payload);
         state.activeCampaignId = slug;
-        setCampaignStatus(`Campaign saved to /smartlink/${slug}.`, "is-success");
-        await loadCampaign();
+        workflows?.markSaved("campaign-form");
+        setCampaignStatus(payload.live ? `Published at /smartlink/${slug}.` : "Draft saved. Publish when you are ready to share it.", "is-success");
+        renderCampaign();
+        renderCampaignLibrary();
         closeCampaignSettingsPanel();
       } catch (error) {
         console.error("Error saving campaign:", error);
-        setCampaignStatus("Could not save campaign. Check the browser console for details.", "is-error");
+        setCampaignStatus(error.message?.startsWith("That campaign address") ? error.message : "Could not save your campaign. Your edits are still here - check your connection and try again.", "is-error");
       } finally {
         state.isSavingCampaign = false;
         syncCampaignFormState();
@@ -6424,6 +6485,12 @@
     }
 
     function syncActivePageUI() {
+      setAdminPagePresentation(state.activePage);
+      const pageNames = {overview:'Overview',analytics:'Analytics',gigs:'Gigs',links:'Links',email:'Email',campaigns:'Campaigns',settings:'Settings',homepage:'Homepage'};
+      document.getElementById('admin-page-title').textContent = pageNames[state.activePage] || 'Overview';
+      document.querySelector('.admin-account')?.removeAttribute('open');
+      document.getElementById('overview-page').classList.toggle('active', state.activePage === 'overview');
+      document.getElementById('homepage-page').classList.toggle('active', state.activePage === 'homepage');
       const isAnalyticsPage = state.activePage === "analytics";
       const isGigsPage = state.activePage === "gigs";
       const isLinksPage = state.activePage === "links";
@@ -6446,7 +6513,9 @@
         link.classList.toggle("active", isActive);
       });
 
-      if (isAnalyticsPage) {
+      if (state.activePage === 'overview' || state.activePage === 'homepage') {
+        elements.collectionNote.textContent = state.activePage === 'overview' ? 'Your band at a glance.' : 'Manage the featured release and merch.';
+      } else if (isAnalyticsPage) {
         const visibleCount = state.viewMode === "sessions" ? state.sessionGroups.length : state.filteredLogs.length;
         elements.collectionNote.textContent = state.viewMode === "sessions"
           ? `Viewing ${getActiveEntries().length} event${getActiveEntries().length === 1 ? "" : "s"} across ${visibleCount} session${visibleCount === 1 ? "" : "s"} from ${state.currentCollection}.`
@@ -6478,7 +6547,9 @@
             : `No campaign selected. ${state.campaigns.length} saved campaign${state.campaigns.length === 1 ? "" : "s"} available.`;
       }
 
-      elements.heroCollection.textContent = `Collection: ${getActiveCollectionLabel()}`;
+      elements.heroCollection.textContent = ['overview', 'homepage'].includes(state.activePage)
+        ? `View: ${state.activePage === 'overview' ? 'Overview' : 'Homepage'}`
+        : `Collection: ${getActiveCollectionLabel()}`;
       if (isAnalyticsPage && !elements.cacheStatus.textContent.trim()) {
         setAnalyticsCacheStatus();
       } else {
@@ -6735,10 +6806,11 @@
         } else if (target.type === "link") {
           await deleteDoc(doc(db, "links", target.id));
         } else if (target.type === "campaign") {
-          await Promise.all([
-            deleteDoc(doc(db, "campaigns", target.id)),
-            deleteDoc(doc(db, "public-campaigns", target.id))
-          ]);
+          const batch = writeBatch(db);
+          batch.delete(doc(db, "campaigns", target.id));
+          batch.delete(doc(db, "public-campaigns", target.id));
+          await batch.commit();
+          workflows?.markSaved("campaign-form");
         } else if (target.type === "session") {
           await Promise.all(target.ids.map((id) => deleteDoc(doc(db, state.currentCollection, id))));
           await deleteCachedLogEntries(state.currentCollection, target.ids);
@@ -6982,7 +7054,9 @@
     }
 
     function showDashboard(user) {
+      document.body.classList.add("admin-signed-in");
       const shouldLoadData = elements.dashboard.style.display !== "grid" || state.authUser?.uid !== user.uid;
+      if (state.authUser?.uid !== user.uid) document.dispatchEvent(new Event('hae-admin-account-changing'));
       state.authUser = user;
       state.isMobileNavOpen = false;
       closeGigSettingsPanel();
@@ -7019,6 +7093,8 @@
     }
 
     function hideDashboard(message = "") {
+      document.body.classList.remove("admin-signed-in");
+      document.dispatchEvent(new Event('hae-admin-account-changing'));
       state.authUser = null;
       state.isMobileNavOpen = false;
       closeGigSettingsPanel();
@@ -7040,6 +7116,9 @@
 
     function setActivePage(page) {
       closeMobileNav();
+      if (page === 'overview' || page === 'homepage') {
+        state.activePage = page; persistActivePage(page); syncActivePageUI(); loadActivePageData(); return;
+      }
 
       if (page === "gigs") {
         state.activePage = "gigs";
@@ -7090,6 +7169,7 @@
     }
 
     function loadActivePageData(options = {}) {
+      if (state.activePage === 'overview' || state.activePage === 'homepage') return workflows.loadPage(state.activePage);
       if (state.activePage === "gigs") {
         return loadGigs();
       }
@@ -7432,12 +7512,18 @@
       elements.gigForm.addEventListener("submit", saveGig);
       elements.linkForm.addEventListener("submit", saveLink);
       elements.campaignForm.addEventListener("submit", saveCampaign);
+      for (const eventName of ["input", "change"]) elements.campaignForm.addEventListener(eventName, () => {
+        renderCampaign(readCampaignDraft(), true);
+        syncCampaignFormState();
+        renderCampaignLibrary();
+      });
       elements.gigEditForm.addEventListener("submit", saveGigEdit);
       elements.linkEditForm.addEventListener("submit", saveLinkEdit);
       elements.seedLinks.addEventListener("click", () => {
         seedDefaultLinks();
       });
       elements.newCampaign?.addEventListener("click", () => {
+        if (state.isSavingCampaign || state.isLoadingCampaign || state.isDeletingCampaign || !workflows?.allowClose("campaign-form")) return;
         resetCampaignForm();
         openCampaignSettingsPanel();
       });
@@ -7645,6 +7731,7 @@
       });
 
       elements.refreshButton.addEventListener("click", () => {
+        if (state.activePage === 'overview' || state.activePage === 'homepage') { workflows.loadPage(state.activePage); return; }
         if (state.activePage === "gigs") {
           loadGigs();
           return;
@@ -7718,6 +7805,18 @@
         }
       });
     }
+
+    workflows = setupWorkflows({ getVisibleMailingContacts, renderMailingListSignups, state, db, doc, getDoc, getDocs, collection, query, where, setDoc, updateDoc,
+      setActivePage, callAdminEmailFunction, normalizeEmailMessage, openGigSettingsPanel,
+      composeNewsletter: sendMailingListEmails, getEmailBodyText, getEmailBodyHtml, getSelectedEmailAttachments,
+      setEmailComposeStatus, syncEmailFormState, loadGigs, loadLinks, updateHeroMeta });
+
+    setupAdminTools({ getNewsletterRecipients: () => workflows.selectedRecipients(), composeNewsletter: sendMailingListEmails, state, db, doc, getDoc, getDocs, collection, query, where, orderBy, limit,
+      callAdminEmailFunction, openCampaignSettingsPanel, renderComposeAttachments, publicOrigin: "https://halfawakeeyes.co.uk" });
+
+    setupAdminLayout();
+    document.getElementById('mailing-search').addEventListener('input', renderMailingListSignups);
+    document.getElementById('mailing-filter').addEventListener('change', renderMailingListSignups);
 
     if (document.readyState === "loading") {
       document.addEventListener("DOMContentLoaded", initAdmin, { once: true });
