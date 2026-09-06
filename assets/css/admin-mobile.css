@@ -1,0 +1,78 @@
+/* Final mobile overrides shared by the admin pages. */
+@media (max-width: 768px) {
+  .admin-refresh .dashboard-content { padding:0 12px 24px; gap:16px; min-width:0; }
+  .admin-refresh .tabs-meta { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:8px; min-height:64px; padding:10px 0; }
+  .admin-refresh .dashboard-topbar-copy { min-width:0; width:auto; }
+  .admin-refresh #admin-page-title { font-size:19px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .admin-refresh #admin-page-description { display:none; }
+  .admin-refresh .dashboard-topbar-actions { display:flex; flex-wrap:nowrap; gap:4px; width:auto; margin:0; }
+  .admin-refresh :is(#mobile-nav-toggle,#refresh-data,#notification-bell) { width:40px; min-width:40px; height:44px; min-height:44px; padding:8px; border:0; background:transparent; border-radius:8px; }
+  .admin-refresh .mobile-nav-toggle-label { display:none; }
+  .admin-refresh .admin-account { margin:0; }
+  .admin-refresh .admin-account > summary { display:flex; align-items:center; justify-content:center; width:40px; min-height:44px; padding:8px; border:0; font-size:0; }
+  .admin-refresh .admin-account > summary::after { display:none; }
+  .admin-refresh .admin-account > summary::before { content:''; width:21px; height:21px; background:center/contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ddd' stroke-width='1.7'%3E%3Ccircle cx='12' cy='8' r='4'/%3E%3Cpath d='M4 22v-3a8 8 0 0 1 16 0v3'/%3E%3C/svg%3E"); }
+  .admin-refresh .admin-account-menu { top:48px; right:0; }
+  #notification-panel { top:72px; right:12px; width:calc(100vw - 24px); max-height:calc(100svh - 88px); }
+  .admin-refresh .dashboard-rail { width:min(290px,85vw); padding:20px 16px calc(24px + env(safe-area-inset-bottom)); }
+  .admin-refresh .dashboard-rail .nav-link { min-height:46px; border-radius:8px; }
+  .analytics-sidebar-subnav button { min-height:40px; }
+  .admin-refresh :is(.form-control,.form-select) { font-size:16px; min-width:0; max-width:100%; min-height:44px; border-radius:8px; }
+  .admin-refresh :is(.manager-card,.manager-panel,.admin-editor-panel,.admin-results-panel,.workflow-grid) { min-width:0; }
+  .admin-refresh :is(.manager-card,.tool-panel) { padding:16px; border-radius:10px; }
+  .admin-refresh .workflow-grid { grid-template-columns:minmax(0,1fr); gap:14px; }
+  .admin-refresh .workflow-actions { gap:8px; }
+  .admin-refresh .workflow-actions > .btn { flex:1 1 auto; }
+  .admin-refresh :is(.manager-toolbar,.section-title) { gap:10px; flex-wrap:wrap; }
+  .admin-refresh .section-title { flex-direction:row; justify-content:space-between; align-items:center; text-align:left; }
+  .admin-refresh .section-title h3 { text-align:left; margin:0; }
+  .admin-refresh .manager-toolbar-actions { gap:8px; flex-wrap:wrap; }
+  .admin-refresh .manager-toolbar-actions .btn { min-height:44px; }
+  .admin-refresh .helper-copy { font-size:12px; line-height:1.5; }
+  .admin-refresh #overview-cards { gap:0; }
+  .admin-refresh #overview-cards .manager-card { padding:16px; border-bottom:1px solid #292929; }
+  .admin-refresh #overview-cards h3 { font-size:28px; margin:10px 0 6px; }
+  .analytics-subnav { margin:0 0 16px; padding:4px; background:#171717; border:1px solid #292929; border-radius:10px; gap:4px; }
+  .analytics-subnav button { flex:1; min-height:42px; padding:8px; border:0; border-radius:7px; font-size:14px; }
+  .analytics-subnav button.active { background:#303030; color:#fff; }
+  #analytics-insights { gap:16px; }
+  .admin-refresh .insight-disclosure > h3 { padding:14px 14px 10px; font-size:13px; }
+  .admin-refresh .insight-filters .control-stack { padding:0 14px 14px; display:grid; gap:12px; }
+  .admin-refresh .insight-filters .controls { display:block; margin:0; }
+  .admin-refresh .insight-filters .controls-secondary { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin:0; }
+  .insight-filters .controls-secondary > div { min-width:0; }
+  .insight-filters .controls-secondary label { font-size:12px; margin-bottom:5px; }
+  .admin-refresh .insight-filters [data-insight-section="reports"] > h3 { display:none; }
+  .admin-refresh [data-insight-section="reports"] .insight-disclosure-body { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:6px 10px; padding:14px; }
+  [data-insight-section="reports"] label[for="insight-report"] { grid-column:1; grid-row:1; font-size:12px; }
+  [data-insight-section="reports"] label[for="insight-source"] { grid-column:2; grid-row:1; font-size:12px; }
+  .admin-refresh [data-insight-section="reports"] #insight-report { grid-column:1; grid-row:2; min-width:0; width:100%; }
+  #insight-source { grid-column:2; grid-row:2; min-width:0; width:100%; }
+  [data-insight-section="reports"] .helper-copy { grid-column:1/-1; padding-top:4px; }
+  .insight-own-visits { padding:12px 14px; }
+  .insight-own-visits label { align-items:flex-start; line-height:1.5; }
+  .insight-own-visits input { width:18px; height:18px; flex:none; margin-top:1px; accent-color:#ddd; }
+  .admin-refresh #analytics-page #stats-grid { gap:10px; margin-bottom:16px; }
+  .admin-refresh #analytics-page .stat-card { padding:14px; border-radius:10px; }
+  .admin-refresh #analytics-page .stat-card .label { font-size:10px; letter-spacing:.04em; }
+  .admin-refresh #analytics-page .stat-card .value { font-size:28px; }
+  .insight-change { font-size:11px; margin-top:8px; padding-top:8px; }
+  .insight-toolbar { gap:10px; }
+  .insight-presets { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); width:100%; gap:6px; }
+  .insight-presets .btn { min-width:0; padding:8px 4px; font-size:12px; }
+  .insight-panel { padding:14px; border-radius:10px; }
+  .insight-trend .insight-toolbar > div { width:100%; }
+  .insight-trend label { width:100%; justify-content:space-between; }
+  .insight-trend select { max-width:70%; }
+  .insight-chart { height:160px; }
+  .insight-axis { font-size:10px; }
+  .insight-marker-form { display:grid; grid-template-columns:minmax(0,1fr); gap:10px; }
+  .insight-marker-form label { min-width:0; }
+  .insight-log-tools { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+  .insight-log-tools .view-toggle { grid-column:1/-1; }
+  .insight-log-tools .view-toggle-button { flex:1; min-height:40px; }
+  .insight-log-tools #page-size,.insight-log-tools #export-csv { width:100%!important; margin:0; }
+  .admin-refresh .insight-logs .admin-data-workspace { padding:12px; }
+  .admin-refresh .pagination-bar { flex-wrap:wrap; gap:12px; padding:12px; }
+  .admin-refresh dialog { max-width:calc(100vw - 20px); max-height:calc(100svh - 24px); }
+}

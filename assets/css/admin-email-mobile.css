@@ -1,0 +1,106 @@
+@media(max-width:768px) {
+  body.admin-refresh.email-page-active { overflow:hidden; }
+  body.admin-refresh.email-page-active #email-page .email-workspace { height:100dvh; min-height:0; grid-template-columns:minmax(0,1fr); grid-template-rows:auto minmax(0,1fr) auto; border:0; background:#0d0d0d; }
+  .admin-refresh #email-page [data-email-panel][hidden] { display:none!important; }
+  body.admin-refresh.email-page-active #email-page .email-mobile-topbar { display:grid; grid-template-columns:44px minmax(0,1fr) 44px; align-items:center; gap:8px; padding:max(8px,env(safe-area-inset-top)) 12px 8px; min-height:60px; background:#0d0d0d; }
+  .admin-refresh #email-page .email-mobile-title { text-align:left; font-size:19px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .admin-refresh #email-page .email-mobile-icon-button { width:44px; height:44px; border:0; border-radius:8px; background:none; color:#ddd; display:grid; place-items:center; padding:10px; }
+  body.admin-refresh.email-page-active #email-page .email-inbox-card { display:flex; flex-direction:column; min-height:0; overflow:hidden; padding:0; background:#101010; }
+  .admin-refresh #email-page .email-inbox-card > .section-title { padding:8px 16px; margin:0; min-height:0; justify-content:flex-start; border:0; }
+  .admin-refresh #email-page .email-inbox-card > .section-title h3 { display:none; }
+  .admin-refresh #email-page #email-count { font-size:12px; }
+  .admin-refresh #email-page .email-toolbar { padding:0 12px 12px; gap:8px; flex:none; }
+  .admin-refresh #email-page #email-search { width:100%; font-size:16px; min-height:44px; border-radius:9px; background:#1a1a1a; }
+  .admin-refresh #email-page .email-toolbar .manager-toolbar-actions { display:none; }
+  body.admin-refresh.email-page-active #email-page .email-message-list { display:flex; flex-direction:column; flex:1; height:auto; min-height:0; max-height:none; padding:0 0 84px; overflow:auto; gap:0; overscroll-behavior:contain; }
+  .admin-refresh #email-page .email-message-item { grid-template-columns:36px minmax(0,1fr); align-items:start; flex:none; width:100%; gap:10px; padding:16px 12px; min-height:100px; border-radius:0; background:none; border:0; border-bottom:1px solid #252525; }
+  .admin-refresh #email-page .email-message-avatar { width:36px; height:36px; border-radius:50%; }
+  .admin-refresh #email-page .email-message-top { gap:8px; }
+  .admin-refresh #email-page .email-message-from { font-size:14px; min-width:0; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+  .admin-refresh #email-page .email-message-date { font-size:11px; margin-left:auto; }
+  .admin-refresh #email-page .email-message-subject { font-size:14px; margin-top:3px; line-height:1.4; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .admin-refresh #email-page .email-message-preview { font-size:13px; line-height:1.45; margin-top:3px; white-space:normal; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .admin-refresh #email-page #email-load-older { flex:none; margin:0; width:100%; min-height:44px; border-radius:0; border-top:1px solid #292929; }
+  body.admin-refresh.email-page-active #email-page .email-mobile-bottom-nav { padding:6px 12px max(6px,env(safe-area-inset-bottom)); background:#111; border-top:1px solid #303030; gap:6px; }
+  .admin-refresh #email-page .email-mobile-nav-item { min-height:52px; padding:6px; border:0; border-radius:9px; color:#999; font-size:11px; gap:4px; }
+  .admin-refresh #email-page .email-mobile-nav-item.is-active { color:#fff; background:#262626; }
+  .admin-refresh #email-page .email-mobile-compose-fab { position:fixed; right:16px; bottom:calc(80px + env(safe-area-inset-bottom)); width:54px; height:54px; min-width:54px; border-radius:16px; background:#eee; color:#111; box-shadow:0 5px 20px #0008; }
+  .admin-refresh #email-page .email-mobile-compose-fab span:first-child { display:block; font-size:26px; }
+  .admin-refresh #email-page .email-mobile-compose-fab span:last-child { display:none; }
+  body.admin-refresh.email-page-active #email-page .email-folder-rail { padding:16px; background:#111; border:0; gap:16px; }
+  body.admin-refresh.email-page-active.email-folders-mobile-open #email-page .email-folder-rail { display:grid; padding:16px; gap:16px; }
+  body.admin-refresh.email-page-active #email-page .email-folder-item { min-height:48px; padding:12px; font-size:15px; border-radius:8px; }
+  .admin-refresh #email-page .email-view-tabs { grid-template-columns:1fr 1fr; gap:6px; }
+  .admin-refresh #email-page .email-view-tab { min-height:44px; text-align:center; font-size:14px; }
+  .admin-refresh #email-page .email-reader-card { position:fixed; inset:0; width:100%; height:100dvh; max-height:100dvh; display:flex; flex-direction:column; padding:0; background:#111; overflow:hidden; visibility:hidden; border:0; border-radius:0; }
+  body.admin-refresh.email-reader-mobile-open #email-page .email-reader-card { visibility:visible; transform:none; opacity:1; pointer-events:auto; }
+  .admin-refresh #email-page .email-reader-card > .section-title { flex:none; margin:0; padding:max(10px,env(safe-area-inset-top)) 16px 10px; min-height:64px; border-bottom:1px solid #292929; }
+  .admin-refresh #email-page .email-reader-title-actions { margin-left:auto; }
+  .admin-refresh #email-page .email-reader-close { display:grid; place-items:center; width:44px; height:44px; }
+  .admin-refresh #email-page .email-reader { flex:1; min-height:0; max-height:none; overflow:auto; padding:20px 16px max(24px,env(safe-area-inset-bottom)); overscroll-behavior:contain; }
+  .admin-refresh #email-page .email-reader-message-header { grid-template-columns:36px minmax(0,1fr); gap:10px; }
+  .admin-refresh #email-page .email-reader-subject { font-size:22px; line-height:1.35; overflow-wrap:anywhere; }
+  .admin-refresh #email-page :is(.email-reader-sender,.email-reader-meta-grid strong,.email-reader-attachment) { overflow-wrap:anywhere; }
+  .admin-refresh #email-page .email-reader-body { min-height:0; line-height:1.65; }
+  .admin-refresh #email-page :is(.email-reader-body-main,.email-reader-history-text) { font-size:15px; line-height:1.65; white-space:pre-wrap; overflow-wrap:anywhere; }
+  .admin-refresh #email-page .email-reader-actions { position:static; inset:auto; width:auto; display:flex; flex-wrap:wrap; gap:8px; padding:16px 0 0; margin-top:24px; background:none; box-shadow:none; }
+  .admin-refresh #email-page .email-reader-actions .btn { min-height:44px; flex:1; min-width:0; color:#eee; background:#252525; }
+  .admin-refresh #email-page .email-reader-actions .btn:first-child { background:#eee; color:#111; }
+  .admin-refresh #email-page .email-compose-overlay { inset:0; padding:0; height:100dvh; overflow:hidden; }
+  .admin-refresh #email-page .email-compose-card { display:flex; flex-direction:column; width:100%; height:100dvh; min-height:0; max-height:100dvh; border:0; border-radius:0; overflow:hidden; }
+  .admin-refresh #email-page .email-compose-header { flex:none; min-height:60px; padding:max(10px,env(safe-area-inset-top)) 16px 10px; }
+  .admin-refresh #email-page .email-compose-form { flex:1; min-height:0; overflow:auto; overscroll-behavior:contain; }
+  .admin-refresh #email-page .email-compose-row { display:flex; align-items:center; padding:10px 16px; gap:10px; min-height:52px; }
+  .admin-refresh #email-page .email-compose-row[hidden] { display:none; }
+  .admin-refresh #email-page .email-compose-row input { flex:1; min-width:0; font-size:16px; min-height:32px; }
+  .admin-refresh #email-page .email-compose-toolbar { display:flex; flex-wrap:wrap; gap:4px; padding:8px 12px; }
+  .admin-refresh #email-page .email-format-button { min-width:40px; min-height:40px; padding:8px; font-size:13px; }
+  .admin-refresh #email-page .email-compose-body { flex:1 0 180px; min-height:180px; padding:16px; font-size:16px; line-height:1.6; overflow-wrap:anywhere; }
+  .admin-refresh #email-page .email-compose-footer { position:sticky; bottom:0; z-index:2; flex:none; background:#141414; padding:12px 16px max(12px,env(safe-area-inset-bottom)); border-top:1px solid #303030; gap:10px; flex-wrap:wrap; }
+  .admin-refresh #email-page .tool-email-controls { padding:10px 16px; flex-wrap:wrap; }
+  .admin-refresh #email-page .tool-email-controls select { min-width:0; width:100%; font-size:16px; min-height:44px; }
+  body.admin-refresh.email-page-active #email-page .email-address-book-card { overflow:auto; min-height:0; }
+  .admin-refresh #email-page #email-address-book { padding:16px 12px 24px; gap:16px; }
+  .admin-refresh.email-address-book-open #email-page .email-mobile-title { grid-column:1 / 3; }
+  .admin-refresh.email-address-book-open #email-page #email-mobile-refresh { grid-column:3; }
+  .admin-refresh #email-page #email-address-book > .section-title { margin:0; padding:0; min-height:0; }
+  .admin-refresh #email-page #email-address-book > .section-title h3 { display:none; }
+  .admin-refresh #email-page #mailing-list-count { font-size:12px; color:#aaa; }
+  .admin-refresh #email-page #email-address-book .mailing-list-toolbar { gap:0; }
+  .admin-refresh #email-page .mailing-list-toolbar .helper-copy { display:none; }
+  .admin-refresh #email-page #email-address-book .mailing-list-toolbar .manager-toolbar-actions { display:grid; grid-template-columns:minmax(0,1fr) auto; width:100%; gap:8px; }
+  .admin-refresh #email-page #email-address-book .mailing-list-toolbar .btn { width:100%; min-height:44px; font-size:14px; padding:10px 12px; }
+  .admin-refresh #email-page .mailing-more summary { min-height:44px; display:flex; align-items:center; padding:10px 14px; }
+  .admin-refresh #email-page .mailing-more > div { min-width:180px; border-radius:8px; box-shadow:0 8px 24px #0008; }
+  .admin-refresh #email-page #mailing-list-summary { padding:12px 0; }
+  .admin-refresh #email-page #mailing-list-summary strong { font-size:22px; line-height:1.2; }
+  .admin-refresh #email-page #mailing-list-summary span { font-size:11px; }
+  .admin-refresh #email-page .mailing-search-bar { grid-template-columns:minmax(0,1fr) 132px; gap:8px; }
+  .admin-refresh #email-page .mailing-search-bar .form-control { width:100%; min-height:44px; font-size:16px; padding:8px; }
+  .admin-refresh #email-page #email-address-book .mailing-selection-bar { padding:0 0 12px; }
+  .admin-refresh #email-page .mailing-selection-bar .workflow-actions { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:6px 12px; margin:0; }
+  .admin-refresh #email-page #email-address-book .mailing-selection-bar .btn { min-height:44px; font-size:13px; padding:8px 12px; width:100%; }
+  .admin-refresh #email-page #newsletter-selection-count { text-align:right; font-size:12px; }
+  .admin-refresh #email-page #email-address-book .mailing-contacts-layout { display:block; min-height:0; max-height:none; height:auto; overflow:visible; }
+  .admin-refresh #email-page #email-address-book :is(.mailing-contacts-list-panel,.mailing-list-table-panel,.table-responsive) { min-height:0; max-height:none; height:auto; overflow:visible; padding:0; border:0; background:none; }
+  .admin-refresh #email-page #email-address-book .mailing-list-table { width:100%; min-width:0; }
+  .admin-refresh #email-page #email-address-book .mailing-contact-row { margin:0; padding:0; border:0; background:none; border-radius:0; }
+  .admin-refresh #email-page #email-address-book .mailing-contact-cell { padding:4px 0; gap:4px; }
+  .admin-refresh #email-page .mailing-recipient-check { width:22px; height:22px; margin:11px; }
+  .admin-refresh #email-page #email-address-book .mailing-contact-button { display:grid; grid-template-columns:minmax(0,1fr); gap:3px; min-height:82px; padding:10px 8px; border-radius:0; text-align:left; }
+  .admin-refresh #email-page #email-address-book .mailing-contact-button.is-active { background:none; }
+  .admin-refresh #email-page #email-address-book .mailing-contact-name { font-size:15px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .admin-refresh #email-page #email-address-book .mailing-contact-email { font-size:13px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .admin-refresh #email-page .mailing-contact-status { font-size:11px; color:#aaa; }
+  .admin-refresh #email-page #email-address-book .mailing-list-detail { display:none; }
+  body.admin-refresh.mailing-contact-detail-open #email-page #email-address-book .mailing-list-detail { display:block; position:fixed; inset:0; height:100dvh; min-height:0; max-height:100dvh; padding:0 16px max(24px,env(safe-area-inset-bottom)); background:#111; border:0; border-radius:0; overflow:auto; }
+  body.admin-refresh.mailing-contact-detail-open #email-page #email-address-book .mailing-contact-detail-bar { margin:0 -16px 20px; padding:max(8px,env(safe-area-inset-top)) 12px 8px; background:#111; }
+  .admin-refresh #email-page #mailing-contact-back { width:44px; height:44px; }
+  .admin-refresh #email-page #email-address-book .mailing-contact-profile { align-items:start; }
+  .admin-refresh #email-page #email-address-book .mailing-contact-profile-main h4 { font-size:20px; line-height:1.35; overflow-wrap:anywhere; }
+  .admin-refresh #email-page #email-address-book .mailing-contact-profile-actions { flex-wrap:wrap; }
+  .admin-refresh #email-page #email-address-book .mailing-contact-round-action { min-height:44px; font-size:13px; }
+  .admin-refresh #email-page #email-address-book .mailing-contact-fields { gap:0; padding:0; }
+  .admin-refresh #email-page #email-address-book .mailing-contact-fields div { padding:14px 0; border:0; border-bottom:1px solid #292929; border-radius:0; background:none; gap:5px; }
+  .admin-refresh #email-page #email-address-book .mailing-contact-fields strong { font-size:14px; font-weight:400; overflow-wrap:anywhere; }
+}

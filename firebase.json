@@ -19,6 +19,21 @@
     "public": ".",
     "redirects": [
       {
+        "source": "/join",
+        "destination": "/join-us/",
+        "type": 301
+      },
+      {
+        "source": "/join/",
+        "destination": "/join-us/",
+        "type": 301
+      },
+      {
+        "source": "/join/index.html",
+        "destination": "/join-us/",
+        "type": 301
+      },
+      {
         "source": "/index.html",
         "destination": "/",
         "type": 301
