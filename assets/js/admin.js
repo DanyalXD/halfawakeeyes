@@ -1,12 +1,14 @@
+import { setupNotificationBell, waitForNotificationPage } from './admin-notification-bell.js?v=20260906-existing-viewers';
+import { renderAnalyticsInsights, matchesAnalyticsReport, matchesAnalyticsSource, setAnalyticsSubview } from './analytics-insights.js?v=20260906-existing-viewers';
 import { filterMailingContacts } from './newsletter-templates.js';
 import { saveCampaignDocuments } from './campaign-store.js';
 import { setupAdminLayout, setAdminPagePresentation } from './admin-layout.js';
-import { mountGigTools, readGigTools, fillGigTools, setupAdminTools } from './admin-tools.js?v=20260905-site-fill';
+import { mountGigTools, readGigTools, fillGigTools, setupAdminTools } from './admin-tools.js?v=20260906-sources';
 import { normalizeGigDetails } from './gig-tools.js';
 import { mountWorkflows, setupWorkflows } from './admin-workflows.js?v=20260905-site-fill';
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-    import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, getFirestore, orderBy, limit, query, runTransaction, writeBatch, setDoc, updateDoc, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, getFirestore, orderBy, limit, onSnapshot, query, runTransaction, writeBatch, setDoc, updateDoc, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
     import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-functions.js";
     import { getMessaging, getToken, isSupported as isMessagingSupported, onMessage } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging.js";
     import QRCode from "https://cdn.jsdelivr.net/npm/qrcode@1.5.4/+esm";
@@ -5866,39 +5868,28 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
     }
 
     function renderStats() {
-      const latestWithTimestamp = state.allLogs.find((entry) => formatTimestamp(entry.timestamp));
-      const latestTimestamp = latestWithTimestamp ? formatTimestamp(latestWithTimestamp.timestamp) : "No timestamp";
       const activeEntries = getActiveEntries();
       const visibleCount = activeEntries.length;
       const sessionCount = state.sessionGroups.length;
-      const groupingField = getBestGroupingField();
       const tableFields = getVisibleTableFields();
-      const uniqueActions = groupingField
-        ? new Set(activeEntries.map((entry) => entry[groupingField]).filter(Boolean)).size
-        : 0;
-
-      elements.statsGrid.innerHTML = `
-        <article class="stat-card">
-          <div class="label">Total Events</div>
-          <div class="value">${state.allLogs.length}</div>
-          <div class="detail">Loaded from ${state.currentCollection}</div>
-        </article>
-        <article class="stat-card">
-          <div class="label">Visible Results</div>
-          <div class="value">${visibleCount}</div>
-          <div class="detail">${state.searchTerm ? "Filtered by search query" : "Showing all available rows"}</div>
-        </article>
-        <article class="stat-card">
-          <div class="label">Unique ${groupingField || "Fields"}</div>
-          <div class="value">${uniqueActions}</div>
-          <div class="detail">${groupingField ? `Based on ${groupingField}` : "No grouping field available"}</div>
-        </article>
-        <article class="stat-card">
-          <div class="label">Latest Event</div>
-          <div class="value">${latestTimestamp === "No timestamp" ? "N/A" : "Recent"}</div>
-          <div class="detail">${latestTimestamp}</div>
-        </article>
-      `;
+      renderAnalyticsInsights(activeEntries, {
+        onNavigate: () => { if (state.activePage !== 'analytics') setActivePage('analytics'); else closeMobileNav(); },
+        source: state.analyticsSource || '',
+        onSource: source => { state.analyticsSource = source; applyFilters(); },
+        allEntries: state.allLogs, report: state.analyticsReport || '',
+        comparisonEntries: state.allLogs.filter(entry =>
+          (!state.searchTerm.trim() || serializeLog(entry).includes(state.searchTerm.trim().toLowerCase())) &&
+          matchesAnalyticsReport(entry, state.analyticsReport) && matchesAnalyticsSource(entry, state.analyticsSource) &&
+          (state.viewMode !== 'sessions' || entry.sessionId)),
+        onReport: report => { state.analyticsReport = report; applyFilters(); },
+        from: state.dateFrom, to: state.dateTo,
+        onRange: (from, to) => {
+          state.dateFrom = from; state.dateTo = to;
+          document.getElementById('date-from').value = from;
+          document.getElementById('date-to').value = to;
+          applyFilters();
+        }
+      });
 
       elements.fieldCount.textContent = `${state.dynamicFields.length} fields detected`;
       if (state.activePage === "analytics") {
@@ -5943,7 +5934,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
         return;
       }
 
-      const counts = {};
+      const counts = Object.create(null);
       activeEntries.forEach((entry) => {
         const key = entry[summaryField] ?? "Unknown";
         counts[key] = (counts[key] || 0) + 1;
@@ -5952,7 +5943,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
       const chips = Object.entries(counts)
         .sort((a, b) => b[1] - a[1])
         .slice(0, 12)
-        .map(([label, count]) => `<span class="chip"><strong>${count}</strong> ${label}</span>`)
+        .map(([label, count]) => `<span class="chip"><strong>${count}</strong> ${escapeHtml(String(label))}</span>`)
         .join("");
 
       elements.summary.innerHTML = chips || `<span class="chip">No summary data</span>`;
@@ -6603,43 +6594,18 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
     }
 
     function syncRefreshButton() {
-      if (!elements.refreshButton) {
-        return;
-      }
-
+      if (!elements.refreshButton) return;
       syncResetAnalyticsCacheButton();
-
-      if (state.activePage === "gigs") {
-        elements.refreshButton.disabled = state.isLoadingGigs;
-        elements.refreshButton.textContent = state.isLoadingGigs ? "Refreshing..." : "Refresh";
-        return;
-      }
-
-      if (state.activePage === "links") {
-        elements.refreshButton.disabled = state.isLoadingLinks;
-        elements.refreshButton.textContent =  state.isLoadingLinks ? "Refreshing..." : "Refresh";
-        return;
-      }
-
-      if (state.activePage === "campaigns") {
-        elements.refreshButton.disabled = state.isLoadingCampaign;
-        elements.refreshButton.textContent = state.isLoadingCampaign ? "Refreshing..." : "Refresh";
-        return;
-      }
-
-      if (state.activePage === "email") {
-        const isAddressBook = state.activeEmailView === "address-book";
-        elements.refreshButton.disabled = isAddressBook
-          ? state.isLoadingMailingList
-          : state.isLoadingEmail || state.isLoadingEmailMessage;
-        elements.refreshButton.textContent = (isAddressBook ? state.isLoadingMailingList : state.isLoadingEmail)
-          ? "Refreshing..."
-          : "Refresh";
-        return;
-      }
-
-      elements.refreshButton.disabled = state.isRefreshing;
-      elements.refreshButton.textContent = state.isRefreshing ? "Refreshing..." : "Refresh";
+      const busy = state.activePage === 'gigs' ? state.isLoadingGigs
+        : state.activePage === 'links' ? state.isLoadingLinks
+        : state.activePage === 'campaigns' ? state.isLoadingCampaign
+        : state.activePage === 'email' ? (state.activeEmailView === 'address-book' ? state.isLoadingMailingList : state.isLoadingEmail || state.isLoadingEmailMessage)
+        : state.isRefreshing;
+      elements.refreshButton.disabled = busy;
+      elements.refreshButton.classList.toggle('is-refreshing', busy);
+      elements.refreshButton.setAttribute('aria-busy', String(busy));
+      elements.refreshButton.setAttribute('aria-label', busy ? 'Refreshing' : 'Refresh page');
+      elements.refreshButton.title = busy ? 'Refreshing' : 'Refresh page';
     }
 
     function closeDeleteDialog() {
@@ -6954,7 +6920,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
         const matchesFrom = fromDate ? (eventDate ? eventDate >= fromDate : false) : true;
         const matchesTo = toDate ? (eventDate ? eventDate <= toDate : false) : true;
 
-        return matchesSearch && matchesFrom && matchesTo;
+        return matchesSearch && matchesFrom && matchesTo && matchesAnalyticsReport(entry, state.analyticsReport) && matchesAnalyticsSource(entry, state.analyticsSource);
       });
 
       state.sessionGroups = getSessionGroups(state.filteredLogs);
@@ -7058,6 +7024,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
       const shouldLoadData = elements.dashboard.style.display !== "grid" || state.authUser?.uid !== user.uid;
       if (state.authUser?.uid !== user.uid) document.dispatchEvent(new Event('hae-admin-account-changing'));
       state.authUser = user;
+      notificationBell.start(user.uid);
       state.isMobileNavOpen = false;
       closeGigSettingsPanel();
       closeCampaignSettingsPanel();
@@ -7114,50 +7081,47 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
       syncMobileNav();
     }
 
+    let pageNavigationVersion = 0;
     function setActivePage(page) {
+      pageNavigationVersion++;
       closeMobileNav();
       if (page === 'overview' || page === 'homepage') {
-        state.activePage = page; persistActivePage(page); syncActivePageUI(); loadActivePageData(); return;
+        state.activePage = page; persistActivePage(page); syncActivePageUI(); return loadActivePageData();
       }
 
       if (page === "gigs") {
         state.activePage = "gigs";
         persistActivePage(state.activePage);
         syncActivePageUI();
-        loadActivePageData();
-        return;
+        return loadActivePageData();
       }
 
       if (page === "links") {
         state.activePage = "links";
         persistActivePage(state.activePage);
         syncActivePageUI();
-        loadActivePageData();
-        return;
+        return loadActivePageData();
       }
 
       if (page === "email") {
         state.activePage = "email";
         persistActivePage(state.activePage);
         syncActivePageUI();
-        loadActivePageData();
-        return;
+        return loadActivePageData();
       }
 
       if (page === "campaigns") {
         state.activePage = "campaigns";
         persistActivePage(state.activePage);
         syncActivePageUI();
-        loadActivePageData();
-        return;
+        return loadActivePageData();
       }
 
       if (page === "settings") {
         state.activePage = "settings";
         persistActivePage(state.activePage);
         syncActivePageUI();
-        loadActivePageData();
-        return;
+        return loadActivePageData();
       }
 
       state.activePage = "analytics";
@@ -7165,7 +7129,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
       persistActivePage(state.activePage);
       closeGigSettingsPanel();
       syncActivePageUI();
-      loadActivePageData({ forceSync: true });
+      return loadActivePageData({ forceSync: true });
     }
 
     function loadActivePageData(options = {}) {
@@ -7815,6 +7779,53 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
       callAdminEmailFunction, openCampaignSettingsPanel, renderComposeAttachments, publicOrigin: "https://halfawakeeyes.co.uk" });
 
     setupAdminLayout();
+    let notificationOpenVersion = 0;
+    const notificationBell = setupNotificationBell({db, collection, doc, query, orderBy, limit, onSnapshot,
+      onOpen: async item => {
+        const uid = state.authUser?.uid;
+        if (!uid) return;
+        const request = ++notificationOpenVersion;
+        let destinationLoad;
+        if (item.page === 'subscribers' || item.page === 'email') {
+          state.activeEmailView = item.page === 'subscribers' ? 'address-book' : 'mail';
+          if (item.page === 'email') state.activeEmailFolder = 'inbox';
+          destinationLoad = setActivePage('email');
+        } else {destinationLoad = setActivePage('analytics');setAnalyticsSubview('actions');}
+        const navigation = pageNavigationVersion;
+        const isCurrent = () => state.authUser?.uid === uid && request === notificationOpenVersion && navigation === pageNavigationVersion;
+        try {
+          if (!await waitForNotificationPage(destinationLoad, isCurrent)) return;
+          if (item.page === 'email') {
+            const result = await callAdminEmailFunction('getEmailMessage', {id:item.recordId, folder:'inbox'});
+            if (!isCurrent()) return;
+            const message = normalizeEmailMessage(result.message || result);
+            if (!message.id) throw new Error('This message is no longer available in the inbox.');
+            state.emailMessages = [message, ...state.emailMessages.filter(entry => entry.id !== message.id)];
+            await openEmailMessage(message.id);
+          } else {
+            const collectionName = item.page === 'subscribers' ? 'mailing-list-signups' : 'site-actions';
+            const snapshot = await getDoc(doc(db,collectionName,item.recordId));
+            if (!isCurrent()) return;
+            if (!snapshot.exists()) throw new Error('This item is no longer available. It may have been removed.');
+            const entry = snapshot.data();
+            if (item.page === 'subscribers') {
+              state.mailingListSignups = [{...entry,id:item.recordId}, ...state.mailingListSignups.filter(contact => contact.id !== item.recordId)];
+              document.getElementById('mailing-search').value = '';
+              document.getElementById('mailing-filter').value = 'all';
+              state.activeMailingListContactId = item.recordId;
+              renderMailingListSignups();
+              document.body.classList.add('mailing-contact-detail-open');
+              elements.mailingListDetail.scrollIntoView({block:'nearest'});
+            } else {
+              state.allLogs = [{...entry,id:item.recordId}, ...state.allLogs.filter(log => log.id !== item.recordId)];
+              state.dynamicFields = getOrderedFields(state.allLogs);
+              applyFilters();
+              openDetailsDialog(item.recordId);
+            }
+          }
+        } catch(error) { if(isCurrent()) notificationBell.showError(getEmailFunctionErrorMessage(error,'Could not open this item. It may have been removed.')); }
+      }
+    });
     document.getElementById('mailing-search').addEventListener('input', renderMailingListSignups);
     document.getElementById('mailing-filter').addEventListener('change', renderMailingListSignups);
 

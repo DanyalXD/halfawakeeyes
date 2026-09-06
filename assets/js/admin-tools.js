@@ -61,6 +61,9 @@ export function setupAdminTools(api) {
   }), campaignResult);
 
   const comparison = panel('analytics-page', 'This week compared with last week', 'Rolling seven-day totals. Sources show recorded ticket clicks and new signups, not confirmed ticket sales.');
+  const comparisonDisclosure = document.createElement('section'); comparisonDisclosure.className = 'insight-disclosure';
+  const comparisonSummary = document.createElement('h3'); comparisonSummary.textContent = 'Weekly ticket & subscriber report';
+  comparison.before(comparisonDisclosure); comparisonDisclosure.append(comparisonSummary, comparison);
   const comparisonResult = document.createElement('div'); comparisonResult.setAttribute('role', 'status');
   comparison.append(button('Load comparison', async event => {
     event.currentTarget.disabled = true; comparisonResult.textContent = 'Loading…';

@@ -6,6 +6,11 @@ export const firebaseConfig = {
 
 export const PUBLIC_MIRROR_DOC_ID = "public-index";
 
+export function isOwnVisitExcluded() {
+  try { return localStorage.getItem('hae-exclude-own-analytics') === '1'; }
+  catch { return false; }
+}
+
 export function normalizeText(value = "") {
   return String(value).replace(/\s+/g, " ").trim();
 }
@@ -145,7 +150,7 @@ export function createSiteAnalytics({
   }
 
   async function logEvent(action, details = {}) {
-    if (isDisabled || !shouldLogEvent(action, details)) {
+    if (isDisabled || isOwnVisitExcluded() || !shouldLogEvent(action, details)) {
       return;
     }
 
@@ -159,6 +164,7 @@ export function createSiteAnalytics({
   }
 
   async function logPageViewOnce(details = {}, storageKey = pageSessionKey) {
+    if (isDisabled || isOwnVisitExcluded()) return;
     try {
       if (!sessionStorage.getItem(storageKey)) {
         sessionStorage.setItem(storageKey, "1");
