@@ -29,6 +29,6 @@ if (gigPage) {
   try {
     const gig = JSON.parse(gigPage.dataset.gigPage);
     trackGigPixel(gig, 'GigTicketView');
-    void analytics.logPageViewOnce({ label: gig.event, target: gig.id, section: 'tickets' });
+    void analytics.logPageViewOnce({ label: gig.event, target: gig.id, section: 'tickets' }, `hae-gig-view:${gig.id}`);
   } catch { /* Keep the event page usable if tracking is unavailable. */ }
 }

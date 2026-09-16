@@ -7,7 +7,7 @@ const renderer=source.slice(source.indexOf('function escapePublicHtml'),source.i
 async function render(status,event='Test show',overrides={}) {
   const exports={};let html='';
   const gig={id:'test',date:'2099-10-01',event,venue:'Venue',city:'Glasgow',status,ticketUrl:'https://tickets.example/show',metaPixelId:'123',doorsTime:'19:30',ageRestriction:'18+',...overrides};
-  vm.runInNewContext(renderer,{exports,onRequest:(_,fn)=>fn,db:{doc:path=>{assert.equal(path,'gigs/test');return {get:async()=>({exists:true,data:()=>gig})};}},ADMIN_SITE_URL:'https://halfawakeeyes.co.uk',URL});
+  vm.runInNewContext(renderer,{require: name => { if (name !== './gig-page-renderer') throw new Error('Unexpected module'); return require('../functions/gig-page-renderer'); },exports,onRequest:(_,fn)=>fn,db:{doc:path=>{assert.equal(path,'gigs/test');return {get:async()=>({exists:true,data:()=>gig})};}},ADMIN_SITE_URL:'https://halfawakeeyes.co.uk',URL});
   const response={set:()=>response,status:()=>response,type:()=>response,send:value=>{html=value;return response;}};
   await exports.getPublicEventPage({method:'GET',path:'/shows/test'},response);return html;
 }

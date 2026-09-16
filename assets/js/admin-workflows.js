@@ -199,7 +199,7 @@ export function setupWorkflows(api) {
       $('gig-status').textContent = 'Copied event and venue. Choose a new date and ticket link, then save.';
     }); actions.append(duplicate);
     if (gig.id && String(gig.hideFromLinks).toLowerCase() !== 'true') {
-      const pageUrl = `https://halfawakeeyes.co.uk/shows/${encodeURIComponent(gig.id)}`;
+      const pageUrl = `https://halfawakeeyes.co.uk/shows/?gig=${encodeURIComponent(gig.id)}`;
       const view = document.createElement('a');
       view.className = 'btn ghost-button'; view.textContent = 'View page';
       view.href = pageUrl; view.target = '_blank'; view.rel = 'noopener noreferrer';

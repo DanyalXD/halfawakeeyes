@@ -28,7 +28,7 @@ async function getPublicGigs(path) {
 }
 function createHandler(get) {
   const exports = {};
-  vm.runInNewContext(renderer, {exports, onRequest: (_, fn) => fn, db: {doc: path => ({get: () => get(path)})}, ADMIN_SITE_URL: 'http://127.0.0.1:8788', URL});
+  vm.runInNewContext(renderer, {require: name => { if (name !== './gig-page-renderer') throw new Error('Unexpected module'); return require('../functions/gig-page-renderer'); },exports, onRequest: (_, fn) => fn, db: {doc: path => ({get: () => get(path)})}, ADMIN_SITE_URL: 'http://127.0.0.1:8788', URL});
   return exports.getPublicEventPage;
 }
 handlers.preview = createHandler(async () => ({exists: true, data: () => gig}));

@@ -36,7 +36,7 @@ try {
     const ticketUrl = normalizePublicUrl(show.ticketUrl);
     row.innerHTML = `<time class="show-date" datetime="${show.date}"><span>${day}</span><small>${month} ${year}</small></time><div class="show-info"><h3></h3><p></p></div>`;
     const eventLink = document.createElement("a");
-    eventLink.href = "/shows/" + encodeURIComponent(show.id);
+    eventLink.href = "/shows/?gig=" + encodeURIComponent(show.id);
     eventLink.textContent = show.event || "Half Awake Eyes live";
     row.querySelector("h3").appendChild(eventLink);
     row.querySelector("p").textContent = [show.venue, show.city].filter(Boolean).join(" - ");

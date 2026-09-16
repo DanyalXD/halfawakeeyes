@@ -9,6 +9,13 @@
   <script>
     (function() {
       var path = window.location.pathname || "";
+      var showMatch = path.match(/^\/shows\/([^/]+)\/?$/);
+      if (showMatch) {
+        var showParams = new URLSearchParams(window.location.search);
+        try { showParams.set("gig", decodeURIComponent(showMatch[1])); } catch (_) { return; }
+        window.location.replace("/shows/?" + showParams.toString() + window.location.hash);
+        return;
+      }
       var isSlugPath = /\/smartlink\/[^/]+\/?$/i.test(path);
       var needsExtraParent = isSlugPath && /\/$/.test(path);
       var baseHref = isSlugPath ? (needsExtraParent ? "../../" : "../") : "./";
