@@ -198,6 +198,24 @@ export function setupWorkflows(api) {
       dirty.add('gig-form'); api.openGigSettingsPanel(); $('gig-date').focus();
       $('gig-status').textContent = 'Copied event and venue. Choose a new date and ticket link, then save.';
     }); actions.append(duplicate);
+    if (gig.id && String(gig.hideFromLinks).toLowerCase() !== 'true') {
+      const pageUrl = `https://halfawakeeyes.co.uk/shows/${encodeURIComponent(gig.id)}`;
+      const view = document.createElement('a');
+      view.className = 'btn ghost-button'; view.textContent = 'View page';
+      view.href = pageUrl; view.target = '_blank'; view.rel = 'noopener noreferrer';
+      const copy = document.createElement('button');
+      copy.type = 'button'; copy.className = 'btn ghost-button'; copy.textContent = 'Copy page link';
+      const feedback = document.createElement('p'); feedback.className = 'workflow-visibility'; feedback.setAttribute('role', 'status');
+      copy.addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText(pageUrl);
+          feedback.textContent = 'Gig page link copied.';
+        } catch {
+          feedback.textContent = `Copy this link: ${pageUrl}`;
+        }
+      });
+      actions.append(view, copy); item.append(feedback);
+    }
   }
 
   const newsletterPanel = document.createElement('div'); newsletterPanel.className = 'mailing-selection-bar';

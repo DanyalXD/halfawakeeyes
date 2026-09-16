@@ -3,8 +3,9 @@ import { renderAnalyticsInsights, matchesAnalyticsReport, matchesAnalyticsSource
 import { filterMailingContacts } from './newsletter-templates.js';
 import { saveCampaignDocuments } from './campaign-store.js';
 import { setupAdminLayout, setAdminPagePresentation } from './admin-layout.js';
-import { mountGigTools, readGigTools, fillGigTools, setupAdminTools } from './admin-tools.js?v=20260906-sources';
+import { mountGigTools, readGigTools, fillGigTools, setupAdminTools } from './admin-tools.js?v=20260916-poster-palette';
 import { normalizeGigDetails } from './gig-tools.js';
+import { normalizePosterTheme } from './poster-theme.js?v=20260916-palette';
 import { mountWorkflows, setupWorkflows } from './admin-workflows.js?v=20260905-site-fill';
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
@@ -634,6 +635,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
         imageUrl: String(gig?.imageUrl || "").trim(),
         metaPixelId: normalizeMetaPixelId(gig?.metaPixelId),
         ...normalizeGigDetails(gig),
+        ...normalizePosterTheme(gig),
         hidden: hideFromEpk,
         hideFromEpk,
         hideFromLinks
@@ -5246,6 +5248,13 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
         return;
       }
 
+      let gigTools;
+      state.isSavingGig = true;
+      syncGigFormState();
+      try { gigTools = await readGigTools("gig"); }
+      catch (error) { setGigStatus(error.message, "is-error"); return; }
+      finally { state.isSavingGig = false; syncGigFormState(); }
+
       const payload = {
         date: elements.gigDate.value,
         event: elements.gigEvent.value.trim(),
@@ -5258,7 +5267,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
         autoRedirect: elements.gigAutoRedirect.checked,
         imageUrl: elements.gigImageUrl.value.trim(),
         metaPixelId: normalizeMetaPixelId(elements.gigMetaPixelId.value),
-        ...readGigTools("gig"),
+        ...gigTools,
         hidden: false,
         hideFromEpk: false,
         hideFromLinks: false
@@ -5369,6 +5378,13 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
         return;
       }
 
+      let gigTools;
+      state.isUpdatingGig = true;
+      syncGigEditState();
+      try { gigTools = await readGigTools("gig-edit"); }
+      catch (error) { elements.gigEditError.textContent = error.message; return; }
+      finally { state.isUpdatingGig = false; syncGigEditState(); }
+
       const hideFromEpk = elements.gigEditHidden.checked;
       const hideFromLinks = elements.gigEditHideFromLinks.checked;
       const payload = {
@@ -5383,7 +5399,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
         autoRedirect: elements.gigEditAutoRedirect.checked,
         imageUrl: elements.gigEditImageUrl.value.trim(),
         metaPixelId: normalizeMetaPixelId(elements.gigEditMetaPixelId.value),
-        ...readGigTools("gig-edit"),
+        ...gigTools,
         hidden: hideFromEpk,
         hideFromEpk,
         hideFromLinks

@@ -86,14 +86,12 @@ exports.getPublicEventPage = onRequest({
     eventId = "";
   }
 
-  const gigsSnapshot = await db.doc("gigs/public-index").get();
-  const gigs = gigsSnapshot.data()?.items;
-  const gig = (Array.isArray(gigs) ? gigs : []).find((item) =>
-    String(item?.id || "") === eventId &&
-    /^\d{4}-\d{2}-\d{2}$/.test(String(item?.date || "")) &&
-    item?.hideFromLinks !== true &&
-    String(item?.hideFromLinks || "").toLowerCase() !== "true"
-  );
+  const validId = eventId && eventId !== "public-index" && !/[\/\\]/.test(eventId) && ![".", ".."].includes(eventId);
+  const snapshot = validId ? await db.doc(`gigs/${eventId}`).get() : null;
+  const savedGig = snapshot?.exists ? snapshot.data() : null;
+  const hidden = savedGig?.hideFromLinks ?? savedGig?.hidden;
+  const gig = savedGig && /^\d{4}-\d{2}-\d{2}$/.test(String(savedGig.date || "")) &&
+    String(hidden).toLowerCase() !== "true" ? savedGig : null;
 
   if (!gig) {
     response.set("Cache-Control", "public, max-age=60, s-maxage=300");
@@ -108,10 +106,25 @@ exports.getPublicEventPage = onRequest({
   const status = ['sold_out', 'cancelled', 'postponed'].includes(gig.status) ? gig.status : 'available';
   const statusLabel = {available:'', sold_out:'Sold out', cancelled:'Cancelled', postponed:'Postponed'}[status];
   const showDetails = [statusLabel, /^([01]\d|2[0-3]):[0-5]\d$/.test(gig.doorsTime || '') ? `Doors ${gig.doorsTime}` : '', String(gig.ageRestriction || '').slice(0,100)].filter(Boolean).join(' · ');
-  const ticketUrl = status === 'available' ? normalizePublicHttpUrl(gig.ticketUrl) : '';
+  const todayParts = new Intl.DateTimeFormat('en-GB', {timeZone: 'Europe/London', year: 'numeric', month: '2-digit', day: '2-digit'}).formatToParts(new Date());
+  const datePart = type => todayParts.find(part => part.type === type).value;
+  const isPast = date < `${datePart('year')}-${datePart('month')}-${datePart('day')}`;
+  const ticketUrl = status === 'available' && !isPast ? normalizePublicHttpUrl(gig.ticketUrl) : '';
+  const formatPrice = value => {
+    const raw = String(value || '').trim();
+    if (!raw) return '';
+    const numeric = raw.replace(/^[\u00a3]\s*/, '').replace(',', '.');
+    return /^\d+(?:\.\d{1,2})?$/.test(numeric)
+      ? new Intl.NumberFormat('en-GB', {style: 'currency', currency: 'GBP'}).format(Number(numeric))
+      : raw;
+  };
+  const advancePrice = formatPrice(gig.ticketPrice);
+  const doorPrice = formatPrice(gig.doorPrice);
+  const includesFee = String(gig.ticketPriceIncludesFee).toLowerCase() === 'true';
+  const priceLine = [advancePrice ? `Advance ${advancePrice}${includesFee ? ' (includes booking fee)' : ''}` : '', doorPrice ? `On the door ${doorPrice}` : ''].filter(Boolean).join(' / ');
   const imageUrl = normalizePublicHttpUrl(gig.imageUrl) || `${ADMIN_SITE_URL}/assets/images/gig-photo.jpeg`;
   const canonicalUrl = `${ADMIN_SITE_URL}/shows/${encodeURIComponent(eventId)}`;
-  const dateLabel = date ? new Intl.DateTimeFormat("en-GB", {day: "numeric", month: "long", year: "numeric", timeZone: "Europe/London"}).format(new Date(`${date}T12:00:00Z`)) : "Date to be announced";
+  const dateLabel = date ? new Intl.DateTimeFormat("en-GB", {weekday: "short", day: "numeric", month: "long", year: "numeric", timeZone: "Europe/London"}).format(new Date(`${date}T12:00:00Z`)) : "Date to be announced";
   const description = `${eventName} at ${venue}, ${city}. Official Half Awake Eyes live show information${date ? ` for ${dateLabel}` : ""}.`;
   const eventSchema = {
     "@context": "https://schema.org",
@@ -147,15 +160,38 @@ exports.getPublicEventPage = onRequest({
     }
   }
 
+  const accent = String(gig.posterAccentOverride || gig.posterAccent || '');
+  let posterStyle = '';
+  if ((gig.matchPosterColors === true || gig.matchPosterColors === 'true') && /^#[0-9a-f]{6}$/i.test(accent)) {
+    const rgb = color => [1,3,5].map(i => parseInt(color.slice(i, i + 2), 16));
+    const hex = channels => '#' + channels.map(v => Math.round(v).toString(16).padStart(2, '0')).join('');
+    const luminance = color => rgb(color).map(v => { v /= 255; return v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }).reduce((sum,v,i) => sum + v * [0.2126,0.7152,0.0722][i], 0);
+    const contrast = (a,b) => (Math.max(luminance(a),luminance(b)) + .05) / (Math.min(luminance(a),luminance(b)) + .05);
+    const background = /^#[0-9a-f]{6}$/i.test(gig.posterBackground || '') ? gig.posterBackground : '#111214';
+    const foreground = luminance(background) > .179 ? '#000000' : '#ffffff';
+    const text = luminance(accent) > .179 ? '#000000' : '#ffffff';
+    // Preserve the poster hue while moving text toward black or white until readable.
+    const readable = color => {
+      for (let step = 0; step <= 100; step++) {
+        const result = hex(rgb(color).map((v,i) => v + (rgb(foreground)[i] - v) * step / 100));
+        if (contrast(result, background) >= 4.5) return result;
+      }
+      return foreground;
+    };
+    const heading = readable(accent);
+    const muted = readable(hex(rgb(background).map((v,i) => v * .45 + rgb(foreground)[i] * .55)));
+    const line = hex(rgb(background).map((v,i) => v * .82 + rgb(foreground)[i] * .18));
+    posterStyle = `--gig-accent:${accent};--gig-accent-hover:${accent};--gig-button-text:${text};--gig-background:${background};--gig-heading:${heading};--gig-text:${foreground};--gig-muted:${muted};--gig-line:${line};color-scheme:${foreground === '#000000' ? 'light' : 'dark'}`;
+  }
   const schemaJson = JSON.stringify(eventSchema).replace(/</g, "\\u003c");
   const pixelData = escapePublicHtml(JSON.stringify({id:eventId, event:eventName, date, venue, metaPixelId: /^\d+$/.test(String(gig.metaPixelId || '')) ? gig.metaPixelId : ''}));
-  const ticketAction = ticketUrl ? `<a data-gig-ticket="${pixelData}" class="button button-solid" href="${escapePublicHtml(ticketUrl)}" target="_blank" rel="noopener noreferrer">Official tickets</a>` : `<p>${escapePublicHtml(statusLabel || "Ticket information will be announced soon.")}</p>`;
+  const ticketAction = ticketUrl ? `<a data-gig-ticket="${pixelData}" class="button button-solid" href="${escapePublicHtml(ticketUrl)}" target="_blank" rel="noopener noreferrer">Get tickets</a>` : `<p>${escapePublicHtml(statusLabel || (isPast ? "This show has ended." : "Ticket information will be announced soon."))}</p>`;
   const html = `<!doctype html>
 <html lang="en-GB"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>${escapePublicHtml(eventName)} Tickets | Half Awake Eyes</title><meta name="description" content="${escapePublicHtml(description)}"><meta name="robots" content="index, follow">
 <link rel="canonical" href="${escapePublicHtml(canonicalUrl)}"><meta property="og:type" content="website"><meta property="og:site_name" content="Half Awake Eyes"><meta property="og:title" content="${escapePublicHtml(eventName)} Tickets"><meta property="og:description" content="${escapePublicHtml(description)}"><meta property="og:url" content="${escapePublicHtml(canonicalUrl)}"><meta property="og:image" content="${escapePublicHtml(imageUrl)}"><meta name="twitter:card" content="summary_large_image">
-<link rel="icon" href="/assets/images/favicon.ico" sizes="32x32"><link rel="apple-touch-icon" href="/assets/images/apple-touch-icon.png"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600&family=Source+Sans+3:wght@400;500;600&display=swap" rel="stylesheet"><link rel="stylesheet" href="/assets/css/theme.css"><link rel="stylesheet" href="/assets/css/site.css"><link rel="stylesheet" href="/assets/css/site-pages.css"><script type="application/ld+json">${schemaJson}</script></head>
-<body><header class="site-header scrolled"><a class="wordmark" href="/">Half Awake Eyes</a><nav aria-label="Main navigation"><a href="/#music">Music</a><a href="/tickets/">Tickets</a><a href="/#contact">Contact</a></nav></header><main class="inner-page"><section class="inner-section"><div class="shows"><div class="shows-heading"><p class="eyebrow">Live</p><h1>${escapePublicHtml(eventName)}</h1></div><article class="show-row"><time class="show-date"${date ? ` datetime="${date}"` : ""}><span>${escapePublicHtml(dateLabel)}</span></time><div class="show-info"><h2>${escapePublicHtml(venue)}</h2><p>${escapePublicHtml(city)}</p><p>${escapePublicHtml(showDetails)}</p></div>${ticketAction}</article><p class="show-state"><a href="/tickets/">View all Half Awake Eyes live dates</a></p></div></section></main><footer><a class="wordmark" href="/">Half Awake Eyes</a><p>Glasgow, Scotland</p><div><a href="/privacy.html">Privacy</a></div></footer><script src="/assets/js/site.js"></script><script type="module" src="/assets/js/public-ticket-actions.js"></script></body></html>`;
+<link rel="icon" href="/assets/images/favicon.ico" sizes="32x32"><link rel="apple-touch-icon" href="/assets/images/apple-touch-icon.png"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600&family=Source+Sans+3:wght@400;500;600&display=swap" rel="stylesheet"><link rel="stylesheet" href="/assets/css/theme.css"><link rel="stylesheet" href="/assets/css/site.css"><link rel="stylesheet" href="/assets/css/site-pages.css"><link rel="stylesheet" href="/assets/css/gig-page.css"><script type="application/ld+json">${schemaJson}</script></head>
+<body data-poster-theme="${posterStyle ? 'matched' : 'standard'}" style="${posterStyle}"><header class="site-header scrolled gig-page-header"><span class="wordmark">Half Awake Eyes</span></header><main class="gig-page" data-gig-page="${pixelData}"><div class="gig-content"><img class="gig-artwork" src="${escapePublicHtml(imageUrl)}" alt="${escapePublicHtml(eventName)} artwork" fetchpriority="high"><section class="gig-heading" aria-labelledby="gig-title"><p class="eyebrow">With Half Awake Eyes</p><h1 id="gig-title">${escapePublicHtml(eventName)}</h1><time class="gig-date" datetime="${date}">${escapePublicHtml(dateLabel)}</time><p class="gig-venue">${escapePublicHtml(venue)}, ${escapePublicHtml(city)}</p><p class="gig-details">${escapePublicHtml(showDetails)}</p>${priceLine ? `<p class="gig-prices">${escapePublicHtml(priceLine)}</p>` : ""}<div class="gig-actions" id="gig-primary-action">${ticketAction}</div></section></div></main>${ticketUrl ? `<div class="gig-sticky-action" id="gig-sticky-action" hidden>${ticketAction}</div>` : ""}<footer><a class="wordmark" href="/">Half Awake Eyes</a><p>Glasgow, Scotland</p><div><a href="/privacy.html">Privacy</a></div></footer><script src="/assets/js/gig-page.js" defer></script><script type="module" src="/assets/js/public-ticket-actions.js"></script></body></html>`;
 
   response.set("Cache-Control", "public, max-age=60, s-maxage=300, stale-while-revalidate=86400");
   response.status(200).type("html").send(request.method === "HEAD" ? "" : html);

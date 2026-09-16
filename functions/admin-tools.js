@@ -10,6 +10,11 @@ const hash = value => crypto.createHash('sha256').update(JSON.stringify(value ??
 
 module.exports = function buildAdminTools(db, assertAdmin) {
   const exports = {};
+  exports.getPosterSamplingImage = onCall(options, async request => {
+    assertAdmin(request);
+    try { return await require('./poster-sampling').getPosterImage(request.data?.url); }
+    catch (error) { throw new HttpsError('failed-precondition', error.message); }
+  });
   exports.getAdminTrafficComparison = onCall(options, async request => {
     assertAdmin(request);
     const now = Date.now(), since = Timestamp.fromMillis(now - 14 * 86400000);

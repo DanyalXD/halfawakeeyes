@@ -124,7 +124,7 @@ async function bootAdmin() {
     return;
   }
 
-  const assetVersion = isLocalAdminHost() ? String(Date.now()) : "20260906-mail-mobile";
+  const assetVersion = isLocalAdminHost() ? String(Date.now()) : "20260916-poster-palette";
 
   if (!window.HAEAdminComponents?.load) {
     showComponentLoadError(new Error("Admin component loader is unavailable."));

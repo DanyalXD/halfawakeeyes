@@ -23,3 +23,12 @@ export function bindTicketAction(link, gig) {
 document.querySelectorAll('[data-gig-ticket]').forEach(link => {
   try { bindTicketAction(link, JSON.parse(link.dataset.gigTicket)); } catch { /* Leave link usable. */ }
 });
+
+const gigPage = document.querySelector('[data-gig-page]');
+if (gigPage) {
+  try {
+    const gig = JSON.parse(gigPage.dataset.gigPage);
+    trackGigPixel(gig, 'GigTicketView');
+    void analytics.logPageViewOnce({ label: gig.event, target: gig.id, section: 'tickets' });
+  } catch { /* Keep the event page usable if tracking is unavailable. */ }
+}

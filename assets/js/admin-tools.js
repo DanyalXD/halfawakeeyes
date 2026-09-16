@@ -2,6 +2,7 @@ import { emailSiteSources, populateEmailTemplate } from './email-site-content.js
 import { homeDefaults } from './home-content.js';
 import { emailTemplates, readSavedTemplates } from './newsletter-templates.js';
 import { normalizeGigDetails, gigStatuses, campaignTrackingUrl, summarizeTraffic } from './gig-tools.js';
+import { mountPosterTheme, fillPosterTheme, readPosterTheme, configurePosterThemes } from './poster-theme.js?v=20260916-palette';
 
 const $ = id => document.getElementById(id);
 const escape = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -17,19 +18,22 @@ export function mountGigTools() {
     const fields = document.createElement('div'); fields.className = 'workflow-grid tool-gig-fields';
     fields.innerHTML = `<label>Show status<select id="${prefix}-status-value" class="form-control">${Object.entries(gigStatuses).map(([v,l]) => `<option value="${v}">${l}</option>`).join('')}</select></label><label>Doors time<input id="${prefix}-doors-time" class="form-control" type="time"></label><label>Age restrictions<input id="${prefix}-age-restriction" class="form-control" maxlength="100" placeholder="e.g. 14+ · under 16s with an adult"></label>`;
     form.prepend(fields);
+    mountPosterTheme(prefix);
     const input = $(`${prefix}-meta-pixel-id`);
     if (input) { const help = document.createElement('p'); help.className = 'helper-copy'; help.textContent = 'This Meta Pixel receives GigTicketClick when someone clicks this show’s ticket button on the main tickets page or show page. Ticket clicks are not purchases.'; input.parentElement.append(help); }
   });
 }
-export function readGigTools(prefix) {
-  return normalizeGigDetails({status: $(`${prefix}-status-value`).value, doorsTime: $(`${prefix}-doors-time`).value, ageRestriction: $(`${prefix}-age-restriction`).value});
+export async function readGigTools(prefix) {
+  return {...normalizeGigDetails({status: $(`${prefix}-status-value`).value, doorsTime: $(`${prefix}-doors-time`).value, ageRestriction: $(`${prefix}-age-restriction`).value}), ...await readPosterTheme(prefix)};
 }
 export function fillGigTools(prefix, gig) {
+  fillPosterTheme(prefix, gig);
   const d = normalizeGigDetails(gig);
   $(`${prefix}-status-value`).value = d.status; $(`${prefix}-doors-time`).value = d.doorsTime; $(`${prefix}-age-restriction`).value = d.ageRestriction;
 }
 
 export function setupAdminTools(api) {
+  configurePosterThemes(url => api.callAdminEmailFunction('getPosterSamplingImage', {url}));
   const { state, db, doc, getDoc, getDocs, collection, query, where, orderBy, limit, callAdminEmailFunction: call } = api;
 
   // Duplicating changes only the editor until the user saves the new campaign.
