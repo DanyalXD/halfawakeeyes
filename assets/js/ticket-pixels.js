@@ -1,5 +1,6 @@
 // Scope events to the selected gig's pixel, even when a listing contains several pixels.
 const initialized = new Set();
+const pageViews = new Set();
 export function trackGigPixel(gig, eventName = 'GigTicketClick', extra = {}) {
   const id = String(gig?.metaPixelId || '').trim();
   if (!/^\d+$/.test(id) || ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname)) return false;
@@ -11,6 +12,10 @@ export function trackGigPixel(gig, eventName = 'GigTicketClick', extra = {}) {
       script.src = 'https://connect.facebook.net/en_US/fbevents.js'; document.head.append(script);
     }
     if (!initialized.has(id)) { window.fbq('init', id); initialized.add(id); }
+    if (eventName === 'GigTicketView' && !pageViews.has(id)) {
+      window.fbq('trackSingle', id, 'PageView');
+      pageViews.add(id);
+    }
     window.fbq('trackSingleCustom', id, eventName, {
       gig_id: gig.id || '', gig_name: gig.event || '', gig_date: gig.date || '',
       venue_name: gig.venue || '', page_name: location.pathname, ...extra
