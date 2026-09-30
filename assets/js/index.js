@@ -308,8 +308,7 @@
 
         if (siteNavWrap && topHero) {
             const syncStickyNav = () => {
-                const heroBottom = topHero.getBoundingClientRect().bottom;
-                siteNavWrap.classList.toggle("is-sticky", heroBottom <= 96);
+                siteNavWrap.classList.toggle("is-sticky", window.scrollY > 40);
                 if (window.innerWidth > 576) {
                     closeMobileNav();
                 }
