@@ -10,7 +10,7 @@ export const homeDefaults = {
   merchPrice: '£20.00',
   merchAvailability: 'Limited run. Sizes XS, S, M and L. Ships from the UK.',
   merchImage: 'assets/images/merch-taste-of-death.png',
-  merchUrl: 'https://halfawakeeyes.bigcartel.com/product/the-taste-of-death-t-shirt'
+  merchUrl: 'https://half-awake-eyes.sumupstore.com/products'
 };
 
 export function safeContentUrl(value, image = false) {
@@ -22,7 +22,9 @@ export function safeContentUrl(value, image = false) {
 export function validateHomeContent(input) {
   const result = {};
   for (const key of Object.keys(homeDefaults)) {
-    const value = String(input[key] ?? homeDefaults[key]).trim();
+    let value = String(input[key] ?? homeDefaults[key]).trim();
+    // Migrate saved homepage content that still uses the previous store.
+    if (key === 'merchUrl' && value === 'https://halfawakeeyes.bigcartel.com/product/the-taste-of-death-t-shirt') value = homeDefaults.merchUrl;
     if (!value || value.length > 600) throw new Error('Complete every field (maximum 600 characters).');
     if (['releaseArtwork', 'merchImage', 'spotify', 'bandcamp', 'youtube', 'merchUrl'].includes(key) && !safeContentUrl(value, key === 'releaseArtwork' || key === 'merchImage')) throw new Error('Use an HTTPS link or an image from assets/images/.');
     result[key] = value;

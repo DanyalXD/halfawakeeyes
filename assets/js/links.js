@@ -79,7 +79,9 @@ import { destinationKey, isSocialProfile, sectionPriority, sectionLabel, linkCop
             const numericSortOrder = Number.parseInt(link?.sortOrder, 10);
             return {
                 title: String(link?.title || "").trim(),
-                url: normalizePublicUrl(link?.url, { allowMailto: true }),
+                url: /^https?:\/\/(?:www\.)?halfawakeeyes\.bigcartel\.com\/?(?:[?#].*)?$/i.test(String(link?.url || '').trim())
+                    ? 'https://half-awake-eyes.sumupstore.com/products'
+                    : normalizePublicUrl(link?.url, { allowMailto: true }),
                 sourceTicketUrl: normalizePublicUrl(link?.sourceTicketUrl),
                 imageUrl: normalizeImageUrl(link?.imageUrl),
                 section: String(link?.section || "").trim(),
