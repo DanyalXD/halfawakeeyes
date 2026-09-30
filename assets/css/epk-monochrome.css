@@ -1,0 +1,99 @@
+/* EPK version of the homepage and links-page monochrome design. */
+:root {
+  color-scheme: dark;
+  --ink: #080808;
+  --paper: #f2f2f2;
+  --muted: #aaaaaa;
+  --line: rgba(242, 242, 242, .16);
+  --line-strong: rgba(242, 242, 242, .32);
+  --blue: #bdbdbd;
+  --accent-strong: #ffffff;
+}
+body { background: var(--ink); color: var(--paper); font-family: var(--font-body); }
+img, video { filter: grayscale(1); }
+/* Lift converted colour imagery without changing the native B&W Slay photos. */
+#gigs .epk-section-photo { filter: grayscale(1) brightness(1.18) contrast(.94); }
+.video-shell video[poster] { filter: grayscale(1) brightness(.9) contrast(.94); }
+.video-shell video.is-video-playing { filter: grayscale(1) brightness(1.08) contrast(.94); }
+#top-hero { z-index: 2; isolation: isolate; background: var(--ink); min-height: 90svh; padding: 7rem 4vw 4rem; }
+.epk-hero-image { position: absolute; inset: 0; z-index: -2; }
+#top-hero .epk-hero-image img {
+  display: block; width: 100%; height: 100%; object-fit: cover; object-position: center 24%;
+  border-radius: 0; clip-path: none; filter: grayscale(1);
+}
+#top-hero::after {
+  content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background: linear-gradient(180deg, rgba(0,0,0,.6), transparent 28%),
+    linear-gradient(0deg, #080808, transparent 65%);
+}
+.hero-panel-top { grid-template-columns: minmax(0, 1fr); max-width: 900px; }
+.hero-heading { max-width: none; }
+h1 { font-size: clamp(3.5rem, 7vw, 6.5rem); color: var(--paper); }
+.epk-eyebrow { margin: 0 0 1rem; color: #cccccc; font-family: var(--font-label); font-size: .75rem; letter-spacing: .2em; text-transform: uppercase; }
+p.subtitle { color: #cccccc; }
+.quick-nav-brand, .quick-nav-toggle, .quick-nav a { color: var(--paper); }
+.quick-nav-wrap.is-sticky { background: rgba(8,8,8,.94); }
+.quick-nav-links { border-radius: 14px; }
+.hero-button { border-radius: 999px; border-color: var(--line-strong); color: var(--paper); box-shadow: none; background: transparent; }
+.hero-button.primary { background: var(--paper); border-color: var(--paper); color: var(--ink); }
+.hero-button.primary:hover { background: #cccccc; color: var(--ink); }
+#release, section#videos, section#resources { background: var(--ink); }
+#about, section#gigs { isolation: isolate; background: #101010; }
+.epk-section-photo { border-radius: 0; position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; object-position: center 45%; }
+#about::after, #gigs::after {
+  content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background: linear-gradient(180deg, #080808, transparent 22%, transparent 78%, #080808), linear-gradient(90deg, rgba(8,8,8,.92), rgba(8,8,8,.76));
+}
+#gigs::after {
+  background: linear-gradient(180deg, #080808, transparent 22%, transparent 78%, #080808), linear-gradient(90deg, rgba(8,8,8,.85), rgba(8,8,8,.62));
+}
+main { filter: grayscale(1); }
+h2, .release-spotlight .release-title, .resource-card h3, .contact-card h3, .closing-subheading { color: var(--paper); border-left-color: #cccccc; }
+.section-tag, .section-intro, .info-row span, .release-meta-item span, .side-note { color: #b8b8b8; }
+#about .section-panel p:last-child, .info-row strong { color: #dddddd; }
+.section-divider { background: linear-gradient(90deg, var(--line), transparent); }
+a { color: #cccccc; }
+a:hover { color: #ffffff; }
+.resource-card, .contact-card, .release-meta-item, .video-shell, .track-card, .video-stage, .video-caption, .gig-column, .gig-list li { border-radius: 14px; }
+.resource-card, .contact-card, .release-meta-item { background: rgba(255,255,255,.025); border-color: rgba(255,255,255,.07); box-shadow: none; }
+.release-kicker { border-radius: 999px; border-color: var(--line); }
+#top-hero, main > section { border-bottom: 0; }
+main > section, #release { min-height: auto; }
+.section-panel, #release .section-panel { min-height: auto; padding: clamp(4rem, 8vw, 7rem) 0; }
+.contact-card { background: transparent; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; padding: 1rem 0; }
+.resource-card:hover, .contact-card:hover { transform: none; box-shadow: none; }
+.release-meta-item { background: transparent; border: 0; border-left: 1px solid var(--line); border-radius: 0; }
+a:focus-visible, button:focus-visible { outline: 2px solid #ffffff; outline-offset: 4px; }
+@media (max-width: 900px) {
+  #top-hero { min-height: auto; display: flex; flex-direction: column; padding: 0; }
+  .epk-hero-image { position: relative; inset: auto; z-index: -2; width: 100%; margin-top: 4.5rem; }
+  #top-hero .epk-hero-image img { height: auto; }
+  #top-hero::after { display: none; }
+  .epk-hero-image::after { content: ''; position: absolute; inset: 0; background: linear-gradient(0deg, #080808, transparent 24%); }
+  .hero-panel { padding: 1rem 1.2rem 3rem; text-align: center; }
+  .hero-panel-top { grid-template-columns: minmax(0, 1fr); justify-items: center; }
+  h1 { font-size: clamp(2.5rem, 9vw, 4.5rem); }
+  .epk-eyebrow { font-size: .65rem; margin-bottom: .75rem; }
+  .quick-nav-wrap { background: #080808; padding-bottom: .75rem; }
+  .quick-nav-brand { display: inline-flex !important; }
+  .quick-nav-top { justify-content: space-between; }
+  .epk-section-photo { opacity: .5; }
+  #gigs .epk-section-photo { opacity: .75; }
+  #about::after, #gigs::after { background: linear-gradient(180deg, #080808, transparent 18%, transparent 82%, #080808), rgba(8,8,8,.78); }
+  #gigs::after { background: linear-gradient(180deg, #080808, transparent 18%, transparent 82%, #080808), rgba(8,8,8,.66); }
+}
+@media (max-width: 576px) {
+  .quick-nav-wrap, .quick-nav-wrap.is-sticky { height: 52px; padding: 4px 1rem; }
+  .quick-nav { gap: 0; min-height: 44px; }
+  .quick-nav-top, .quick-nav-wrap.is-sticky .quick-nav-top { height: 44px; justify-content: space-between; }
+  .quick-nav-brand { font-size: 1rem; }
+  .quick-nav-toggle, .quick-nav-toggle:hover { border: 0; background: transparent; box-shadow: none; border-radius: 0; }
+  .quick-nav-toggle-lines, .quick-nav-toggle-lines::before, .quick-nav-toggle-lines::after { width: 20px; height: 1px; }
+  .quick-nav-links { top: calc(100% + 4px); }
+  .quick-nav-links a { min-height: 44px; }
+  .epk-hero-image { margin-top: 52px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { transition: none !important; }
+}
