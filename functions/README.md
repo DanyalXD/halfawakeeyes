@@ -43,3 +43,7 @@ Deploy `sendAdminNewsletter`, the updated `sendAdminEmail`, `emailUnsubscribe`, 
 Unsubscribe tokens are random bearer links; only their hashes are stored in `mailing-list-unsubscribe-tokens`. These and `mailing-list-suppressions` are server-only collections (denied by default in the current rules). GET displays a confirmation; POST records the opt-out and marks linked contacts unsubscribed. A suppression also prevents later duplicate signup records from bypassing the opt-out. Test emails use a non-mutating preview link. No new secret is required.
 
 An SMTP timeout can make delivery uncertain; check Sent before retrying an unconfirmed batch. These changes have been tested with mocked delivery; no production messages were sent.
+
+## SumUp store
+
+See [SUMUP.md](SUMUP.md) for homepage product management, payment-history setup and deployment.

@@ -38,6 +38,11 @@ service cloud.firestore {
       allow create, update, delete: if isAdmin();
     }
 
+    match /site-content/store {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
     match /site-content/homepage {
       allow read: if true;
       allow write: if isAdmin();

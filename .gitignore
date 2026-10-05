@@ -1,0 +1,14 @@
+# Local Firebase state and deployment logs
+.firebase/
+firebase-debug.log
+firebase-debug.*.log
+
+# Installed dependencies
+node_modules/
+
+# Generated browser captures and temporary design previews
+.tests/*.png
+.tests/*browser-profile*/
+.tests/*preview.html
+!.tests/store-preview.html
+!.tests/payments-features-preview.html

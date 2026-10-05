@@ -1283,3 +1283,4 @@ async function deliverAdminMail(mailOptions) {
 exports.emailUnsubscribe = onRequest({region:'us-central1',maxInstances:3,timeoutSeconds:30},createUnsubscribeHandler(db));
 
 Object.assign(exports, require("./admin-tools")(db, assertAdmin));
+Object.assign(exports, require("./sumup")(assertAdmin));

@@ -1,4 +1,6 @@
 const descriptions = {
+  store:'Manage the product cards shown on your website.',
+  sumup:'Payments, payouts, receipts and refunds from your SumUp account.',
   overview:'Your shows, audience and latest activity at a glance.',
   analytics:'See how people find your music and interact with the site.',
   gigs:'Manage show details, ticket links and public listings.',
@@ -45,7 +47,7 @@ export function setupAdminLayout() {
   const grid = home.querySelector('.workflow-grid');
   for (const [name, caption, keys] of [
     ['Featured release','The music and artwork featured on your homepage.', ['releaseTitle','releaseDescription','releaseArtwork','firstTrack','spotify','bandcamp','youtube']],
-    ['Merchandise','Your featured product, availability and shop link.', ['merchTitle','merchPrice','merchAvailability','merchImage','merchUrl']]
+    ['Merchandise fallback','Used until you publish products in Store, and if the store cannot load. Manage your main product cards in Store.', ['merchTitle','merchPrice','merchAvailability','merchImage','merchUrl']]
   ]) {
     const section = document.createElement('fieldset'); section.className = 'admin-form-section';
     const legend = document.createElement('legend'); legend.textContent = name;

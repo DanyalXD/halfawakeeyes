@@ -1,0 +1,190 @@
+.store { background: #101010; }
+.store-heading { max-width: 760px; margin-bottom: 3rem; }
+.store-heading :is(h1, h2) { font-size: clamp(3rem, 6vw, 6rem); margin: 1rem 0; }
+.store-products { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 2.5rem; }
+.store-product { min-width: 0; max-width: 640px; overflow-wrap: anywhere; }
+.store-product img { width: 100%; height: auto; aspect-ratio: 1; object-fit: contain; background: #171717; }
+.store-product h3 { font-size: 2rem; margin: 1.5rem 0 1rem; }
+.store-product .button { margin-top: 1rem; }
+#store-editor fieldset { border: 1px solid #444; padding: 1.25rem; margin: 1rem 0; border-radius: .75rem; }
+#store-editor legend { font-size: 1.1rem; }
+#store-editor .form-control { width: 100%; }
+#store-preview { background: #101010; padding: 1.5rem; }
+#store-preview .store-products { grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); }
+#store-payments, #store-payouts { overflow-x: auto; }
+.store-table { width: 100%; border-collapse: collapse; }
+.store-table th, .store-table td { padding: .8rem; border-bottom: 1px solid #444; text-align: left; white-space: nowrap; }
+
+#store-controls { border: 0; padding: 0; margin: 0; min-width: 0; }
+#store-preview[hidden] { display: none; }
+
+.store-page .site-header { background: rgba(8, 8, 8, .96); }
+.store-page #store-catalog { padding-top: clamp(8rem, 14vw, 12rem); min-height: 45vh; }
+.store-page .site-header a[aria-current="page"] { border-bottom: 1px solid currentColor; }
+.store-load-status { margin: 0; padding: 1.5rem 6vw; }
+.store-load-status:empty, .store-load-status[hidden] { display: none; }
+.store-help { border-top: 1px solid var(--line); }
+.store-help h2 { font-size: clamp(2.4rem, 4vw, 4rem); margin-bottom: 2rem; }
+.store-help details { max-width: 900px; padding: 1.25rem 0; border-bottom: 1px solid var(--line); }
+.store-help summary { cursor: pointer; font-weight: 600; }
+.store-help p { color: var(--muted); }
+.store-help a { text-decoration: underline; overflow-wrap: anywhere; }
+
+.merch-showcase.section { min-height: 68vh; display: flex; flex-direction: column; justify-content: center; padding: 6rem 1.2rem; background: #0b0b0b; }
+.merch-showcase > .store-heading, .merch-showcase > .store-products { width: min(1100px, 100%); margin-inline: auto; }
+.merch-showcase .store-heading { max-width: none; margin-bottom: 3rem; text-align: left; }
+.merch-showcase .store-heading h2 { margin: 0; font-family: var(--font-display); font-weight: 400; text-transform: lowercase; font-size: clamp(2.5rem, 4vw, 3.5rem); line-height: 1; }
+.merch-showcase .store-products { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(2rem, 5vw, 5rem); }
+.merch-showcase .store-product { max-width: none; text-align: left; }
+.merch-showcase .merch-item { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: baseline; gap: 1rem 1.5rem; color: inherit; }
+.merch-showcase .store-product img { grid-column: 1 / -1; width: 100%; height: auto; max-height: none; aspect-ratio: 1; object-fit: contain; padding: 0; background: transparent; border: 0; }
+.merch-showcase .store-product h3 { margin: .8rem 0 0; font-family: var(--font-label); font-weight: 400; text-transform: uppercase; font-size: clamp(1.1rem, 1.6vw, 1.4rem); line-height: 1.3; letter-spacing: .035em; }
+.merch-showcase .merch-price { margin: 0; color: #aaa; font-family: var(--font-body); font-size: 1.05rem; letter-spacing: 0; white-space: nowrap; }
+.merch-showcase a.merch-item:hover h3 { text-decoration: underline; text-underline-offset: .3em; }
+.merch-showcase a.merch-item:focus-visible { outline: 2px solid var(--paper); outline-offset: 8px; }
+@media (max-width: 600px) {
+  .merch-showcase .store-products { grid-template-columns: minmax(0, 1fr); gap: 3.5rem; }
+  .merch-showcase .store-product img { max-height: 420px; }
+}
+
+.merch-showcase .store-heading > p { color: #aaa; font-size: .95rem; margin: .9rem 0 0; }
+.merch-showcase .merch-action { grid-column: 1 / -1; justify-self: start; display: inline-flex; align-items: center; min-height: 44px; margin-top: .35rem; font-family: var(--font-label); font-size: .78rem; letter-spacing: .1em; text-transform: uppercase; text-decoration: underline; text-underline-offset: .5em; text-decoration-color: #666; }
+
+@media (max-width: 800px) {
+  .merch-showcase.section { min-height: 64vh; padding: 4rem 1.2rem; }
+}
+
+/* Admin payment records */
+#store-finances { min-width: 0; }
+#store-finances .store-finance-header { display: flex; justify-content: space-between; align-items: center; gap: 20px; }
+#store-finances h3 { margin: 0; font-size: 18px; }
+#store-finances p { margin: 8px 0 0; color: #999; font-size: 12px; line-height: 1.6; }
+#store-finances #store-refresh-payments { flex: 0 0 auto; width: auto; margin: 0; min-height: 40px; }
+#store-finances #store-payment-status { padding: 12px 0 18px; margin: 0; border-bottom: 1px solid #303030; overflow-wrap: anywhere; }
+#store-finances .store-finance-records { margin-top: 26px; }
+#store-finances h4 { margin: 0; font-size: 14px; font-weight: 600; }
+#store-finances h4 span, #store-finances summary span { margin-left: 10px; color: #999; font-size: 11px; font-weight: 400; }
+#store-finances .store-finance-records > p { margin: 5px 0 14px; }
+#store-finances .store-table { font-size: 12px; }
+#store-finances .store-table th { background: #191919; color: #aaa; font-size: 11px; font-weight: 500; }
+#store-finances .store-table th, #store-finances .store-table td { padding: 13px 14px; border-color: #292929; }
+#store-finances .store-table tbody tr:hover { background: #171717; }
+#store-finances .store-table td:nth-child(3) { white-space: normal; min-width: 160px; max-width: 300px; overflow-wrap: anywhere; }
+#store-finances .store-table td:nth-child(4) { font-variant-numeric: tabular-nums; }
+#store-finances .store-finance-footer { margin-top: 28px; padding-top: 16px; border-top: 1px solid #303030; }
+#store-finances .store-finance-footer > p { margin: 0 0 18px; }
+#store-finances details { font-size: 12px; color: #aaa; }
+#store-finances summary { cursor: pointer; color: #ddd; padding: 8px 0; }
+#store-finances ol { padding-left: 20px; margin: 12px 0; line-height: 1.8; }
+#store-finances li + li { margin-top: 6px; }
+#store-finances code { color: #ccc; overflow-wrap: anywhere; }
+#store-finances details > a { display: inline-block; margin-top: 12px; }
+#store-finances a { color: #ddd; text-decoration: underline; text-underline-offset: 3px; }
+@media (max-width: 600px) {
+  #store-finances .store-finance-header { align-items: flex-start; gap: 12px; }
+  #store-finances h4 span, #store-finances summary span { display: block; margin: 5px 0 0; }
+}
+
+#store-finances .payment-toolbar { display: flex; flex-wrap: wrap; align-items: end; gap: 12px; margin: 20px 0; }
+#store-finances .payment-toolbar label { display: grid; gap: 7px; color: #aaa; font-size: 12px; margin: 0; }
+#store-finances .payment-toolbar input, #store-finances .payment-toolbar select { min-height: 40px; color-scheme: dark; }
+#store-finances .payment-search { flex: 1 1 220px; }
+#store-finances .payment-toolbar .btn { margin: 0; min-height: 40px; }
+#store-finances .payment-summary { display: flex; flex-wrap: wrap; gap: 16px 40px; padding: 18px 0; border-block: 1px solid #292929; color: #999; font-size: 12px; }
+#store-finances .payment-summary strong { display: block; margin: 6px 0; color: #eee; font-size: 24px; font-weight: 500; }
+#store-finances .payment-summary p { flex-basis: 100%; margin: 0; }
+#store-finances .store-table small { display: block; color: #999; margin-top: 5px; }
+#store-finances .store-table td:first-child { white-space: normal; min-width: 140px; max-width: 300px; overflow-wrap: anywhere; }
+#store-finances .store-table td:nth-child(3) { min-width: auto; white-space: nowrap; }
+#store-finances .store-table .btn { font-size: 11px; padding: 6px 10px; }
+#payout-export { margin-top: 16px; }
+#payment-dialog { color: #eee; background: #141414; border: 1px solid #444; border-radius: 12px; padding: 24px; width: min(720px, calc(100vw - 32px)); max-height: 85vh; overflow: auto; }
+#payment-dialog::backdrop { background: #000b; }
+#payment-dialog:not([open]) { display: none; }
+#store-finances #payment-dialog h4 { margin: 24px 0 12px; }
+#store-finances #payment-dialog details { border-top: 1px solid #333; margin-top: 20px; padding-top: 12px; }
+#store-finances #payment-dialog .payment-detail-total { color: #fff; font-size: 30px; margin-top: 24px; }
+#payment-refund-form > label { display: block; margin: 16px 0; font-size: 12px; }
+#payment-refund-amount { max-width: 200px; margin-top: 8px; }
+#payment-detail-status { overflow-wrap: anywhere; }
+#store-finances .payment-confirm { line-height: 1.7; }
+@media (max-width: 600px) {
+  #store-finances .payment-toolbar > label { flex: 1 1 140px; min-width: 0; }
+  #store-finances .payment-toolbar input { width: 100%; min-width: 0; }
+  #payment-dialog { padding: 18px; }
+}
+
+#store-finances { display: block; }
+#store-finances > *, #store-finances .store-finance-records { min-width: 0; max-width: 100%; }
+#store-finances .store-finance-header > div { min-width: 0; }
+#payment-dialog .store-table { display: block; overflow-x: auto; }
+
+/* SumUp: phone layouts use readable records instead of sideways tables. */
+@media (max-width: 640px) {
+  #sumup-page > .manager-card:first-child .workflow-actions { display: grid; grid-template-columns: 1fr; }
+  #sumup-page > .manager-card:first-child .btn { width: 100%; min-height: 44px; }
+  #store-finances .payment-toolbar { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; margin: 24px 0; }
+  #store-finances .payment-toolbar label { min-width: 0; }
+  #store-finances .payment-toolbar .payment-search, #payment-range > button { grid-column: 1 / -1; }
+  #store-finances .payment-toolbar :is(input, select) { width: 100%; min-width: 0; min-height: 46px; font-size: 16px; }
+  #store-finances .payment-toolbar .btn, #store-finances #store-refresh-payments, #store-finances .store-table .btn { min-height: 44px; }
+  #payment-export { white-space: normal; font-size: 12px; }
+  #store-finances .payment-summary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; padding: 20px 0; }
+  #store-finances .payment-summary > div { min-width: 0; padding: 14px; background: #191919; border-radius: 8px; overflow-wrap: anywhere; }
+  #store-finances .payment-summary strong { font-size: 25px; }
+  #store-finances .payment-summary > p { grid-column: 1 / -1; font-size: 11px; }
+  #store-finances .store-finance-records { margin-top: 30px; }
+  #store-finances :is(#store-payments, #store-payouts) { overflow: visible; }
+  #store-finances .store-table { display: block; width: 100%; overflow: visible; }
+  #store-finances .store-table thead { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  #store-finances .store-table tbody { display: block; }
+  #store-finances .store-table tr { display: grid; gap: 12px; padding: 18px 0; border-bottom: 1px solid #303030; }
+  #store-finances .store-table td { display: flex; justify-content: space-between; gap: 16px; min-width: 0; max-width: none; padding: 0; border: 0; white-space: normal; overflow-wrap: anywhere; }
+  #store-finances .store-table td::before { content: attr(data-label); color: #999; font-size: 11px; flex: 0 0 auto; }
+  #store-finances .store-table td > span { min-width: 0; text-align: right; }
+  #store-finances #store-payments tr { grid-template-columns: minmax(0, 1fr) auto; gap: 12px 16px; }
+  #store-finances #store-payments td::before { display: none; }
+  #store-finances #store-payments td > span { text-align: left; }
+  #store-finances #store-payments td:nth-child(1) { grid-column: 1; grid-row: 1; font-size: 14px; line-height: 1.5; }
+  #store-finances #store-payments td:nth-child(2) { grid-column: 1; grid-row: 2; color: #aaa; font-size: 11px; }
+  #store-finances #store-payments td:nth-child(3) { grid-column: 2; grid-row: 1; justify-content: end; font-size: 16px; font-variant-numeric: tabular-nums; }
+  #store-finances #store-payments td:nth-child(4) { grid-column: 2; grid-row: 2; justify-content: end; font-size: 11px; text-transform: capitalize; }
+  #store-finances #store-payments td:nth-child(5) { grid-column: 1 / -1; }
+  #store-finances #store-payments td:nth-child(5) > span, #store-finances #store-payments .btn, #payout-export { width: 100%; }
+  #store-finances #store-payments .btn { font-size: 12px; }
+  #payment-dialog { position: fixed; inset: auto 0 0; margin: 0; width: 100%; max-width: 100%; max-height: 92dvh; border-radius: 16px 16px 0 0; padding: 20px 20px max(20px, env(safe-area-inset-bottom)); box-sizing: border-box; }
+  #payment-dialog .store-finance-header { position: sticky; top: -20px; z-index: 1; background: #141414; padding: 12px 0; }
+  #payment-dialog .btn { min-height: 44px; }
+  #store-finances #payment-dialog summary { padding: 14px 0; }
+  #payment-refund-amount { width: 100%; max-width: none; min-height: 46px; font-size: 16px; }
+  #payment-refund-form > button { width: 100%; }
+  #payment-refund-confirm { width: 20px; height: 20px; vertical-align: middle; margin-right: 6px; }
+}
+
+@media (max-width: 640px) {
+  #sumup-page > .manager-card + .manager-card { margin-top: 16px; }
+  #sumup-page > .manager-card:first-child h2 { margin: 0 0 10px; font-size: 20px; }
+  #sumup-page > .manager-card:first-child p { margin: 0; font-size: 13px; color: #aaa; line-height: 1.6; }
+  #sumup-page > .manager-card:first-child .workflow-actions { margin: 16px 0 0; gap: 8px; }
+  #sumup-page > .manager-card:first-child .btn { text-align: center; font-size: 12px; }
+}
+
+@media (max-width: 640px) {
+  #store-finances #store-payouts tr { grid-template-columns: minmax(0, 1fr) auto; gap: 8px 16px; padding: 20px 0; }
+  #store-finances #store-payouts td::before { display: none; }
+  #store-finances #store-payouts td > span { text-align: left; }
+  #store-finances #store-payouts td:nth-child(3) { grid-column: 1; grid-row: 1; font-size: 20px; font-weight: 600; color: #eee; }
+  #store-finances #store-payouts td:nth-child(1) { grid-column: 2; grid-row: 1; justify-content: end; align-items: center; color: #aaa; font-size: 12px; }
+  #store-finances #store-payouts td:nth-child(2) { grid-column: 1 / -1; grid-row: 2; color: #aaa; font-size: 12px; }
+  #store-finances #store-payouts td:nth-child(2) small { display: inline; margin-left: 8px; font-size: 11px; }
+  #store-finances #store-payouts td:nth-child(4) { grid-column: 1; grid-row: 3; justify-content: start; gap: 5px; color: #999; font-size: 11px; }
+  #store-finances #store-payouts td:nth-child(4)::before { display: inline; content: "Fee"; }
+  #store-finances #store-payouts td:nth-child(5) { grid-column: 2; grid-row: 3; justify-content: end; color: #bbb; font-size: 11px; text-transform: capitalize; }
+}
+
+#store-finances details.store-finance-records { border-top: 1px solid #303030; }
+#store-finances .store-finance-records > summary { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 52px; padding: 14px 0; list-style: none; }
+#store-finances .store-finance-records > summary::-webkit-details-marker { display: none; }
+#store-finances .store-finance-records > summary::after { content: '+'; font-size: 22px; color: #aaa; flex: 0 0 auto; }
+#store-finances .store-finance-records[open] > summary::after { content: '\2212'; }
+#store-finances .store-finance-records > summary:focus-visible { outline: 2px solid #ddd; outline-offset: 4px; border-radius: 4px; }

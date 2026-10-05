@@ -1,0 +1,49 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<base href="../"><title>Local store smoke test</title>
+<link rel="stylesheet" href="assets/css/admin.css"><link rel="stylesheet" href="assets/css/admin-workflows.css"><link rel="stylesheet" href="assets/css/admin-design.css"><link rel="stylesheet" href="assets/css/admin-pages.css"><link rel="stylesheet" href="assets/css/store.css">
+<style>body{padding:24px}.dashboard-rail{display:none}.dashboard-content{max-width:1100px;margin:auto}#test-result{padding:16px;background:#173d28;color:white}#public-preview{display:none}#store-page > :not(#store-finances) { display:none } </style></head>
+<body class="admin-refresh"><p id="test-result">Running smoke test…</p><aside class="dashboard-rail"><ul class="nav"></ul></aside><main class="dashboard-content"></main><section id="public-preview" class="section"></section>
+<script type="module">
+import {mountStore,setupStore} from './assets/js/admin-store.js';
+import {csv} from './assets/js/admin-payments.js';
+const $=id=>document.getElementById(id), assert=(value,message)=>{if(!value)throw Error(message);};
+const tick=()=>new Promise(resolve=>setTimeout(resolve,0));
+const first={id:'payment-123456',timestamp:'2026-10-01T15:30:00Z',transaction_code:'TX123456',product_summary:'The Taste of Death T-shirt',amount:25,currency:'GBP',status:'SUCCESSFUL',payment_type:'ECOM',refunded_amount:0};
+const second={...first,id:'payment-234567',transaction_code:'TX234567',product_summary:'Dispossession T-shirt',status:'REFUNDED'};
+let paymentLoads=0, refundCount=0, oldBackend=false, failPage=false,holdDetail=false,resolveDetail;
+const state={authUser:{uid:'admin'}};
+try{
+ mountStore();$('sumup-page').classList.add('active');
+ const api=setupStore({state,db:{},doc:()=>'',getDoc:async()=>({exists:()=>false,data:()=>({})}),setDoc:async()=>{},markSaved:()=>{},isDirty:()=>false,
+ callAdminEmailFunction:async(name,data)=>{
+ if(name==='getAdminStorePayments') {paymentLoads++;if(oldBackend)return {transactions:[first],payouts:[]};if(failPage && data.cursor)throw Error('Fixture page failed');return {merchantCode:'LOCAL TEST',transactions:data.cursor ? [second]:[first],nextCursor:data.cursor ? '':'cursor-123456',payouts:[{date:'2026-10-02',reference:'PAYOUT123',type:'PAYOUT',amount:48.2,currency:'GBP',fee:1.8,status:'PAID_OUT'}],payoutError:''};}
+ if(name==='getAdminStorePayment'){if(holdDetail)await new Promise(resolve=>resolveDetail=resolve);return {...first,refund:{min:.01,max:25},events:[{date:first.timestamp,type:'PAYOUT',amount:25,status:'PAID_OUT'}],receipt:{amount:25,currency:'GBP',transaction_code:first.transaction_code,vat_amount:0,tip_amount:0,products:[{name:'T-shirt',quantity:1,total_price:25}]}};}
+ if(name==='refundAdminStorePayment'){assert(data.confirmed && data.amount===10,'Refund confirmation/amount');refundCount++;return {accepted:true};}
+ }});
+ await api.load('store');assert(paymentLoads===0,'Website Store must not fetch payments');assert($('store-form').closest('.dashboard-page').id==='store-page' && $('store-finances').closest('.dashboard-page').id==='sumup-page','Separate tab contents');
+ await api.load('sumup');
+ const transactionSection=$('store-payments').closest('details'), payoutSection=$('store-payouts').closest('details');
+ assert(transactionSection.open && !payoutSection.open,'Transactions open and payouts collapsed initially');
+ transactionSection.querySelector('summary').click();assert(!transactionSection.open,'Transactions collapse');
+ transactionSection.querySelector('summary').click();assert(transactionSection.open,'Transactions reopen');
+ payoutSection.querySelector('summary').click();assert(payoutSection.open,'Payouts expand');
+ payoutSection.querySelector('summary').click();assert(!payoutSection.open,'Payouts collapse');
+ assert(transactionSection.contains($('payment-search')) && payoutSection.contains($('payout-export')),'Section controls collapse with records');
+ assert($('store-payments').querySelectorAll('tbody tr').length===2,'All pages loaded');assert($('payment-summary').textContent.includes('50.00'),'Complete summary');
+ $('payment-search').value='dispossession';$('payment-search').dispatchEvent(new Event('input'));assert($('store-payments').querySelectorAll('tbody tr').length===1,'Search');
+ $('payment-filter').value='SUCCESSFUL';$('payment-filter').dispatchEvent(new Event('change'));assert(!$('store-payments').querySelector('table'),'Status combines with search');
+ $('payment-search').value='';$('payment-filter').value='';$('payment-search').dispatchEvent(new Event('input'));
+ assert(csv([{a:'=HYPERLINK("bad")',b:'two,columns'}],[['A','a'],['B','b']]).includes("'="),'CSV formula neutralized');
+ $('store-payments').querySelector('[data-payment]').click();await tick();assert($('payment-dialog').open,'Details dialog');assert($('payment-detail').textContent.includes('Receipt details'),'Receipt');
+ const form=$('payment-refund-form');form.closest('details').open=true;$('payment-refund-amount').value='10';form.requestSubmit();await tick();assert(refundCount===0,'Refund requires confirmation');
+ $('payment-refund-confirm').checked=true;form.requestSubmit();await tick();assert(refundCount===1,'One refund request');assert(!$('payment-refund-form'),'Refund cannot be resubmitted');$('payment-close').click();
+ oldBackend=true;await api.load('sumup');assert($('store-payment-status').textContent.includes('Deploy the updated'),'Old backend cannot produce misleading totals');oldBackend=false;
+ failPage=true;await api.load('sumup');assert(!$('payment-summary').textContent.includes('50.00'),'Incomplete summary suppressed');assert($('store-payment-status').textContent.includes('Fixture page failed'),'Page failure shown');failPage=false;await api.load('sumup');
+ holdDetail=true;$('store-payments').querySelector('[data-payment]').click();await tick();document.dispatchEvent(new Event('hae-admin-account-changing'));state.authUser=null;resolveDetail();await tick();assert(!$('payment-dialog').open && !$('payment-detail').textContent,'Stale detail discarded');assert(!$('payment-summary').textContent && $('payment-export').disabled,'Account clears financial data');
+ state.authUser={uid:'admin'};holdDetail=false;await api.load('sumup');
+ $('test-result').textContent='PASS: pagination, totals, filters, CSV safety, receipt, refund confirmation, partial failure and account cleanup.';
+ if(location.search.includes('details')){$('store-payments').querySelector('[data-payment]').click();await tick();}
+ if(location.search.includes('records')){const style=document.createElement('style');style.textContent='#sumup-page > .manager-card:first-child, #store-finances > :not(.store-finance-records):not(.store-finance-footer) {display:none}';document.head.append(style);}
+ window.scrollTo({top:0,behavior:'instant'});
+}catch(error){$('test-result').textContent='FAIL: '+error.message;document.title='FAIL';}
+</script></body></html>

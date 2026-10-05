@@ -1,5 +1,6 @@
 import { homeDefaults, validateHomeContent, safeContentUrl } from './home-content.js';
 import { canBuyTickets, gigDetailLabel } from './gig-tools.js';
+import { mountStore, setupStore } from './admin-store.js?v=20261005-sumup-collapse';
 
 const $ = id => document.getElementById(id);
 const escape = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -13,7 +14,10 @@ export function mountWorkflows() {
   const nav = document.querySelector('.dashboard-rail .nav');
   nav.insertAdjacentHTML('afterbegin', '<li class="nav-item"><a class="nav-link tab-label" href="#" data-page="overview">Overview</a></li>');
   nav.insertAdjacentHTML('beforeend', '<li class="nav-item"><a class="nav-link tab-label" href="#" data-page="homepage">Homepage</a></li>');
+  mountStore();
   const icons = {
+    sumup: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M7 15h3"/>',
+    store: '<path d="M3 7h18l-2-4H5zM4 7v14h16V7M9 21v-8h6v8"/>',
     overview: '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
     analytics: '<path d="M4 20V10m8 10V4m8 16v-7"/>',
     gigs: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4m10-4v4M3 11h18"/>',
@@ -60,8 +64,9 @@ export function setupWorkflows(api) {
     $(`${kind}-publish-status`).parentElement.dataset.status = failed ? 'error' : message.startsWith('Published.') ? 'success' : 'pending';
     $(`${kind}-publish-retry`).hidden = !failed;
   }
-  const tracked = ['gig-form', 'gig-edit-form', 'link-form', 'link-edit-form', 'homepage-form', 'campaign-form'];
+  const tracked = ['gig-form', 'gig-edit-form', 'link-form', 'link-edit-form', 'homepage-form', 'campaign-form', 'store-form'];
   const markSaved = id => dirty.delete(id);
+  const store = setupStore({ ...api, markSaved, isDirty: id => dirty.has(id) });
   function discard(id) { $(id)?.reset(); $(id)?.querySelector('.workflow-preview')?.remove(); dirty.delete(id); }
   const allowClose = id => !dirty.has(id) || (window.confirm('Discard your unsaved changes?') && (discard(id), true));
   tracked.forEach(id => {
@@ -266,5 +271,5 @@ export function setupWorkflows(api) {
     } catch { api.setEmailComposeStatus('Could not send test. Your draft is still here.', 'is-error'); }
     finally { testButton.disabled = false; state.isSendingEmail = false; api.syncEmailFormState(); }
   });
-  return { selectedRecipients, recipientCheckbox, unsubscribeContact, markSaved, isDirty: id => dirty.has(id), allowClose, decorateGig, renderRecipients, publishStatus, loadPage: page => page === 'overview' ? loadOverview() : loadHomepage() };
+  return { selectedRecipients, recipientCheckbox, unsubscribeContact, markSaved, isDirty: id => dirty.has(id), allowClose, decorateGig, renderRecipients, publishStatus, loadPage: page => ['store', 'sumup'].includes(page) ? store.load(page) : page === 'overview' ? loadOverview() : loadHomepage() };
 }

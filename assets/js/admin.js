@@ -2,11 +2,11 @@ import { setupNotificationBell, waitForNotificationPage } from './admin-notifica
 import { renderAnalyticsInsights, matchesAnalyticsReport, matchesAnalyticsSource, setAnalyticsSubview } from './analytics-insights.js?v=20260906-existing-viewers';
 import { filterMailingContacts } from './newsletter-templates.js';
 import { saveCampaignDocuments } from './campaign-store.js';
-import { setupAdminLayout, setAdminPagePresentation } from './admin-layout.js';
+import { setupAdminLayout, setAdminPagePresentation } from './admin-layout.js?v=20261005-sumup-collapse';
 import { mountGigTools, readGigTools, fillGigTools, setupAdminTools } from './admin-tools.js?v=20260916-poster-palette';
 import { normalizeGigDetails } from './gig-tools.js';
 import { normalizePosterTheme } from './poster-theme.js?v=20260916-palette';
-import { mountWorkflows, setupWorkflows } from './admin-workflows.js?v=20260905-site-fill';
+import { mountWorkflows, setupWorkflows } from './admin-workflows.js?v=20261005-sumup-collapse';
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
     import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, getFirestore, orderBy, limit, onSnapshot, query, runTransaction, writeBatch, setDoc, updateDoc, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
@@ -118,7 +118,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
     };
 
     const ADMIN_ACTIVE_PAGE_STORAGE_KEY = "hae-admin-active-page";
-    const VALID_ADMIN_PAGES = new Set(["overview", "homepage", "analytics", "gigs", "links", "email", "campaigns", "settings"]);
+    const VALID_ADMIN_PAGES = new Set(["overview", "homepage", "store", "sumup", "analytics", "gigs", "links", "email", "campaigns", "settings"]);
     const ADMIN_EMAIL_ALLOWLIST = new Set([
       "danyal1995@hotmail.co.uk",
       "danyalc95@gmail.com"
@@ -1833,8 +1833,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
     }
 
     function updateHeroMeta(updatedAt = "Not loaded") {
-      elements.heroCollection.textContent = ['overview', 'homepage'].includes(state.activePage)
-        ? `View: ${state.activePage === 'overview' ? 'Overview' : 'Homepage'}`
+      elements.heroCollection.textContent = ['overview', 'homepage', 'store', 'sumup'].includes(state.activePage)
+        ? `View: ${state.activePage === 'overview' ? 'Overview' : state.activePage === 'store' ? 'Website Store' : state.activePage === 'sumup' ? 'SumUp' : 'Homepage'}`
         : `Collection: ${getActiveCollectionLabel()}`;
       elements.heroUpdated.textContent = `Updated: ${updatedAt}`;
     }
@@ -6493,11 +6493,13 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
 
     function syncActivePageUI() {
       setAdminPagePresentation(state.activePage);
-      const pageNames = {overview:'Overview',analytics:'Analytics',gigs:'Gigs',links:'Links',email:'Email',campaigns:'Campaigns',settings:'Settings',homepage:'Homepage'};
+      const pageNames = {overview:'Overview',analytics:'Analytics',gigs:'Gigs',links:'Links',email:'Email',campaigns:'Campaigns',settings:'Settings',homepage:'Homepage',store:'Website Store',sumup:'SumUp'};
       document.getElementById('admin-page-title').textContent = pageNames[state.activePage] || 'Overview';
       document.querySelector('.admin-account')?.removeAttribute('open');
       document.getElementById('overview-page').classList.toggle('active', state.activePage === 'overview');
       document.getElementById('homepage-page').classList.toggle('active', state.activePage === 'homepage');
+      document.getElementById('store-page').classList.toggle('active', state.activePage === 'store');
+      document.getElementById('sumup-page').classList.toggle('active', state.activePage === 'sumup');
       const isAnalyticsPage = state.activePage === "analytics";
       const isGigsPage = state.activePage === "gigs";
       const isLinksPage = state.activePage === "links";
@@ -6520,8 +6522,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
         link.classList.toggle("active", isActive);
       });
 
-      if (state.activePage === 'overview' || state.activePage === 'homepage') {
-        elements.collectionNote.textContent = state.activePage === 'overview' ? 'Your band at a glance.' : 'Manage the featured release and merch.';
+      if (['overview', 'homepage', 'store', 'sumup'].includes(state.activePage)) {
+        elements.collectionNote.textContent = state.activePage === 'overview' ? 'Your band at a glance.' : state.activePage === 'store' ? 'Website product cards.' : state.activePage === 'sumup' ? 'SumUp payments, payouts and refunds.' : 'Manage the featured release and merch.';
       } else if (isAnalyticsPage) {
         const visibleCount = state.viewMode === "sessions" ? state.sessionGroups.length : state.filteredLogs.length;
         elements.collectionNote.textContent = state.viewMode === "sessions"
@@ -6554,8 +6556,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
             : `No campaign selected. ${state.campaigns.length} saved campaign${state.campaigns.length === 1 ? "" : "s"} available.`;
       }
 
-      elements.heroCollection.textContent = ['overview', 'homepage'].includes(state.activePage)
-        ? `View: ${state.activePage === 'overview' ? 'Overview' : 'Homepage'}`
+      elements.heroCollection.textContent = ['overview', 'homepage', 'store', 'sumup'].includes(state.activePage)
+        ? `View: ${state.activePage === 'overview' ? 'Overview' : state.activePage === 'store' ? 'Website Store' : state.activePage === 'sumup' ? 'SumUp' : 'Homepage'}`
         : `Collection: ${getActiveCollectionLabel()}`;
       if (isAnalyticsPage && !elements.cacheStatus.textContent.trim()) {
         setAnalyticsCacheStatus();
@@ -7101,7 +7103,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
     function setActivePage(page) {
       pageNavigationVersion++;
       closeMobileNav();
-      if (page === 'overview' || page === 'homepage') {
+      if (['overview', 'homepage', 'store', 'sumup'].includes(page)) {
         state.activePage = page; persistActivePage(page); syncActivePageUI(); return loadActivePageData();
       }
 
@@ -7149,7 +7151,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
     }
 
     function loadActivePageData(options = {}) {
-      if (state.activePage === 'overview' || state.activePage === 'homepage') return workflows.loadPage(state.activePage);
+      if (['overview', 'homepage', 'store', 'sumup'].includes(state.activePage)) return workflows.loadPage(state.activePage);
       if (state.activePage === "gigs") {
         return loadGigs();
       }
@@ -7711,7 +7713,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
       });
 
       elements.refreshButton.addEventListener("click", () => {
-        if (state.activePage === 'overview' || state.activePage === 'homepage') { workflows.loadPage(state.activePage); return; }
+        if (['overview', 'homepage', 'store', 'sumup'].includes(state.activePage)) { workflows.loadPage(state.activePage); return; }
         if (state.activePage === "gigs") {
           loadGigs();
           return;

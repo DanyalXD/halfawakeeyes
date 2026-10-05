@@ -1,6 +1,7 @@
 import { canBuyTickets, gigDetailLabel } from './gig-tools.js';
 import { createEmailSignupService, firebaseConfig, getTrackingParams, normalizePublicUrl, PUBLIC_MIRROR_DOC_ID } from './public-site-utils.js';
 import { applyHomeContent } from './home-content.js';
+import { renderStore } from './store-content.js?v=20261005-merch-spacing';
 
 const form = document.getElementById('home-signup');
 const status = document.getElementById('signup-status');
@@ -56,9 +57,13 @@ async function initializeHome() {
       import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js')
     ]);
     const db = getFirestore(initializeApp(firebaseConfig));
-    getDoc(doc(db, 'site-content', 'homepage')).then(snapshot => {
-      if (snapshot.exists()) applyHomeContent(snapshot.data());
-    }).catch(() => { /* Keep the built-in homepage if content cannot be loaded. */ });
+    void (async () => {
+      const [homepage, store] = await Promise.allSettled([
+        getDoc(doc(db, 'site-content', 'homepage')), getDoc(doc(db, 'site-content', 'store'))
+      ]);
+      try { if (homepage.status === 'fulfilled' && homepage.value.exists()) applyHomeContent(homepage.value.data()); } catch { /* Keep built-in content. */ }
+      try { if (store.status === 'fulfilled' && store.value.exists()) renderStore(store.value.data(), document.getElementById('merch'), { featured: true }); } catch { /* Keep featured merch when the store is unavailable. */ }
+    })();
     void loadNextShow(db, doc, getDoc);
     const { submitEmailSignup } = createEmailSignupService({
       db, doc, setDoc,

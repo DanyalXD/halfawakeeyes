@@ -1,0 +1,41 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<base href="../"><title>Local store smoke test</title>
+<link rel="stylesheet" href="assets/css/admin.css"><link rel="stylesheet" href="assets/css/admin-workflows.css"><link rel="stylesheet" href="assets/css/admin-design.css"><link rel="stylesheet" href="assets/css/admin-pages.css"><link rel="stylesheet" href="assets/css/store.css">
+<style>body{padding:24px}.dashboard-rail{display:none}.dashboard-content{max-width:1100px;margin:auto}#test-result{padding:16px;background:#173d28;color:white}#public-preview{display:none}</style></head>
+<body class="admin-refresh"><p id="test-result">Running smoke test…</p><aside class="dashboard-rail"><ul class="nav"></ul></aside><main class="dashboard-content"></main><section id="public-preview" class="section"></section>
+<script type="module">
+import { mountStore, setupStore } from './assets/js/admin-store.js';
+const $ = id => document.getElementById(id);
+const assert = (condition,message) => {if (!condition) throw Error(message);};
+try {
+  mountStore(); $('store-page').classList.add('active');
+  let saved, dirty=false;
+  const state={authUser:{uid:'local-test'}};
+  const api=setupStore({state,db:{},doc:(_,collection,id)=>id,getDoc:async()=>({exists:()=>false,data:()=>({})}),
+    setDoc:async(_,data)=>{saved=data;}, markSaved:()=>{dirty=false;},isDirty:()=>dirty,
+    callAdminEmailFunction:async()=>({merchantCode:'LOCAL TEST',nextCursor:'',transactions:[{timestamp:'2026-10-05',transaction_code:'TEST',product_summary:'Local fixture',amount:20,currency:'GBP',status:'SUCCESSFUL',payment_type:'ECOM'}],payouts:[],payoutError:''})});
+  $('store-form').addEventListener('input',()=>{dirty=true;});
+  await api.load();
+  assert(!$('store-controls').disabled,'Editor must load');
+  assert($('store-editor').children.length===1,'Existing merch must seed editor');
+  $('store-add').click();
+  const row=$('store-editor').lastElementChild;
+  for (const [key,value] of Object.entries({title:'Second product',price:'£25.00',description:'Sizes available in SumUp.',image:'assets/images/merch-taste-of-death.png',url:'https://half-awake-eyes.sumupstore.com/products'})) row.querySelector(`[data-field="${key}"]`).value=value;
+  row.querySelector('[data-move="-1"]').click();
+  row.querySelector('[data-field="soldOut"]').checked=true;
+  $('store-preview-button').click();
+  assert(!$('store-preview').hidden,'Preview should open');
+  assert($('store-preview').querySelectorAll('.store-product').length===2,'Preview should show both cards');
+  assert(!$('store-preview').querySelector('.store-product').querySelector('a'),'Sold-out product should have no buy button');
+  $('store-form').requestSubmit(); await new Promise(resolve=>setTimeout(resolve,0));
+  assert(saved.products[0].title==='Second product','Publish must preserve reordering');
+  assert(saved.products[0].soldOut,'Publish must preserve availability');
+  assert(!dirty,'Publish should clear dirty state');
+  document.dispatchEvent(new Event('hae-admin-account-changing'));
+  assert(!$('store-payments').children.length,'Account change must clear payment data');
+  assert(!$('store-editor').children.length && $('store-controls').disabled,'Account change must clear editor');
+  await api.load();
+  $('test-result').textContent='PASS: load, add, reorder, sold-out preview, publish and account-change cleanup.';
+  window.scrollTo({top:0,behavior:'instant'});
+} catch(error) {$('test-result').textContent=`FAIL: ${error.message}`; document.title='FAIL';}
+</script></body></html>
