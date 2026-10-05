@@ -37,7 +37,7 @@
 
       <link rel="stylesheet" href="assets/css/theme.css?v=20260725-public-theme" />
       <link rel="stylesheet" href="assets/css/index.css?v=20260726-section-gradient" />
-      <link rel="stylesheet" href="assets/css/epk-monochrome.css?v=20260930-scroll" />
+      <link rel="stylesheet" href="assets/css/epk-monochrome.css?v=20261005-home-nav" />
     <script type="application/ld+json">
     {
         "@context": "https://schema.org",
@@ -142,40 +142,44 @@
 </head>
 
 <body>
+    <a class="epk-skip" href="#main">Skip to press kit</a>
+    <header class="site-header">
+        <a class="wordmark" href="index.html" aria-label="Half Awake Eyes homepage">Half Awake Eyes</a>
+        <button class="nav-toggle" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="site-nav"><span></span><span></span></button>
+        <nav id="site-nav" aria-label="EPK sections">
+            <a href="#release">Release</a>
+            <a href="#about">About</a>
+            <a href="#videos">Videos</a>
+            <a href="#gigs">Gig History</a>
+            <a href="#resources">Resources</a>
+            <a href="#contact">Contact</a>
+        </nav>
+    </header>
     <header id="top-hero">
         <picture class="epk-hero-image">
             <img src="assets/images/slay-hero-1280.jpg" srcset="assets/images/slay-hero-640.jpg 640w, assets/images/slay-hero-1280.jpg 1280w, assets/images/slay-hero-1920.jpg 1920w" sizes="100vw" width="3846" height="3794" alt="Half Awake Eyes at Slay in Glasgow" fetchpriority="high" decoding="async">
         </picture>
-        <div class="quick-nav-wrap" id="site-nav-wrap">
-            <nav class="quick-nav" aria-label="EPK sections">
-                <div class="quick-nav-top">
-                    <span class="quick-nav-brand">Half Awake Eyes</span>
-                    <button class="quick-nav-toggle" id="site-nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav-links" aria-label="Toggle navigation">
-                        <span class="quick-nav-toggle-lines"></span>
-                    </button>
-                </div>
-                <div class="quick-nav-links" id="site-nav-links">
-                    <a href="#release">Release</a>
-                    <a href="#about">About</a>
-                    <a href="#videos">Videos</a>
-                    <a href="#gigs">Gig History</a>
-                    <a href="#resources">Resources</a>
-                    <a href="#contact">Contact</a>
-                </div>
-            </nav>
-        </div>
         <div class="hero-panel">
             <div class="hero-panel-top">
                 <div class="hero-heading">
                     <p class="epk-eyebrow">Electronic press kit</p>
                     <h1>Half Awake Eyes</h1>
                     <p class="subtitle">Alternative Metal | Glasgow, Scotland</p>
+                    <div class="hero-actions">
+                        <a class="hero-button primary" href="mailto:halfawakeeyes@gmail.com">Booking enquiries <span aria-hidden="true">&nearr;</span></a>
+                        <a class="hero-button" href="#resources">Press materials <span aria-hidden="true">&darr;</span></a>
+                    </div>
                 </div>
             </div>
         </div>
     </header>
 
-    <main>
+    <main id="main">
+    <div class="epk-highlights" aria-label="Band highlights">
+        <div><span>On air</span><strong>BBC Introducing Scotland</strong></div>
+        <div><span>On stage</span><strong>Support for Casey &amp; The Cost</strong></div>
+        <div><span>On record</span><strong>Debut EP &middot; February 2026</strong></div>
+    </div>
     <section id="release">
         <div class="section-panel">
             <div class="section-heading">
@@ -184,7 +188,7 @@
             </div>
             <div class="release-spotlight">
                 <div>
-                    <span class="release-kicker">Current Focus</span>
+                    <span class="release-kicker">Half Awake Eyes / Debut EP</span>
                     <h2 class="release-title">Debut EP out now</h2>
                     <p class="section-intro">A first statement from Half Awake Eyes: heavy, atmospheric, and emotionally sharp, with enough space and tension to stand out from more one-note modern metal releases.</p>
                     <div class="release-meta">
@@ -232,7 +236,7 @@
                 <div>
                     <div class="section-heading">
                         <span class="section-tag">02 About</span>
-                        <h2>About the Band</h2>
+                        <h2>Atmosphere.<br>Weight. Tension.</h2>
                         <p class="section-intro">Everything a promoter, venue, festival booker, journalist, or collaborator needs in one place.</p>
                         <div class="section-divider"></div>
                     </div>
@@ -359,10 +363,10 @@
                             </div>
                         </div>
 
-                        <button class="carousel-control-prev" type="button" data-bs-target="#videoCarousel" data-bs-slide="prev">
+                        <button class="carousel-control-prev" type="button" data-bs-target="#videoCarousel" data-bs-slide="prev" aria-label="Previous live video">
                             <span class="carousel-control-prev-icon"></span>
                         </button>
-                        <button class="carousel-control-next" type="button" data-bs-target="#videoCarousel" data-bs-slide="next">
+                        <button class="carousel-control-next" type="button" data-bs-target="#videoCarousel" data-bs-slide="next" aria-label="Next live video">
                             <span class="carousel-control-next-icon"></span>
                         </button>
                     </div>
@@ -414,7 +418,7 @@
                         <h3 class="closing-subheading">Resources</h3>
                         <div class="resource-grid">
                             <article class="resource-card">
-                                <h3>Press Kit</h3>
+                                <h3>Press photography</h3>
                                 <p>Download high-resolution promotional photos suitable for press use, posters, and show announcements.</p>
                                 <a class="download-link"
                                     href="https://drive.google.com/drive/folders/1dFLq35JkF_NyhJypMFzKlsc7iXehKnWJ?usp=sharing"
@@ -462,7 +466,8 @@
         <div><a href="privacy.html">Privacy</a><span>&copy; <span data-current-year></span></span></div>
     </footer>
   <script src="assets/js/current-year.js"></script>
-  <script type="module" src="assets/js/index.js?v=20260930-scroll"></script>
+  <script src="assets/js/site.js"></script>
+  <script type="module" src="assets/js/index.js?v=20261005-single-nav"></script>
 </body>
 
 </html>

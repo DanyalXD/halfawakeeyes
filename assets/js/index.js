@@ -293,45 +293,6 @@
             }
         }
 
-        const siteNavWrap = document.getElementById("site-nav-wrap");
-        const siteNavToggle = document.getElementById("site-nav-toggle");
-        const siteNavLinks = document.getElementById("site-nav-links");
-        const topHero = document.getElementById("top-hero");
-
-        const closeMobileNav = () => {
-            if (!siteNavWrap || !siteNavToggle) {
-                return;
-            }
-            siteNavWrap.classList.remove("is-menu-open");
-            siteNavToggle.setAttribute("aria-expanded", "false");
-        };
-
-        if (siteNavWrap && topHero) {
-            const syncStickyNav = () => {
-                siteNavWrap.classList.toggle("is-sticky", window.scrollY > 40);
-                if (window.innerWidth > 576) {
-                    closeMobileNav();
-                }
-            };
-
-            syncStickyNav();
-            window.addEventListener("scroll", syncStickyNav, { passive: true });
-            window.addEventListener("resize", syncStickyNav);
-        }
-
-        if (siteNavWrap && siteNavToggle && siteNavLinks) {
-            siteNavToggle.addEventListener("click", () => {
-                const isOpen = siteNavWrap.classList.toggle("is-menu-open");
-                siteNavToggle.setAttribute("aria-expanded", isOpen ? "true" : "false");
-            });
-
-            siteNavLinks.querySelectorAll("a").forEach((link) => {
-                link.addEventListener("click", () => {
-                    closeMobileNav();
-                });
-            });
-        }
-
         const videos = document.querySelectorAll('video');
         const carousel = document.getElementById('videoCarousel');
         const videoTitle = document.getElementById('video-title');
