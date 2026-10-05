@@ -51,7 +51,12 @@
 .merch-showcase .merch-action { grid-column: 1 / -1; justify-self: start; display: inline-flex; align-items: center; min-height: 44px; margin-top: .35rem; font-family: var(--font-label); font-size: .78rem; letter-spacing: .1em; text-transform: uppercase; text-decoration: underline; text-underline-offset: .5em; text-decoration-color: #666; }
 
 @media (max-width: 800px) {
-  .merch-showcase.section { min-height: 64vh; padding: 4rem 1.2rem; }
+  .merch-showcase.section { min-height: 0; padding: 2.5rem 1.2rem; }
+  .merch-showcase .store-heading { margin-bottom: 1.5rem; }
+  .merch-showcase .store-products { gap: 2rem; }
+  .merch-showcase .merch-item { gap: .5rem 1rem; }
+  .merch-showcase .store-product img { aspect-ratio: 1.15; }
+  .merch-showcase .store-product h3, .merch-showcase .merch-action { margin-top: 0; }
 }
 
 /* Admin payment records */
