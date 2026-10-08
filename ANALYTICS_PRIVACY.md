@@ -1,6 +1,6 @@
 # Analytics audit and privacy refactor
 
-Reviewed 7 October 2026. This describes technical measures, not a legal certification. Deployment and the legacy migration are required before the new public policy describes production behaviour.
+Reviewed 7 October 2026; realtime processing updated 8 October. This describes technical measures, not a legal certification. See the deployment status below; static publishing and any historical migration are separate steps.
 
 ## Audit of the previous implementation
 
@@ -33,15 +33,15 @@ No recipient IDs, queries/fragments, URL credentials, email addresses, raw user 
 
 ## Processing, aggregation and retention
 
-Immediate event-only aggregation would discard the timing and adjacency needed for approximate bounce, duration, entry/exit and navigation statistics. The chosen short buffer supports those explicitly requested statistics:
+Event counts update as writes arrive; the short-lived session buffer separately supports approximate bounce, duration, entry/exit and navigation statistics:
 
 1. The existing client writes a reduced event to site-actions; statisticsVersion distinguishes the new model from old consentVersion records. Raw expiry is server timestamp plus approximately two hours (rules allow one minute of clock tolerance).
-2. aggregateSiteAnalytics runs every 15 minutes. A session becomes ready after its last recorded event has been idle for 30 minutes. At normal service levels, its totals appear after 30-45 idle minutes; a continuously active one-hour session normally finishes processing within one hour and 45 minutes of its first event.
-3. A transaction reads the raw records and current daily counters, adds statistics to analytics-daily and deletes those raw records in the same commit. Failed commits leave the raw input unchanged; retries or overlapping runs cannot double-count deleted records. No raw events or session ID survive a successful aggregation. Memory grouping is discarded after the job.
-4. Raw expiresAt is two hours. cleanupAnalytics runs every 15 minutes and deletes expired raw/ad records, also checking raw timestamps so previous longer TTLs cannot persist. Healthy cleanup removes leftovers by the next run, roughly two hours and 15 minutes; this is a target, not a guaranteed physical deletion deadline. Firestore TTL is an asynchronous backstop and can take longer. Outages, delayed jobs, backups and logs require operational review. Expired inputs lost before recovery cannot contribute to aggregates; retaining them longer for reporting is not the policy.
+2. countSiteAnalytics runs on each new event. It atomically adds event-only counters and marks the raw event analyticsCounted, so retries cannot duplicate counts. Events normally appear within seconds. aggregateSiteAnalytics runs every 15 minutes as recovery and session finalization: sessions become ready after 30 idle minutes, so visits/bounce/duration normally finish after 30-45 idle minutes.
+3. A transaction reads the raw records and current daily counters, adds only uncounted events plus session statistics to analytics-daily and deletes those raw records in the same commit. Failed commits leave the raw input unchanged; retries or overlapping runs cannot double-count deleted records. No raw events or session ID survive successful session finalization. Event-only counting retains the short-lived buffer until then. Memory grouping is discarded after the job.
+4. Raw expiresAt is two hours. cleanupAnalytics runs every 15 minutes, attempts recovery/finalization first, then deletes expired raw/ad records, also checking raw timestamps so previous longer TTLs cannot persist. Healthy cleanup removes leftovers by the next run, roughly two hours and 15 minutes; this is a target, not a guaranteed physical deletion deadline. Firestore TTL is an asynchronous backstop and can take longer. Outages, delayed jobs, backups and logs require operational review. Expired inputs lost before recovery cannot contribute to aggregates; retaining them longer for reporting is not the policy.
 5. Durable UTC daily statistics expire at bucket midnight plus 90 days (thus up to 90 days). Cleanup removes expired totals, TTL backs it up and APIs exclude expired dates. Deleting raw input does not delete completed totals.
 
-The job scans at most 20,000 raw records per run; each normal session has at most 40 events. Oversized hostile sessions are omitted and removed by expiry cleanup. Capacity failures must be investigated immediately, since unavailable aggregation can cause data loss. Public clients can forge allowed statistical writes: schema validation is not abuse prevention or proof of the user's preference. No new collection endpoint or analytics vendor is introduced.
+The job scans at most 20,000 raw records per run; each normal session has at most 40 events. Oversized sessions have event counters but no session summaries and are removed by expiry cleanup. Capacity failures must be investigated immediately, since unavailable aggregation can cause data loss. Public clients can forge allowed statistical writes: schema validation is not abuse prevention or proof of the user's preference. No new collection endpoint or analytics vendor is introduced.
 
 ## Aggregate schema and admin access
 
@@ -53,7 +53,7 @@ Campaign and source reports are independent; selecting one clears the other. Cam
 
 The dashboard and CSV expose only these aggregate buckets; new reports use memory only. Previous raw IndexedDB stores are cleared by cache version 4 without clearing mailbox caches. Individual analytics notification feeds remain disabled. Historical offline admin tabs and downloaded raw exports need separate disposal. Mailing-list administration remains a distinct product function and may retain its own personal records.
 
-Firestore rules permit unauthenticated creates only with UUID IDs, the reduced allowlist, valid enums/public paths, safe origin/text fields, authoritative timestamp and expiry at most two hours plus tolerance. Authenticated account sessions cannot create browsing events. Raw reads and updates are denied; privileged admin deletes remain possible. All direct reads/writes of analytics-daily are denied; the Admin SDK alone maintains counters and the authenticated callable serves reports. ad-tracking remains retired. TTL field overrides apply to site-actions.expiresAt and analytics-daily.expiresAt. Existing content-history configuration is preserved; no new composite index is required.
+Firestore rules permit unauthenticated creates only with UUID IDs, the reduced allowlist, valid enums/public paths, safe origin/text fields, authoritative timestamp and expiry at most two hours plus tolerance. Authenticated account sessions cannot create browsing events. Raw reads and updates are denied; privileged admin deletes remain possible. All direct reads/writes of analytics-daily are denied; the Admin SDK alone maintains counters and the authenticated callable serves reports. analytics-status/current contains only a random revision written with counter changes. Administrators may listen to that one document; clients cannot write it. The dashboard coalesces notifications into authenticated report requests, preserves filters, and unsubscribes on navigation/sign-out. No polling timer is used for dashboard updates. ad-tracking remains retired. TTL field overrides apply to site-actions.expiresAt and analytics-daily.expiresAt. Existing content-history configuration is preserved; no new composite index is required.
 
 ## Processors and human review before rollout
 
@@ -63,9 +63,9 @@ Firestore rules permit unauthenticated creates only with UUID IDs, the reduced a
 - Meta needs separate explicit consent, processor/controller disclosure and retention review. Withdrawal revokes the pixel, removes known first-party Meta cookies and reloads; this cannot erase past Meta disclosures or provider cookies. Automatic Spotify loading and Google Fonts requests need their own provider/transparency review. No external advertising events were used in testing.
 - Monitor the two scheduled jobs, processing capacity, TTL health and privilege access. Do not enable the default-on public code before aggregation and deletion work in staging. A job outage can breach the intended short retention unless operational backstops function. No legal certification is implied.
 
-## Rollout and migration: commands for later, not executed
+## Rollout and migration runbook
 
-No deployment or production migration has been run. The public notice describes intended behaviour only after coordinated rollout.
+Firebase functions and rules were deployed on 8 October 2026. The realtime trigger and both scheduled processors are confirmed ACTIVE. No historical migration was performed by this refactor; these migration commands remain a runbook. Updated dashboard and privacy static files still require the normal site publishing workflow.
 
 1. If the previous cleanup function is deployed, pause its Cloud Scheduler job during the historical migration, so raw history is not deleted before conversion. Verify the actual job name with gcloud scheduler jobs list --location=us-central1 --project=half-awake-eyes, then pause the applicable job. The usual Firebase job name is firebase-schedule-cleanupAnalytics-us-central1.
 2. Deploy the new rules (old consentVersion payloads will be rejected), indexes, aggregate-only admin endpoints and notification suppression first. Keep default-on public assets unpublished until steps 3?5 pass. Use your existing authenticated Firebase workflow:
@@ -117,3 +117,7 @@ firebase emulators:exec --only firestore --project demo-hae-analytics --config f
 ~~~
 
 Playwright/Chromium and Java 21+ are required for the respective checks. If Playwright is shared, set PLAYWRIGHT_MODULE_PATH. Browser tests use a synthetic hostname and intercept every external request. Emulator checks refuse non-localhost or non-demo configuration. No test sends production analytics or advertising. The unrelated campaigns.test.mjs Hosting rewrite failure remains untouched.
+
+## Realtime refactor verification (8 October 2026)
+
+Regression coverage verifies immediate counts, duplicate trigger delivery, concurrent finalization, transactional rollback, recovery, deletion, listener coalescing/reconnection and discarding late responses. The demo emulator also rejects forged counting markers and public status reads/writes. Verification: 120 tests passed; the existing campaigns Hosting rewrite test still fails. Desktop/mobile Chrome and demo Firestore concurrency/access checks passed. npm audit reported 24 existing production dependency advisories (1 critical, 12 high, 11 moderate); dependency upgrades remain separate, and this refactor added no dependencies. The Firebase deployment of countSiteAnalytics, aggregateSiteAnalytics, cleanupAnalytics and Firestore rules completed successfully; all three functions were verified ACTIVE. Production was not seeded with synthetic visitor events.

@@ -1,3 +1,4 @@
+import { createLiveAnalytics } from './analytics-live.js?v=20261008-realtime';
 import { setupTicketTracker } from './admin-ticket-tracker.js?v=20261008-tickets-page';
 import { setupNotificationBell, waitForNotificationPage } from './admin-notification-bell.js?v=20261008-privacy-anchor';
 import { renderAnalyticsInsights, matchesAnalyticsReport, matchesAnalyticsSource, setAnalyticsSubview } from './analytics-insights.js?v=20261008-privacy-anchor';
@@ -6867,23 +6868,31 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
       renderPagination();
     }
 
-    async function loadLogs(collectionName, { forceSync = false } = {}) {
-      state.isRefreshing = true; syncRefreshButton(); state.viewMode = 'events';
-      try {
-        const result = await httpsCallable(functions, 'getAdminAnalytics')({});
-        state.allLogs = collectionName === 'ad-tracking' ? [] : sortLogs(result.data.entries || []);
+    const liveAnalytics = createLiveAnalytics({
+      subscribe: (changed, failed) => onSnapshot(doc(db, 'analytics-status', 'current'), changed, failed),
+      fetchReport: () => httpsCallable(functions, 'getAdminAnalytics')({}),
+      onLoading: loading => {state.isRefreshing = loading; syncRefreshButton();},
+      onReport: result => {
+        state.allLogs = state.currentCollection === 'ad-tracking' ? [] : sortLogs(result.data.entries || []);
         state.dynamicFields = getOrderedFields(state.allLogs);
-        updateHeroMeta('Aggregate report');
+        updateHeroMeta('Live aggregate report');
         if (elements.searchInput) {elements.searchInput.value=''; elements.searchInput.disabled=true; elements.searchInput.placeholder='Use date, campaign or source reports';}
         state.searchTerm='';
-        setAnalyticsCacheStatus('Daily statistical totals; small breakdowns withheld; 90-day retention.');
+        setAnalyticsCacheStatus(state.allLogs.length
+          ? 'Live event totals. Session summaries follow after inactivity. Small breakdowns withheld; 90-day retention.'
+          : 'Waiting for website activity. Event totals update automatically; small breakdowns are withheld.');
         applyFilters();
-      } catch {
-        state.allLogs = []; state.filteredLogs = []; state.sessionGroups = []; state.dynamicFields = [];
-        updateHeroMeta('Load failed');
-        setAnalyticsCacheStatus('Could not load aggregate analytics. Deploy getAdminAnalytics and sign in as an admin.');
-        applyFilters();
-      } finally {state.isRefreshing = false; syncRefreshButton();}
+      },
+      onError: () => {
+        updateHeroMeta('Live update failed');
+        setAnalyticsCacheStatus('Could not update analytics. Displayed totals may be out of date. Use Refresh to retry.');
+      }
+    });
+    document.addEventListener('hae-admin-account-changing', () => liveAnalytics.stop());
+    function loadLogs() {
+      if (!state.authUser || state.activePage !== 'analytics') return;
+      state.viewMode = 'events';
+      return liveAnalytics.start();
     }
 
     function showDashboard(user) {
@@ -6951,6 +6960,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
 
     let pageNavigationVersion = 0;
     function setActivePage(page) {
+      if (page !== 'analytics') liveAnalytics.stop();
       pageNavigationVersion++;
       closeMobileNav();
       if (['overview', 'homepage', 'store', 'sumup', 'ticket-tracker'].includes(page)) {

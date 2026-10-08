@@ -7,7 +7,7 @@ function serverHarness(db) {
  const module={exports:{}};class HttpsError extends Error {constructor(code,message){super(message);this.code=code;}}
  vm.runInNewContext(fs.readFileSync('functions/analytics.js','utf8'),{module,URL,Date,require:name=>({
  'node:crypto':require('node:crypto'),'firebase-functions/v2/https':{onCall:(_o,h)=>h,HttpsError},
- 'firebase-functions/v2/scheduler':{onSchedule:(_o,h)=>h},'firebase-admin/firestore':{Timestamp:{fromMillis:n=>new Date(n),now:()=>new Date()}}
+ 'firebase-functions/v2/firestore':{onDocumentCreated:(_o,h)=>h},'firebase-functions/v2/scheduler':{onSchedule:(_o,h)=>h},'firebase-admin/firestore':{Timestamp:{fromMillis:n=>new Date(n),now:()=>new Date()}}
  }[name])});
  return module.exports.buildAnalyticsFunctions(db,r=>{if(r.auth?.token?.email!=='admin@example.test')throw new HttpsError('permission-denied','Denied');});
 }
@@ -35,8 +35,8 @@ test('small breakdowns and small session summaries are withheld',()=>{
 test('idle sessions are aggregated and removed while active sessions wait',async()=>{
  const db=database({'site-actions':{closed:event(),active:event({sessionId:'active',timestamp:new Date(now-5*60000)})}});
  assert.equal(await processAnalytics(db,now),1);assert.equal(db.rows.has('site-actions/closed'),false);assert.equal(db.rows.has('site-actions/active'),true);
- assert.equal([...db.rows].find(([key])=>key.startsWith('analytics-daily/') && db.rows.get(key).kind==='total')[1].views,1);
- await processAnalytics(db,now);assert.equal([...db.rows.values()].find(e=>e.kind==='total').views,1);
+ assert.equal([...db.rows].find(([key])=>key.startsWith('analytics-daily/') && db.rows.get(key).kind==='total')[1].views,2);
+ await processAnalytics(db,now);assert.equal([...db.rows.values()].find(e=>e.kind==='total').views,2);
 });
 test('aggregation failure leaves raw data available without partial totals',async()=>{
  const db=database({'site-actions':{closed:event()}});db.failCommit=true;await assert.rejects(processAnalytics(db,now));assert.equal(db.rows.has('site-actions/closed'),true);assert.equal(db.rows.size,1);
@@ -45,7 +45,7 @@ test('aggregation failure leaves raw data available without partial totals',asyn
 test('expired raw records are deleted but durable totals remain reportable',async()=>{
  const timestamp=new Date().toISOString().slice(0,10)+'T00:00:00.000Z';const db=database({'site-actions':{expired:event({timestamp:new Date(now-3*3600000),expiresAt:new Date(now-3600000)})},'ad-tracking':{old:{timestamp:new Date(0)}},'analytics-daily':{daily:{kind:'total',timestamp,value:'',count:8,views:8,expiresAt:new Date(now+86400000)}}});
  await serverHarness(db).cleanupAnalytics();assert.equal([...db.rows.keys()].filter(k=>k.startsWith('site-actions/')).length,0);assert.equal(db.rows.has('ad-tracking/old'),false);
- const report=await serverHarness(db).getAdminAnalytics({auth:{token:{email:'admin@example.test'}}});assert.equal(report.entries[0].views,8);
+ const report=await serverHarness(db).getAdminAnalytics({auth:{token:{email:'admin@example.test'}}});assert.equal(report.entries.filter(e=>e.kind==='total').reduce((sum,e)=>sum+(e.views||0),0),9);
 });
 test('session metrics include only a temporary session and totals survive deletion',async()=>{
  const db=database({'site-actions':{a:event(),b:event({action:'page_view',page:'/tickets',timestamp:new Date(+stamp+1000)}),c:event({action:'click',timestamp:new Date(+stamp+2000)})}});

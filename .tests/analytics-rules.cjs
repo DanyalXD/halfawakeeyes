@@ -19,7 +19,7 @@ async function create(changes={},collection='site-actions') {
   const allowed=await create();
   if(!allowed.response.ok)throw Error(`Valid statistical event was rejected: ${await allowed.response.text()}`);
   for(const changes of [
-    {userId:'fan@example.test'}, {viewport:'1920x1080'}, {ip:'192.0.2.1'}, {latitude:55.8},
+    {analyticsCounted:true}, {userId:'fan@example.test'}, {viewport:'1920x1080'}, {ip:'192.0.2.1'}, {latitude:55.8},
     {statisticsVersion:undefined}, {sessionId:'persistent-person'},
     {href:'https://tickets.example/order?email=fan'}, {referrer:'https://social.example/private'},
     {label:'fan@example.test'}, {page:'/account/fan@example.test'},
@@ -31,6 +31,8 @@ async function create(changes={},collection='site-actions') {
   const raw=await fetch(base+'/site-actions/'+allowed.id);assert.equal(raw.status,403);
   const ads=await create({},'ad-tracking');assert.equal(ads.response.status,403);
   const aggregates=await create({},'analytics-daily');assert.equal(aggregates.response.status,403);
+  const statusWrite=await create({},'analytics-status');assert.equal(statusWrite.response.status,403);
+  const statusRead=await fetch(base+'/analytics-status/current');assert.equal(statusRead.status,403);
   const aggregateRead=await fetch(base+'/analytics-daily/private');assert.equal(aggregateRead.status,403);
   const oldSchema=await create({statisticsVersion:undefined,consentVersion:'2026-10-07'});assert.equal(oldSchema.response.status,403);
   const extra=await create({page:'/shows/YWm5A0ZIUh1UBYqoDMVk/'});assert.equal(extra.response.status,200);
@@ -38,18 +40,24 @@ async function create(changes={},collection='site-actions') {
   const requireFunctions=require('node:module').createRequire(require('node:path').resolve(__dirname,'../functions/package.json'));
   const {initializeApp}=requireFunctions('firebase-admin/app');
   const {getFirestore}=requireFunctions('firebase-admin/firestore');
-  const {processAnalytics,buildAnalyticsFunctions}=require('../functions/analytics');
+  const {countAnalyticsEvent,processAnalytics,buildAnalyticsFunctions}=require('../functions/analytics');
   const db=getFirestore(initializeApp({projectId:'demo-hae-analytics'}));
   const old=new Date(Date.now()-45*60000);
   const seeds=Array.from({length:5},()=>({ref:db.collection('site-actions').doc(randomUUID()),data:{...valid,timestamp:old,sessionId:randomUUID()}}));
   await Promise.all(seeds.map(seed=>seed.ref.set(seed.data)));
+  await Promise.all([countAnalyticsEvent(db,seeds[0].ref),countAnalyticsEvent(db,seeds[0].ref),processAnalytics(db)]);
   await Promise.all([processAnalytics(db),processAnalytics(db)]);
   await processAnalytics(db);
+  const tokenPart=value=>Buffer.from(JSON.stringify(value)).toString('base64url');
+  const adminToken=tokenPart({alg:'none',typ:'JWT'})+'.'+tokenPart({iss:'https://securetoken.google.com/demo-hae-analytics',aud:'demo-hae-analytics',sub:'test-admin',iat:Math.floor(Date.now()/1000),exp:Math.floor(Date.now()/1000)+3600,email:'danyal1995@hotmail.co.uk'})+'.';
+  const adminStatus=await fetch(base+'/analytics-status/current',{headers:{Authorization:'Bearer '+adminToken}});
+  assert.equal(adminStatus.status,200,'An authorized admin can subscribe to the revision');
+  assert.deepEqual(Object.keys((await adminStatus.json()).fields),['revision']);
   for(const seed of seeds)assert.equal((await seed.ref.get()).exists,false);
   const tools=buildAnalyticsFunctions(db,request=>assert.equal(request.auth?.token?.email,'admin@example.test'));
   const report=await tools.getAdminAnalytics.run({auth:{token:{email:'admin@example.test'}}});
-  assert.ok(report.entries.some(e=>e.kind==='total' && e.views===5 && e.sessions===5));
+  assert.ok(report.entries.some(e=>e.kind==='total' && e.views===7 && e.sessions===5));
   assert.doesNotMatch(JSON.stringify(report),/sessionId|statisticsVersion|12:|userId/);
-  console.log('Emulator aggregation: transaction saved 5 views/sessions, deleted raw input and callable returned durable statistics.');
-  console.log('Firestore rules: valid reduced events accepted; 15 unsafe schemas, raw reads and legacy advertising writes rejected.');
+  console.log('Emulator aggregation: transaction saved 7 immediate views and 5 finalized sessions, deleted raw input and callable returned durable statistics.');
+  console.log('Firestore rules: valid reduced events accepted; 16 unsafe schemas, raw reads and legacy advertising writes rejected.');
 })().catch(error=>{console.error(error);process.exitCode=1;});

@@ -19,11 +19,15 @@ window.previewReady=true;
 </script></body></html>`;
 const aggregateFixture=`<!doctype html><html><body>${fs.readFileSync(path.join(root,'assets/components/admin/pages/analytics.html'),'utf8')}<script type="module">
 import {renderAnalyticsInsights} from '/assets/js/analytics-insights.js';
-renderAnalyticsInsights([
+import {createLiveAnalytics} from '/assets/js/analytics-live.js';
+const rows=[
 {kind:'total',value:'',count:13,views:8,clicks:5,tickets:5,sessions:8,clickingSessions:5,bounces:2,sessionSeconds:240,timestamp:'2026-10-07'},
 {kind:'page',value:'/links',views:8,count:8,timestamp:'2026-10-07'},
 {kind:'device',value:'mobile',views:8,count:8,timestamp:'2026-10-07'}
-],{from:'2026-10-07',to:'2026-10-07'});window.aggregateReady=true;
+ ];
+const live=createLiveAnalytics({subscribe:next=>{window.analyticsChanged=next;return()=>{};},fetchReport:async()=>rows,onReport:rows=>{renderAnalyticsInsights(rows,{from:'2026-10-07',to:'2026-10-07'});window.aggregateReady=true;},onError:error=>{throw error;},onLoading:()=>{}});
+window.nextAnalyticsEvent=()=>{rows[0].views++;rows[0].count++;window.analyticsChanged();};
+await live.start();
 </script></body></html>`;
 
 (async()=>{
@@ -92,6 +96,8 @@ renderAnalyticsInsights([
       const cards=await page.locator('#stats-grid').innerText();
       assert.match(cards,/Page views\s+8/); assert.match(cards,/Approximate visits\s+8/);
       assert.match(cards,/30s/); assert.match(cards,/25%/);
+      await page.evaluate(()=>window.nextAnalyticsEvent());
+      await page.waitForFunction(()=>/Page views\s+9/.test(document.querySelector('#stats-grid').innerText));
       assert.equal(await page.getByRole('button',{name:'Sessions',exact:true}).count(),0);
       assert.deepEqual(errors,[]);
       console.log(`Aggregate dashboard renders weighted metrics and session estimates at ${viewport.width}px.`);

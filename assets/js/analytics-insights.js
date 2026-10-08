@@ -262,7 +262,8 @@ export function renderAnalyticsInsights(entries, options = {}) {
   const supporting = document.createElement('div'); supporting.className='insight-supporting';
   const breakdown = root.querySelector('[data-insight-section="breakdown"]');
   const builder = root.querySelector('[data-insight-section="builder"]');
-  breakdown.before(supporting); supporting.append(breakdown,builder);
+  const definitions = root.querySelector('[data-insight-section="definitions"]');
+  breakdown.before(supporting); supporting.append(breakdown,definitions,builder);
 
   root.querySelector('#insight-report').addEventListener('change', event=>options.onReport?.(event.target.value));
   const filters = document.querySelector('.insight-filters');

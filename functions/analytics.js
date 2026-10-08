@@ -46,7 +46,7 @@ function eventCounts(event) {
     tickets:Number(redirect || event.action === 'click' && (/ticket/i.test(event.section + ' ' + event.label) || event.section === 'Shows')),
     signups:Number(event.action === 'email_signup'), outboundClicks:Number(click && event.outbound)};
 }
-function aggregateAnalytics(records) {
+function aggregateAnalytics(records, {includeEvents=true, includeSessions=true}={}) {
   const buckets = new Map(), sessions = new Map();
   const add = (timestamp, kind, value, counts) => {
     const key = JSON.stringify([timestamp,kind,value]);
@@ -57,7 +57,7 @@ function aggregateAnalytics(records) {
   for (const raw of records) {
     const event=sanitiseLegacyEvent(raw); if (!event.timestamp || !event.action) continue;
     const timestamp=day(event.timestamp), counts=eventCounts(event);
-    if (counts.count) {
+    if (includeEvents && raw.analyticsCounted !== true && counts.count) {
       add(timestamp,'total','',counts);
       add(timestamp,'event',event.action,counts);
       add(timestamp,'page',event.page,counts);
@@ -67,7 +67,7 @@ function aggregateAnalytics(records) {
       if (counts.clicks) add(timestamp,'link',event.label || event.href || 'Unlabelled link',counts);
       if (counts.views) for (const kind of ['browser','os','device']) add(timestamp,kind,event[kind],{count:1,views:1});
     }
-    if (raw.sessionId) {
+    if (includeSessions && raw.sessionId) {
       if (!sessions.has(raw.sessionId)) sessions.set(raw.sessionId,[]);
       sessions.get(raw.sessionId).push(event);
     }
@@ -96,26 +96,41 @@ function publicAggregates(records, now=Date.now()) {
     return [result];
   });
 }
-// Aggregate writes and raw deletions share a transaction. Retries/concurrent jobs cannot double count.
+async function writeBuckets(db, transaction, buckets) {
+  const refs=buckets.map(bucket=>db.collection('analytics-daily').doc(bucket.id));
+  const previous=await Promise.all(refs.map(ref=>transaction.get(ref)));
+  buckets.forEach((bucket,index)=>{
+    const {id,...data}=bucket, old=previous[index].exists ? previous[index].data() : {};
+    for(const field of counterFields) if (field in data || field in old) data[field]=(data[field] || 0)+(old[field] || 0);
+    data.schemaVersion=3; data.expiresAt=new Date(Date.parse(data.timestamp)+RETENTION_DAYS*86400000);
+    transaction.set(refs[index],data);
+  });
+  // This admin-only signal contains no visitor data or unsuppressed breakdowns.
+  if (buckets.length) transaction.set(db.collection('analytics-status').doc('current'),{revision:crypto.randomUUID()});
+}
+function retained(record, now) {
+  const stamp=millis(record.timestamp); return stamp>=now-RETENTION_DAYS*86400000 && stamp<=now;
+}
+async function countAnalyticsEvent(db, ref, now=Date.now()) {
+  return db.runTransaction(async transaction=>{
+    const snapshot=await transaction.get(ref);
+    if (!snapshot.exists || snapshot.data().analyticsCounted===true) return false;
+    const record=snapshot.data();
+    await writeBuckets(db,transaction,aggregateAnalytics(retained(record,now)?[record]:[],{includeSessions:false}));
+    transaction.set(ref,{...record,analyticsCounted:true});
+    return true;
+  });
+}
+// The marker, counters and final deletion are transactional, including races with the live trigger.
 async function storeAndDelete(db, docs, {now=Date.now(), historical=false}={}) {
   if (!docs.length) return false;
   return db.runTransaction(async transaction=>{
     const snapshots=await Promise.all(docs.map(doc=>transaction.get(doc.ref)));
     const current=snapshots.filter(doc=>doc.exists);
     if (!current.length) return false;
-    const records=current.map(doc=>historical ? sanitiseLegacyEvent(doc.data()) : doc.data());
+    const records=current.map(doc=>historical ? {...sanitiseLegacyEvent(doc.data()),analyticsCounted:doc.data().analyticsCounted===true} : doc.data());
     if (!historical && records.some(record=>millis(record.timestamp)>now-SESSION_IDLE_MS)) return false;
-    const buckets=aggregateAnalytics(records.filter(record=> {
-      const stamp=millis(record.timestamp); return stamp >= now-RETENTION_DAYS*86400000 && stamp<=now;
-    }));
-    const refs=buckets.map(bucket=>db.collection('analytics-daily').doc(bucket.id));
-    const previous=await Promise.all(refs.map(ref=>transaction.get(ref)));
-    buckets.forEach((bucket,index)=>{
-      const {id,...data}=bucket, old=previous[index].exists ? previous[index].data() : {};
-      for(const field of counterFields) if (field in data || field in old) data[field]=(data[field] || 0)+(old[field] || 0);
-      data.schemaVersion=3; data.expiresAt=new Date(Date.parse(data.timestamp)+RETENTION_DAYS*86400000);
-      transaction.set(refs[index],data);
-    });
+    await writeBuckets(db,transaction,aggregateAnalytics(records.filter(record=>retained(record,now))));
     current.forEach(doc=>transaction.delete(doc.ref)); return true;
   });
 }
@@ -133,9 +148,12 @@ async function processAnalytics(db, now=Date.now()) {
   }
   let processed=0;
   for(const docs of groups.values()) {
-    if(docs.some(doc=>millis(doc.data().timestamp)>now-SESSION_IDLE_MS)) continue;
+    if(docs.some(doc=>millis(doc.data().timestamp)>now-SESSION_IDLE_MS) || docs.length>40) {
+      // Recovery for missed triggers; fresh visits need not wait for session finalization.
+      for(const doc of docs) if(doc.data().analyticsCounted!==true) await countAnalyticsEvent(db,doc.ref,now);
+      continue;
+    }
     // Honest clients send at most 40 events; oversized hostile sessions are dropped by expiry cleanup.
-    if(docs.length>40) continue;
     if(await storeAndDelete(db,docs,{now})) processed++;
   }
   return processed;
@@ -143,6 +161,7 @@ async function processAnalytics(db, now=Date.now()) {
 function buildAnalyticsFunctions(db, assertAdmin) {
   const {onCall,HttpsError}=require('firebase-functions/v2/https');
   const {onSchedule}=require('firebase-functions/v2/scheduler');
+  const {onDocumentCreated}=require('firebase-functions/v2/firestore');
   const {Timestamp}=require('firebase-admin/firestore');
   const getAdminAnalytics=onCall({region:'us-central1',maxInstances:2,timeoutSeconds:120,memory:'512MiB'},async request=>{
     assertAdmin(request);
@@ -157,7 +176,11 @@ function buildAnalyticsFunctions(db, assertAdmin) {
     return {entries:publicAggregates(entries),retentionDays:RETENTION_DAYS,rawRetentionHours:2,aggregated:true};
   });
   const aggregateSiteAnalytics=onSchedule({schedule:'every 15 minutes',region:'us-central1',timeoutSeconds:540,memory:'512MiB',maxInstances:1},async()=>processAnalytics(db));
+  const countSiteAnalytics=onDocumentCreated({document:'site-actions/{eventId}',region:'us-central1',retry:true,maxInstances:2},async event=>{
+    if(event.data) await countAnalyticsEvent(db,event.data.ref);
+  });
   const cleanupAnalytics=onSchedule({schedule:'every 15 minutes',region:'us-central1',timeoutSeconds:540,maxInstances:1},async()=>{
+    await processAnalytics(db);
     for(const name of ['site-actions','ad-tracking','analytics-daily']) {
       const cutoff=Timestamp.fromMillis(Date.now()-(name==='analytics-daily'?RETENTION_DAYS*86400000:RAW_RETENTION_MS));
       for(const [field,before] of [['expiresAt',Timestamp.now()], ...(name==='analytics-daily'?[]:[['timestamp',cutoff]])]) {
@@ -169,6 +192,6 @@ function buildAnalyticsFunctions(db, assertAdmin) {
       }
     }
   });
-  return {getAdminAnalytics,aggregateSiteAnalytics,cleanupAnalytics};
+  return {getAdminAnalytics,countSiteAnalytics,aggregateSiteAnalytics,cleanupAnalytics};
 }
-module.exports={RETENTION_DAYS,RAW_RETENTION_MS,MIN_BREAKDOWN_COUNT,sanitiseLegacyEvent,aggregateAnalytics,publicAggregates,storeAndDelete,processAnalytics,buildAnalyticsFunctions};
+module.exports={RETENTION_DAYS,RAW_RETENTION_MS,MIN_BREAKDOWN_COUNT,sanitiseLegacyEvent,aggregateAnalytics,publicAggregates,countAnalyticsEvent,storeAndDelete,processAnalytics,buildAnalyticsFunctions};
