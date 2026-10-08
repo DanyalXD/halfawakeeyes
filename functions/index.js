@@ -6,7 +6,7 @@ const { initializeApp } = require("firebase-admin/app");
 const { getFirestore, FieldValue } = require("firebase-admin/firestore");
 const { getMessaging } = require("firebase-admin/messaging");
 const { HttpsError, onCall, onRequest } = require("firebase-functions/v2/https");
-const { onDocumentCreated } = require("firebase-functions/v2/firestore");
+const { onDocumentCreated, onDocumentWritten } = require("firebase-functions/v2/firestore");
 const { onSchedule } = require("firebase-functions/v2/scheduler");
 const { defineSecret } = require("firebase-functions/params");
 const { ImapFlow } = require("imapflow");
@@ -1073,6 +1073,10 @@ exports.notifyOnSiteActionCreated = onDocumentCreated({
   // Statistical browsing never produces individual action notifications.
 
 });
+
+exports.notifyOnPageViewTotalChanged = onDocumentWritten({
+  region: 'us-central1', document: 'analytics-page-views/current', maxInstances: 2
+}, async () => require('./analytics-notifications').notifyPageViewTotals(db, sendAdminPushNotification));
 
 exports.notifyOnMailingListSignupCreated = onDocumentCreated({
   region: "us-central1",

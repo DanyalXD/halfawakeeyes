@@ -1,6 +1,6 @@
 import { createLiveAnalytics } from './analytics-live.js?v=20261008-realtime';
 import { setupTicketTracker } from './admin-ticket-tracker.js?v=20261008-tickets-page';
-import { setupNotificationBell, waitForNotificationPage } from './admin-notification-bell.js?v=20261008-privacy-anchor';
+import { setupNotificationBell, waitForNotificationPage } from './admin-notification-bell.js?v=20261008-page-view-alerts';
 import { renderAnalyticsInsights, matchesAnalyticsReport, matchesAnalyticsSource, setAnalyticsSubview } from './analytics-insights.js?v=20261008-privacy-anchor';
 import { filterMailingContacts } from './newsletter-templates.js';
 import { saveCampaignDocuments } from './campaign-store.js';

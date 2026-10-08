@@ -1,0 +1,21 @@
+const test=require('node:test'),assert=require('node:assert/strict');
+const {database}=require('./analytics-db.cjs');
+const {countAnalyticsEvent}=require('../functions/analytics');
+const {notifyPageViewTotals}=require('../functions/analytics-notifications');
+test('page-view notices contain only the current UTC total and survive unrelated clicks',async()=>{
+ const now=Date.now(),db=database({'site-actions':{view:{action:'page_view',page:'/links',sessionId:'private-session',timestamp:new Date(now)},click:{action:'click',timestamp:new Date(now)}}});
+ await countAnalyticsEvent(db,db.collection('site-actions').doc('view'),now);
+ const notice=db.rows.get('analytics-page-views/current');assert.equal(notice.views,1);
+ assert.deepEqual(Object.keys(notice).sort(),['day','expiresAt','timestamp','views']);
+ await countAnalyticsEvent(db,db.collection('site-actions').doc('click'),now);
+ assert.deepEqual(db.rows.get('analytics-page-views/current'),notice);
+ const sent=[];const send=async payload=>sent.push(payload);
+ await notifyPageViewTotals(db,send,now);await notifyPageViewTotals(db,send,now);
+ assert.equal(sent.length,1);assert.equal(sent[0].body,'1 page view today (UTC).');
+ assert.equal(sent[0].isEnabled({siteActions:{page_view:true}}),true);
+ assert.equal(sent[0].isEnabled({siteActions:{page_view:false}}),false);
+ assert.doesNotMatch(JSON.stringify(sent),/private-session|\/links|sessionId/);
+ await notifyPageViewTotals(db,send,now+86400000);assert.equal(sent.length,1);
+ db.rows.set('analytics-page-views/current',{day:new Date(now+86400000).toISOString().slice(0,10),views:1,timestamp:new Date(now+86400000)});
+ await notifyPageViewTotals(db,send,now+86400000);assert.equal(sent.length,2);
+});

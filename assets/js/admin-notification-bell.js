@@ -3,11 +3,10 @@ function timestamp(value) {
   const date = value?.toDate ? value.toDate() : new Date(value?.seconds != null ? value.seconds*1000 : value || '');
   return Number.isFinite(date.getTime()) ? date.getTime() : 0;
 }
-export function buildBellNotifications({actions=[],signups=[],messages=[]}={}) {
+export function buildBellNotifications({pageViews=null,signups=[],messages=[]}={}) {
   const items=[];
-  for(const entry of actions.filter(entry=>entry && entry.id != null)) {
-    const ticket=entry.action==='ticket_redirect_continue' && entry.actionSubtype!=='auto' || entry.action==='click' && (/ticket/i.test(`${entry.section || ''} ${entry.label || ''}`) || entry.section==='Shows');
-    if(ticket) items.push({id:`action:${entry.id}`,recordId:String(entry.id),title:'Ticket link clicked',body:String(entry.label || 'A visitor opened a ticket link.').slice(0,240),time:timestamp(entry.timestamp),page:'analytics'});
+  if(pageViews?.day===new Date().toISOString().slice(0,10) && Number.isSafeInteger(pageViews.views) && pageViews.views>0) {
+    items.push({id:`page-views:${pageViews.day}:${pageViews.views}`,title:'New page view',body:`${pageViews.views} page ${pageViews.views===1?'view':'views'} today (UTC).`,time:timestamp(pageViews.timestamp),page:'analytics'});
   }
   for(const entry of signups.filter(entry=>entry && entry.id != null)) if(!entry.unsubscribed) items.push({id:`signup:${entry.id}`,recordId:String(entry.id),title:'Mailing-list signup',body:String(entry.email || 'A new subscriber joined.'),time:timestamp(entry.createdAt || entry.updatedAt),page:'subscribers'});
   for(const entry of messages.filter(entry=>entry && entry.id != null)) items.push({id:`email:${entry.id}`,recordId:String(entry.id),title:'Incoming email',body:String(entry.subject || '(No subject)').slice(0,240),time:timestamp(entry.date),page:'email'});
@@ -41,6 +40,7 @@ export function setupNotificationBell({db,collection,doc,query,orderBy,limit,onS
     try{const saved=JSON.parse(localStorage.getItem(storageKey()) || '[]');if(Array.isArray(saved))read=new Set(saved.filter(id=>typeof id==='string').slice(-500));}catch{}
     const current=generation;
     const feeds=[
+      ['pageViews',doc(db,'analytics-page-views','current')],
       ['signups',query(collection(db,'mailing-list-signups'),orderBy('createdAt','desc'),limit(25))],
       ['messages',doc(db,'admin-email-cache','inbox')]
     ];
@@ -49,8 +49,8 @@ export function setupNotificationBell({db,collection,doc,query,orderBy,limit,onS
       const fail=()=>{if(current!==generation)return;pending.delete(name);failures.add(name);render();};
       try {stops.push(onSnapshot(ref,snapshot=>{
         if(current!==generation)return;
-        data[name]=name==='messages'?(snapshot.data()?.messages || []):snapshot.docs.map(item=>({...item.data(),id:item.id}));
-        if(!Array.isArray(data[name]))data[name]=[];
+        data[name]=name==='pageViews'?snapshot.data() || null:name==='messages'?(snapshot.data()?.messages || []):snapshot.docs.map(item=>({...item.data(),id:item.id}));
+        if(name!=='pageViews' && !Array.isArray(data[name]))data[name]=[];
         pending.delete(name);failures.delete(name);render();
       },fail));}catch{fail();}
     }

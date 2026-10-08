@@ -104,6 +104,10 @@ async function writeBuckets(db, transaction, buckets) {
     for(const field of counterFields) if (field in data || field in old) data[field]=(data[field] || 0)+(old[field] || 0);
     data.schemaVersion=3; data.expiresAt=new Date(Date.parse(data.timestamp)+RETENTION_DAYS*86400000);
     transaction.set(refs[index],data);
+    const today=new Date().toISOString().slice(0,10);
+    if(bucket.kind==='total' && bucket.views>0 && bucket.timestamp.slice(0,10)===today) {
+      transaction.set(db.collection('analytics-page-views').doc('current'),{day:today,views:data.views,timestamp:new Date(),expiresAt:data.expiresAt});
+    }
   });
   // This admin-only signal contains no visitor data or unsuppressed breakdowns.
   if (buckets.length) transaction.set(db.collection('analytics-status').doc('current'),{revision:crypto.randomUUID()});
@@ -181,9 +185,9 @@ function buildAnalyticsFunctions(db, assertAdmin) {
   });
   const cleanupAnalytics=onSchedule({schedule:'every 15 minutes',region:'us-central1',timeoutSeconds:540,maxInstances:1},async()=>{
     await processAnalytics(db);
-    for(const name of ['site-actions','ad-tracking','analytics-daily']) {
+    for(const name of ['site-actions','ad-tracking','analytics-daily','analytics-page-views','admin-analytics-push-state']) {
       const cutoff=Timestamp.fromMillis(Date.now()-(name==='analytics-daily'?RETENTION_DAYS*86400000:RAW_RETENTION_MS));
-      for(const [field,before] of [['expiresAt',Timestamp.now()], ...(name==='analytics-daily'?[]:[['timestamp',cutoff]])]) {
+      for(const [field,before] of [['expiresAt',Timestamp.now()], ...(['site-actions','ad-tracking'].includes(name)?[['timestamp',cutoff]]:[])]) {
         while(true) {
           const snapshot=await db.collection(name).where(field,'<=',before).limit(400).get();
           if(snapshot.empty) break;

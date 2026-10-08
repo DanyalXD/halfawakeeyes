@@ -33,6 +33,9 @@ async function create(changes={},collection='site-actions') {
   const aggregates=await create({},'analytics-daily');assert.equal(aggregates.response.status,403);
   const statusWrite=await create({},'analytics-status');assert.equal(statusWrite.response.status,403);
   const statusRead=await fetch(base+'/analytics-status/current');assert.equal(statusRead.status,403);
+  const noticeWrite=await create({},'analytics-page-views');assert.equal(noticeWrite.response.status,403);
+  assert.equal((await fetch(base+'/analytics-page-views/current')).status,403);
+  assert.equal((await fetch(base+'/admin-analytics-push-state/current')).status,403);
   const aggregateRead=await fetch(base+'/analytics-daily/private');assert.equal(aggregateRead.status,403);
   const oldSchema=await create({statisticsVersion:undefined,consentVersion:'2026-10-07'});assert.equal(oldSchema.response.status,403);
   const extra=await create({page:'/shows/YWm5A0ZIUh1UBYqoDMVk/'});assert.equal(extra.response.status,200);
@@ -53,6 +56,14 @@ async function create(changes={},collection='site-actions') {
   const adminStatus=await fetch(base+'/analytics-status/current',{headers:{Authorization:'Bearer '+adminToken}});
   assert.equal(adminStatus.status,200,'An authorized admin can subscribe to the revision');
   assert.deepEqual(Object.keys((await adminStatus.json()).fields),['revision']);
+  const noticeResponse=await fetch(base+'/analytics-page-views/current',{headers:{Authorization:'Bearer '+adminToken}});
+  assert.equal(noticeResponse.status,200);
+  const noticeFields=(await noticeResponse.json()).fields;
+  assert.deepEqual(Object.keys(noticeFields).sort(),['day','expiresAt','timestamp','views']);
+  assert.equal(noticeFields.views.integerValue,'7');
+  const {notifyPageViewTotals}=require('../functions/analytics-notifications');const sent=[];
+  await Promise.all([notifyPageViewTotals(db,async notice=>sent.push(notice)),notifyPageViewTotals(db,async notice=>sent.push(notice))]);
+  assert.equal(sent.length,1);assert.equal(sent[0].body,'7 page views today (UTC).');
   for(const seed of seeds)assert.equal((await seed.ref.get()).exists,false);
   const tools=buildAnalyticsFunctions(db,request=>assert.equal(request.auth?.token?.email,'admin@example.test'));
   const report=await tools.getAdminAnalytics.run({auth:{token:{email:'admin@example.test'}}});
