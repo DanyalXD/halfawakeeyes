@@ -1,12 +1,12 @@
-import { setupNotificationBell, waitForNotificationPage } from './admin-notification-bell.js?v=20260906-existing-viewers';
-import { renderAnalyticsInsights, matchesAnalyticsReport, matchesAnalyticsSource, setAnalyticsSubview } from './analytics-insights.js?v=20260906-existing-viewers';
+import { setupNotificationBell, waitForNotificationPage } from './admin-notification-bell.js?v=20261008-privacy-anchor';
+import { renderAnalyticsInsights, matchesAnalyticsReport, matchesAnalyticsSource, setAnalyticsSubview } from './analytics-insights.js?v=20261008-privacy-anchor';
 import { filterMailingContacts } from './newsletter-templates.js';
 import { saveCampaignDocuments } from './campaign-store.js';
 import { setupAdminLayout, setAdminPagePresentation } from './admin-layout.js?v=20261005-sumup-collapse';
 import { mountGigTools, readGigTools, fillGigTools, setupAdminTools } from './admin-tools.js?v=20260916-poster-palette';
 import { normalizeGigDetails } from './gig-tools.js';
 import { normalizePosterTheme } from './poster-theme.js?v=20260916-palette';
-import { mountWorkflows, setupWorkflows } from './admin-workflows.js?v=20261005-sumup-collapse';
+import { mountWorkflows, setupWorkflows } from './admin-workflows.js?v=20261008-privacy-anchor';
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
     import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, getFirestore, orderBy, limit, onSnapshot, query, runTransaction, writeBatch, setDoc, updateDoc, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
@@ -124,7 +124,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
       "danyalc95@gmail.com"
     ]);
     const ADMIN_LOG_CACHE_DB_NAME = "hae-admin-cache";
-    const ADMIN_LOG_CACHE_DB_VERSION = 3;
+    const ADMIN_LOG_CACHE_DB_VERSION = 4;
     const ADMIN_LOG_CACHE_ENTRIES_STORE = "analyticsEntries";
     const ADMIN_LOG_CACHE_META_STORE = "analyticsMeta";
     const ADMIN_EMAIL_CACHE_STORE = "emailFolders";
@@ -447,6 +447,10 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
 
           request.onupgradeneeded = () => {
             const dbInstance = request.result;
+            // Purge old visitor-level analytics without touching mailbox caches.
+            for (const name of [ADMIN_LOG_CACHE_ENTRIES_STORE, ADMIN_LOG_CACHE_META_STORE]) {
+              if (dbInstance.objectStoreNames.contains(name)) request.transaction.objectStore(name).clear();
+            }
 
             if (!dbInstance.objectStoreNames.contains(ADMIN_LOG_CACHE_ENTRIES_STORE)) {
               const entryStore = dbInstance.createObjectStore(ADMIN_LOG_CACHE_ENTRIES_STORE, { keyPath: "cacheId" });
@@ -905,89 +909,11 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
     }
 
     function getCampaignAnalyticsSummary(entries = [], campaign = getCampaignForAnalytics()) {
-      if (!campaign?.title) {
-        return {
-          visits: 0,
-          uniqueVisitors: 0,
-          clicks: 0,
-          platformClicks: 0,
-          primaryClicks: 0,
-          secondaryClicks: 0,
-          ctr: "0%",
-          latestActivity: "No activity",
-          platforms: [],
-          referrers: [],
-          destinations: []
-        };
-      }
-
-      const slug = normalizeCampaignSlug(campaign.slug, campaign.title);
-      const filteredEntries = entries.filter((entry) => {
-        if (String(entry?.section || "").trim() !== "smartlink") {
-          return false;
-        }
-
-        const entrySlug = normalizeCampaignSlug(entry?.campaignSlug || "", "");
-        if (entrySlug && slug) {
-          return entrySlug === slug;
-        }
-
-        return String(entry?.campaign || "").trim() === campaign.title;
-      });
-
-      const visits = filteredEntries.filter((entry) => entry?.action === "page_view" || entry?.actionSubtype === "campaign_page");
-      const clicks = filteredEntries.filter((entry) => entry?.action === "click");
-      const platformClicks = clicks.filter((entry) => entry?.actionSubtype === "platform_link");
-      const primaryClicks = clicks.filter((entry) => entry?.actionSubtype === "primary_cta");
-      const secondaryClicks = clicks.filter((entry) => entry?.actionSubtype === "secondary_cta");
-      const uniqueVisitors = new Set(filteredEntries.map((entry) => String(entry?.sessionId || "").trim()).filter(Boolean)).size;
-      const platformCounts = new Map();
-      const referrerCounts = new Map();
-      const destinationCounts = new Map();
-
-      clicks.forEach((entry) => {
-        const label = String(entry?.label || entry?.target || "Unknown destination").trim() || "Unknown destination";
-        destinationCounts.set(label, (destinationCounts.get(label) || 0) + 1);
-      });
-
-      platformClicks.forEach((entry) => {
-        const platformLabel = String(entry?.platform || entry?.label || entry?.target || "Unknown platform").trim() || "Unknown platform";
-        platformCounts.set(platformLabel, (platformCounts.get(platformLabel) || 0) + 1);
-      });
-
-      visits.forEach((entry) => {
-        const referrerLabel = getReferrerLabel(entry?.referrer);
-        referrerCounts.set(referrerLabel, (referrerCounts.get(referrerLabel) || 0) + 1);
-      });
-
-      const platforms = [...platformCounts.entries()]
-        .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
-        .map(([label, count]) => ({ label, count }));
-
-      const referrers = [...referrerCounts.entries()]
-        .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
-        .map(([label, count]) => ({ label, count }));
-
-      const destinations = [...destinationCounts.entries()]
-        .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
-        .map(([label, count]) => ({ label, count }));
-
-      const latestEntry = filteredEntries[0] || null;
-      const ctr = visits.length ? `${Math.round((clicks.length / visits.length) * 100)}%` : "0%";
-
-      return {
-        visits: visits.length,
-        uniqueVisitors,
-        clicks: clicks.length,
-        platformClicks: platformClicks.length,
-        primaryClicks: primaryClicks.length,
-        secondaryClicks: secondaryClicks.length,
-        ctr,
-        latestActivity: latestEntry ? (formatTimestamp(latestEntry.timestamp) || "Recent") : "No activity",
-        platforms,
-        referrers,
-        destinations
-      };
+      const slug = normalizeCampaignSlug(campaign?.slug, campaign?.title);
+      const rows=entries.filter(e=>e.kind==='campaign' && (e.value===slug || e.value===campaign?.title));
+      const visits=rows.reduce((n,e)=>n+(e.views || 0),0), clicks=rows.reduce((n,e)=>n+(e.clicks || 0),0);
+      return {visits,clicks,uniqueVisitors:0,platformClicks:0,primaryClicks:0,secondaryClicks:0,
+        ctr:visits ? Math.round(clicks/visits*100)+'%' : 'Unavailable',latestActivity:rows[0] ? formatTimestamp(rows[0].timestamp) : 'No activity',platforms:[],referrers:[],destinations:[]};
     }
 
     function renderCampaignAnalytics() {
@@ -1043,12 +969,12 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
         <article class="campaign-analytics-card">
           <div class="label">Visits</div>
           <div class="value">${summary.visits}</div>
-          <div class="detail">${summary.uniqueVisitors} unique session${summary.uniqueVisitors === 1 ? "" : "s"}</div>
+          <div class="detail">Aggregate page views; session counts are site-wide</div>
         </article>
         <article class="campaign-analytics-card">
           <div class="label">Clicks</div>
           <div class="value">${summary.clicks}</div>
-          <div class="detail">${summary.platformClicks} platform, ${summary.primaryClicks + summary.secondaryClicks} CTA</div>
+          <div class="detail">Aggregate interactions; destinations are reported separately</div>
         </article>
         <article class="campaign-analytics-card">
           <div class="label">Click Rate</div>
@@ -1063,7 +989,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
       `;
 
       if (!summary.platforms.length) {
-        elements.campaignAnalyticsPlatforms.innerHTML = `<div class="gig-admin-empty">No platform click-through data yet for this campaign.</div>`;
+        elements.campaignAnalyticsPlatforms.innerHTML = `<div class="gig-admin-empty">Platform totals are not combined with campaign identifiers.</div>`;
       } else {
         elements.campaignAnalyticsPlatforms.innerHTML = "";
         summary.platforms.forEach((platform) => {
@@ -1084,7 +1010,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
       }
 
       if (!summary.referrers.length) {
-        elements.campaignAnalyticsReferrers.innerHTML = `<div class="gig-admin-empty">No referrer data yet for this campaign.</div>`;
+        elements.campaignAnalyticsReferrers.innerHTML = `<div class="gig-admin-empty">Sources are reported separately from campaigns.</div>`;
       } else {
         elements.campaignAnalyticsReferrers.innerHTML = "";
         summary.referrers.slice(0, 8).forEach((referrer) => {
@@ -1105,7 +1031,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
       }
 
       if (!summary.destinations.length) {
-        elements.campaignAnalyticsDestinations.innerHTML = `<div class="gig-admin-empty">No click-through data yet for this campaign.</div>`;
+        elements.campaignAnalyticsDestinations.innerHTML = `<div class="gig-admin-empty">Destination totals are reported separately from campaigns.</div>`;
         return;
       }
 
@@ -1241,38 +1167,14 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
       }
     }
 
-    async function loadCampaignAnalytics({ forceSync = false, syncAfterCache = false } = {}) {
-      if (state.isLoadingCampaignAnalytics) {
-        return;
-      }
-
-      state.isLoadingCampaignAnalytics = true;
-      renderCampaignAnalytics();
-
-      let cachedEntries = [];
+    async function loadCampaignAnalytics() {
+      if (state.isLoadingCampaignAnalytics) return;
+      state.isLoadingCampaignAnalytics = true; renderCampaignAnalytics();
       try {
-        const cachedBundle = await readCachedLogs("site-actions");
-        cachedEntries = Array.isArray(cachedBundle.entries) ? cachedBundle.entries : [];
-
-        const cachedSmartlinkEntries = cachedEntries.filter((entry) => String(entry?.section || "").trim() === "smartlink");
-        if (cachedSmartlinkEntries.length) {
-          state.campaignAnalyticsLogs = cachedSmartlinkEntries;
-          renderCampaignAnalytics();
-
-          if (!forceSync && !syncAfterCache) {
-            return;
-          }
-        }
-
-        const snapshot = await getDocs(query(collection(db, "site-actions"), where("section", "==", "smartlink")));
-        state.campaignAnalyticsLogs = sortLogs(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
-      } catch (error) {
-        console.error("Error loading campaign analytics:", error);
-        state.campaignAnalyticsLogs = cachedEntries.filter((entry) => String(entry?.section || "").trim() === "smartlink");
-      } finally {
-        state.isLoadingCampaignAnalytics = false;
-        renderCampaignAnalytics();
-      }
+        const result = await httpsCallable(functions, 'getAdminAnalytics')({});
+        state.campaignAnalyticsLogs = sortLogs((result.data.entries || []).filter(entry=>entry.kind==='campaign'));
+      } catch {state.campaignAnalyticsLogs = [];}
+      finally {state.isLoadingCampaignAnalytics = false; renderCampaignAnalytics();}
     }
 
     function getDateForFilter(value) {
@@ -5891,13 +5793,13 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
       renderAnalyticsInsights(activeEntries, {
         onNavigate: () => { if (state.activePage !== 'analytics') setActivePage('analytics'); else closeMobileNav(); },
         source: state.analyticsSource || '',
-        onSource: source => { state.analyticsSource = source; applyFilters(); },
+        onSource: source => { state.analyticsReport = ''; state.analyticsSource = source; applyFilters(); },
         allEntries: state.allLogs, report: state.analyticsReport || '',
         comparisonEntries: state.allLogs.filter(entry =>
           (!state.searchTerm.trim() || serializeLog(entry).includes(state.searchTerm.trim().toLowerCase())) &&
           matchesAnalyticsReport(entry, state.analyticsReport) && matchesAnalyticsSource(entry, state.analyticsSource) &&
           (state.viewMode !== 'sessions' || entry.sessionId)),
-        onReport: report => { state.analyticsReport = report; applyFilters(); },
+        onReport: report => { state.analyticsSource = ''; state.analyticsReport = report; applyFilters(); },
         from: state.dateFrom, to: state.dateTo,
         onRange: (from, to) => {
           state.dateFrom = from; state.dateTo = to;
@@ -6952,92 +6854,26 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
     }
 
     async function loadLogs(collectionName, { forceSync = false } = {}) {
-      state.isRefreshing = true;
-      syncRefreshButton();
-      elements.tableHead.innerHTML = "";
-      elements.tableBody.innerHTML = `<tr><td><div class="empty-state">Loading ${collectionName}...</div></td></tr>`;
-      updateHeroMeta("Loading...");
-      setAnalyticsCacheStatus("Analytics cache: checking browser storage...");
-
+      state.isRefreshing = true; syncRefreshButton(); state.viewMode = 'events';
       try {
-        const cachedBundle = await readCachedLogs(collectionName);
-        const cachedEntries = Array.isArray(cachedBundle.entries) ? cachedBundle.entries : [];
-        const cachedLatestTimestamp = cachedBundle.latestTimestamp || getLatestLogTimestamp(cachedEntries);
-
-        if (cachedEntries.length) {
-          state.allLogs = sortLogs(cachedEntries);
-          state.dynamicFields = getOrderedFields(state.allLogs);
-          updateHeroMeta(cachedBundle.syncedAt ? `Cached - ${formatTimestamp(cachedBundle.syncedAt) || "recently"}` : "Cached");
-          applyFilters();
-          setAnalyticsCacheStatus(`Analytics cache: ${state.allLogs.length} event${state.allLogs.length === 1 ? "" : "s"} loaded from IndexedDB.`);
-
-          if (!forceSync) {
-            return;
-          }
-
-          setAnalyticsCacheStatus(`Analytics cache: ${state.allLogs.length} cached event${state.allLogs.length === 1 ? "" : "s"} found. Checking Firestore for newer events...`);
-        }
-
-        if (cachedLatestTimestamp) {
-          const snapshot = await getDocs(
-            query(
-              collection(db, collectionName),
-              where("timestamp", ">=", cachedLatestTimestamp),
-              orderBy("timestamp", "asc")
-            )
-          );
-
-          const freshEntries = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-          state.allLogs = mergeLogs(cachedEntries, freshEntries);
-          await upsertCachedLogs(collectionName, freshEntries, new Date(), getLatestLogTimestamp(state.allLogs));
-        } else {
-          let snapshot;
-          try {
-            snapshot = await getDocs(query(collection(db, collectionName), orderBy("timestamp", "desc")));
-          } catch (error) {
-            console.warn(`Falling back to unordered load for ${collectionName}.`, error);
-            snapshot = await getDocs(collection(db, collectionName));
-          }
-
-          state.allLogs = sortLogs(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
-          await replaceCachedLogs(collectionName, state.allLogs, new Date());
-        }
-
+        const result = await httpsCallable(functions, 'getAdminAnalytics')({});
+        state.allLogs = collectionName === 'ad-tracking' ? [] : sortLogs(result.data.entries || []);
         state.dynamicFields = getOrderedFields(state.allLogs);
-        updateHeroMeta(`Synced - ${new Date().toLocaleString()}`);
+        updateHeroMeta('Aggregate report');
+        if (elements.searchInput) {elements.searchInput.value=''; elements.searchInput.disabled=true; elements.searchInput.placeholder='Use date, campaign or source reports';}
+        state.searchTerm='';
+        setAnalyticsCacheStatus('Daily statistical totals; small breakdowns withheld; 90-day retention.');
         applyFilters();
-        setAnalyticsCacheStatus(`Analytics cache: ${state.allLogs.length} event${state.allLogs.length === 1 ? "" : "s"} stored locally.`);
-      } catch (error) {
-        console.error("Error loading logs:", error);
-        if (state.allLogs.length) {
-          updateHeroMeta("Showing cached data");
-          setAnalyticsCacheStatus(`Analytics cache: showing ${state.allLogs.length} cached event${state.allLogs.length === 1 ? "" : "s"}.`);
-        } else {
-          state.allLogs = [];
-          state.filteredLogs = [];
-          state.sessionGroups = [];
-          state.dynamicFields = [];
-          updateHeroMeta("Load failed");
-          setAnalyticsCacheStatus("Analytics cache: unavailable.");
-          renderStats();
-          renderSummary();
-          renderTable();
-          renderPagination();
-          elements.tableBody.innerHTML = `
-            <tr>
-              <td>
-                <div class="empty-state">Failed to load Firestore data. Check the browser console for details.</div>
-              </td>
-            </tr>
-          `;
-        }
-      } finally {
-        state.isRefreshing = false;
-        syncRefreshButton();
-      }
+      } catch {
+        state.allLogs = []; state.filteredLogs = []; state.sessionGroups = []; state.dynamicFields = [];
+        updateHeroMeta('Load failed');
+        setAnalyticsCacheStatus('Could not load aggregate analytics. Deploy getAdminAnalytics and sign in as an admin.');
+        applyFilters();
+      } finally {state.isRefreshing = false; syncRefreshButton();}
     }
 
     function showDashboard(user) {
+      void openAdminLogCache();
       document.body.classList.add("admin-signed-in");
       const shouldLoadData = elements.dashboard.style.display !== "grid" || state.authUser?.uid !== user.uid;
       if (state.authUser?.uid !== user.uid) document.dispatchEvent(new Event('hae-admin-account-changing'));
@@ -7090,7 +6926,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
       elements.loginError.textContent = message;
       elements.loginForm.reset();
       setAuthStatus(null);
-      elements.heroCollection.textContent = "Collection: site-actions";
+      elements.heroCollection.textContent = "Daily statistical analytics";
       elements.heroUpdated.textContent = "Waiting for sign-in";
       setAnalyticsCacheStatus("Analytics cache: not loaded yet.");
       state.isPushEnabled = false;
@@ -7808,7 +7644,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
           state.activeEmailView = item.page === 'subscribers' ? 'address-book' : 'mail';
           if (item.page === 'email') state.activeEmailFolder = 'inbox';
           destinationLoad = setActivePage('email');
-        } else {destinationLoad = setActivePage('analytics');setAnalyticsSubview('actions');}
+        } else {destinationLoad = setActivePage('analytics');setAnalyticsSubview('overview');}
         const navigation = pageNavigationVersion;
         const isCurrent = () => state.authUser?.uid === uid && request === notificationOpenVersion && navigation === pageNavigationVersion;
         try {
@@ -7820,8 +7656,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
             if (!message.id) throw new Error('This message is no longer available in the inbox.');
             state.emailMessages = [message, ...state.emailMessages.filter(entry => entry.id !== message.id)];
             await openEmailMessage(message.id);
-          } else {
-            const collectionName = item.page === 'subscribers' ? 'mailing-list-signups' : 'site-actions';
+          } else if (item.page === 'subscribers') {
+            const collectionName = 'mailing-list-signups';
             const snapshot = await getDoc(doc(db,collectionName,item.recordId));
             if (!isCurrent()) return;
             if (!snapshot.exists()) throw new Error('This item is no longer available. It may have been removed.');
@@ -7834,11 +7670,6 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
               renderMailingListSignups();
               document.body.classList.add('mailing-contact-detail-open');
               elements.mailingListDetail.scrollIntoView({block:'nearest'});
-            } else {
-              state.allLogs = [{...entry,id:item.recordId}, ...state.allLogs.filter(log => log.id !== item.recordId)];
-              state.dynamicFields = getOrderedFields(state.allLogs);
-              applyFilters();
-              openDetailsDialog(item.recordId);
             }
           }
         } catch(error) { if(isCurrent()) notificationBell.showError(getEmailFunctionErrorMessage(error,'Could not open this item. It may have been removed.')); }
@@ -7852,4 +7683,3 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
     } else {
       initAdmin();
     }
-

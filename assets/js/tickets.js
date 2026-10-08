@@ -1,13 +1,15 @@
 import { normalizeGigDetails, canBuyTickets, gigDetailLabel } from './gig-tools.js';
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { doc, getDoc, getFirestore, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { doc, getDoc, getFirestore, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import {
   createSiteAnalytics,
+  hasTrackingConsent,
+  enableMetaPrivacy,
   firebaseConfig,
   getTrackingParams,
   normalizeImageUrl,
   normalizePublicUrl
-} from "./public-site-utils.js";
+} from "./public-site-utils.js?v=20261008-privacy-anchor";
 
 const params = new URLSearchParams(window.location.search);
 const gigId = params.get("gig") || "";
@@ -21,7 +23,7 @@ const isLocalPreview =
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-const { userId, campaign, source, medium } = getTrackingParams(params);
+const { campaign, source, medium } = getTrackingParams(params);
 const pagePath = window.location.pathname || "/tickets.html";
 const pageName = pagePath.split("/").pop() || "tickets";
 const REDIRECT_DELAY_MS = 1600;
@@ -32,16 +34,14 @@ const LOAD_ERROR_FALLBACK_TICKET_URL = normalizePublicUrl("https://www.skiddle.c
 // Localhost/file preview should still read gigs from Firestore; this only disables analytics writes.
 const disableFirestoreAnalytics = isLocalPreview;
 
-const { logEvent } = createSiteAnalytics({
+const { logEvent } = createSiteAnalytics({serverTimestamp,
   db,
   doc,
   setDoc,
   pagePath,
   pageName,
   isDisabled: disableFirestoreAnalytics,
-  getContext: () => ({
-    userId,
-    campaign,
+  getContext: () => ({    campaign,
     source,
     medium,
     section: "tickets"
@@ -78,6 +78,9 @@ const elements = {
 let activeGig = null;
 let activeMetaPixelId = "";
 let metaPageViewTracked = false;
+window.addEventListener('hae-consent-change', () => {
+  if (activeGig?.metaPixelId) {initializeMetaPixel(activeGig.metaPixelId); trackMetaPageView();}
+});
 let redirectTimer = 0;
 let redirectStarted = false;
 let activeTicketProvider = "";
@@ -533,7 +536,8 @@ function applyArtwork(url, title) {
 }
 
 function initializeMetaPixel(pixelId) {
-  if (isLocalPreview || !/^\d+$/.test(pixelId) || activeMetaPixelId === pixelId) {
+  enableMetaPrivacy(pixelId);
+  if (!hasTrackingConsent('marketing') || isLocalPreview || !/^\d+$/.test(pixelId) || activeMetaPixelId === pixelId) {
     return;
   }
 
@@ -560,13 +564,14 @@ function initializeMetaPixel(pixelId) {
     })(window, document, "script", "https://connect.facebook.net/en_US/fbevents.js");
   }
 
+  window.fbq('set', 'autoConfig', false, pixelId);
   window.fbq("init", pixelId);
   activeMetaPixelId = pixelId;
   metaPageViewTracked = false;
 }
 
 function trackMetaPageView() {
-  if (!activeMetaPixelId || metaPageViewTracked || typeof window.fbq !== "function") {
+  if (!hasTrackingConsent('marketing') || !activeMetaPixelId || metaPageViewTracked || typeof window.fbq !== "function") {
     return;
   }
 
@@ -575,7 +580,7 @@ function trackMetaPageView() {
 }
 
 function trackMetaEvent(eventName, details = {}) {
-  if (!activeMetaPixelId || typeof window.fbq !== "function") {
+  if (!hasTrackingConsent('marketing') || !activeMetaPixelId || typeof window.fbq !== "function") {
     return;
   }
 

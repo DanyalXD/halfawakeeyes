@@ -3,13 +3,13 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
 
-async function loadPage({blocked = false, hostname = 'halfawakeeyes.co.uk', pixelId = '2221554155032633'} = {}) {
+async function loadPage({blocked = false, hostname = 'halfawakeeyes.co.uk', consent = false, pixelId = '2221554155032633'} = {}) {
   const calls = [], scripts = [], analyticsCalls = [], listeners = {};
   const gig = {id: 'casey', event: 'Casey', metaPixelId: pixelId};
   const link = {dataset: {gigTicket: JSON.stringify(gig)}, href: 'https://example.com/tickets', addEventListener: (type, fn) => {listeners[type] = fn;}};
   const context = vm.createContext({
     location: {hostname, pathname: '/shows/', search: '?gig=casey'},
-    window: {},
+    window: {addEventListener: () => {}},
     document: {
       createElement: () => ({}), head: {append: script => scripts.push(script)},
       querySelectorAll: () => [link], querySelector: () => ({dataset: {gigPage: JSON.stringify(gig)}})
@@ -29,14 +29,15 @@ async function loadPage({blocked = false, hostname = 'halfawakeeyes.co.uk', pixe
     });
     modules.set(file, module);
     await module.link(async specifier => {
-      if (specifier === './public-site-utils.js') {
-        const utils = new vm.SyntheticModule(['firebaseConfig', 'createSiteAnalytics', 'getTrackingParams'], function() {
-          this.setExport('firebaseConfig', {}); this.setExport('getTrackingParams', () => ({}));
+      if (specifier === './public-site-utils.js?v=20261008-privacy-anchor') {
+        const utils = new vm.SyntheticModule(['firebaseConfig', 'createSiteAnalytics', 'getTrackingParams', 'hasTrackingConsent', 'enableMetaPrivacy'], function() {
+          this.setExport('enableMetaPrivacy', () => {});
+          this.setExport('hasTrackingConsent', () => consent); this.setExport('firebaseConfig', {}); this.setExport('getTrackingParams', () => ({}));
           this.setExport('createSiteAnalytics', () => ({logEvent: (...args) => analyticsCalls.push(['click', ...args]), logPageViewOnce: (...args) => analyticsCalls.push(['view', ...args])}));
         }, {context});
         await utils.link(() => {}); return utils;
       }
-      return localModule(specifier.slice(2));
+      return localModule(specifier.slice(2).split('?')[0]);
     });
     return module;
   }
@@ -48,11 +49,11 @@ async function loadPage({blocked = false, hostname = 'halfawakeeyes.co.uk', pixe
 }
 
 for (const blocked of [false, true]) test(`single show tracks views and clicks with Firebase ${blocked ? 'blocked' : 'available'}`, async () => {
-  const page = await loadPage({blocked});
+  const page = await loadPage({blocked, consent: true});
   assert.equal(page.scripts.length, 1);
   assert.equal(page.scripts[0].src, 'https://connect.facebook.net/en_US/fbevents.js');
   assert.deepEqual(page.calls.map(call => call.slice(0, 3)), [
-    ['init', '2221554155032633'], ['trackSingle', '2221554155032633', 'PageView'], ['trackSingleCustom', '2221554155032633', 'GigTicketView']
+    ['set', 'autoConfig', false], ['init', '2221554155032633'], ['trackSingle', '2221554155032633', 'PageView'], ['trackSingleCustom', '2221554155032633', 'GigTicketView']
   ]);
   page.page.namespace.bindTicketAction(page.link, page.gig);
   page.listeners.click({type: 'click', button: 0});
@@ -69,9 +70,16 @@ for (const blocked of [false, true]) test(`single show tracks views and clicks w
 
 test('local previews and missing pixel IDs send no advertising events', async () => {
   for (const options of [{hostname: 'localhost'}, {pixelId: ''}, {pixelId: '<script>'}]) {
-    const page = await loadPage(options);
+    const page = await loadPage({...options, consent: true});
     page.listeners.click({type: 'click'});
     assert.equal(page.scripts.length, 0);
     assert.equal(page.context.window.fbq, undefined);
   }
+});
+
+test('Meta is disabled before marketing consent and after refusal', async () => {
+  const page = await loadPage();
+  page.listeners.click({type:'click'});
+  assert.equal(page.scripts.length,0);
+  assert.equal(page.context.window.fbq,undefined);
 });

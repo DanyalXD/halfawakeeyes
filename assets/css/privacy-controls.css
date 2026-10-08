@@ -1,0 +1,292 @@
+/* Shared public preferences, scoped independently of each page's theme. */
+#hae-privacy-controls,
+#hae-privacy-settings {
+  --privacy-surface: #141414;
+  --privacy-text: #f2f2f2;
+  --privacy-muted: #b8b8b8;
+  --privacy-border: #3b3b3b;
+  box-sizing: border-box;
+  color: var(--privacy-text);
+  font: 14px/1.5 var(--font-body, Arial, sans-serif);
+  letter-spacing: normal;
+  text-transform: none;
+}
+#hae-privacy-controls[hidden],
+#hae-privacy-controls [hidden],
+#hae-privacy-settings[hidden] { display: none !important; }
+#hae-privacy-controls {
+  position: fixed;
+  z-index: 10000;
+  left: auto;
+  right: 24px;
+  bottom: max(24px, env(safe-area-inset-bottom));
+  width: 432px;
+  max-width: calc(100vw - 48px);
+  max-height: calc(100vh - 48px);
+  max-height: calc(100dvh - 48px);
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: 24px;
+  background: var(--privacy-surface);
+  border: 1px solid var(--privacy-border);
+  border-radius: 8px;
+  box-shadow: 0 8px 32px rgb(0 0 0 / 24%);
+  color-scheme: dark;
+}
+#hae-privacy-controls *,
+#hae-privacy-controls *::before,
+#hae-privacy-controls *::after { box-sizing: border-box; }
+#hae-privacy-controls form { margin: 0; padding: 0; }
+#hae-privacy-controls .hae-privacy-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: -8px -8px 4px 0;
+}
+#hae-privacy-controls h2 {
+  margin: 0;
+  color: var(--privacy-text);
+  font: 600 22px/1.2 var(--font-body, Arial, sans-serif);
+  letter-spacing: -.02em;
+  text-transform: none;
+}
+#hae-privacy-controls h2::before { content: none; }
+#hae-privacy-controls p { margin: 0; font: inherit; }
+#hae-privacy-controls .hae-privacy-intro { color: var(--privacy-muted); margin-bottom: 20px; }
+#hae-privacy-controls button,
+#hae-privacy-settings {
+  appearance: none;
+  border: 1px solid var(--privacy-border);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--privacy-text);
+  font: 600 14px/1.25 var(--font-body, Arial, sans-serif);
+  letter-spacing: normal;
+  text-transform: none;
+  text-decoration: none;
+  cursor: pointer;
+  min-height: 44px;
+  padding: 12px 16px;
+  transition: background-color .15s, border-color .15s;
+}
+#hae-privacy-controls button:hover,
+#hae-privacy-settings:hover { background: #252525; border-color: #777; }
+#hae-privacy-controls .hae-privacy-close {
+  display: grid;
+  place-items: center;
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-color: transparent;
+  color: var(--privacy-muted);
+}
+#hae-privacy-controls .hae-privacy-close svg { width: 20px; height: 20px; }
+#hae-privacy-controls .hae-privacy-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  margin: 0;
+  padding: 16px 0;
+  border-top: 1px solid var(--privacy-border);
+  cursor: pointer;
+}
+#hae-privacy-controls .hae-privacy-copy { display: block; min-width: 0; }
+#hae-privacy-controls .hae-privacy-name { display: block; font-weight: 600; font-size: 15px; }
+#hae-privacy-controls .hae-privacy-description {
+  display: block;
+  margin-top: 4px;
+  color: var(--privacy-muted);
+  font-size: 13px;
+  line-height: 1.4;
+}
+#hae-privacy-controls .hae-privacy-switch { display: grid; justify-items: center; gap: 4px; flex-shrink: 0; }
+#hae-privacy-controls input[type="checkbox"] {
+  appearance: none;
+  display: block;
+  position: relative;
+  width: 44px;
+  height: 26px;
+  min-width: 44px;
+  margin: 0;
+  padding: 0;
+  border: 1px solid #686868;
+  border-radius: 20px;
+  background: #333;
+  cursor: pointer;
+  transition: background-color .15s;
+}
+#hae-privacy-controls input[type="checkbox"]::before {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #b8b8b8;
+  transition: transform .15s;
+}
+#hae-privacy-controls input[type="checkbox"]:checked { background: var(--privacy-text); border-color: var(--privacy-text); }
+#hae-privacy-controls input[type="checkbox"]:checked::before { background: var(--privacy-surface); transform: translateX(18px); }
+#hae-privacy-controls .hae-privacy-state { font-size: 11px; line-height: 1; color: var(--privacy-muted); }
+#hae-privacy-controls .hae-privacy-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px; }
+#hae-privacy-controls .hae-privacy-save { background: var(--privacy-text); color: var(--privacy-surface); border-color: var(--privacy-text); }
+#hae-privacy-controls .hae-privacy-save:hover { background: #d8d8d8; border-color: #d8d8d8; }
+#hae-privacy-controls .hae-privacy-policy { display: inline-flex; align-items: center; min-height: 44px; margin-top: 4px; color: var(--privacy-muted); text-decoration: underline; text-underline-offset: 3px; font-size: 12px; }
+#hae-privacy-controls .hae-privacy-policy:hover { color: var(--privacy-text); }
+#hae-privacy-controls [role="status"] { color: var(--privacy-muted); font-size: 13px; }
+#hae-privacy-controls [role="status"]:empty { display: none; }
+#hae-privacy-controls :focus-visible,
+#hae-privacy-settings:focus-visible { outline: 2px solid var(--privacy-text); outline-offset: 4px; }
+#hae-privacy-settings { position: fixed; z-index: 9999; left: 24px; bottom: max(16px, env(safe-area-inset-bottom)); background: var(--privacy-surface); font-size: 12px; }
+/* One footer frame for every public page, regardless of page or poster theme. */
+@font-face {
+  font-family: HAEFooterWordmark;
+  src: url('../fonts/Roabla-DemoVersion-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-display: swap;
+}
+#hae-site-footer {
+  box-sizing: border-box;
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 0 0 auto;
+  width: 100%;
+  min-height: 0;
+  margin: 0;
+  padding: 8px 16px max(8px, env(safe-area-inset-bottom));
+  gap: 0;
+  border: 0;
+  border-top: 1px solid #303030;
+  background: #080808;
+  color: #aaaaaa;
+  font: 400 12px/1.5 Arial, sans-serif;
+  text-align: center;
+  letter-spacing: normal;
+  text-transform: none;
+}
+#hae-site-footer [data-public-footer-links] {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  gap: 0 12px;
+}
+#hae-site-footer a {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  margin: 0;
+  padding: 8px 0;
+  color: inherit;
+  font: inherit;
+  letter-spacing: normal;
+  text-transform: none;
+  text-decoration: none;
+  white-space: nowrap;
+}
+#hae-site-footer a:hover { color: #f2f2f2; }
+#hae-site-footer .hae-footer-brand { display: none; }
+#hae-site-footer #hae-privacy-settings {
+  position: static;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  min-width: 44px;
+  margin: 0;
+  padding: 8px 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-decoration: none;
+}
+#hae-site-footer #hae-privacy-settings:hover { color: #f2f2f2; }
+#hae-site-footer .hae-footer-copyright {
+  display: block;
+  margin: 0;
+  padding: 0;
+  color: #999999;
+  font: 400 11px/1.5 Arial, sans-serif;
+  text-align: center;
+  letter-spacing: normal;
+  text-transform: none;
+}
+#hae-site-footer :focus-visible { outline: 2px solid #f2f2f2; outline-offset: 2px; }
+@media (min-width: 801px) {
+  #hae-site-footer {
+    flex-direction: row;
+    justify-content: space-between;
+    padding-inline: 24px;
+    gap: 16px;
+  }
+  #hae-site-footer [data-public-footer-links] {
+    order: 1;
+    justify-content: flex-end;
+    width: auto;
+    margin-left: auto;
+  }
+  #hae-site-footer .hae-footer-brand {
+    order: -2;
+    display: inline-flex;
+    flex-shrink: 0;
+    color: #e7e4dc;
+    font: 400 18px/1 HAEFooterWordmark, serif;
+    letter-spacing: .03em;
+    text-transform: uppercase;
+  }
+  #hae-site-footer .hae-footer-copyright { order: -1; }
+}
+@media (max-width: 800px) {
+  /* Keep ticket bars from covering footer links when visitors reach the page end. */
+  body.hae-footer-visible #gig-sticky-action,
+  body.hae-footer-visible #sticky-cta-shell { display: none !important; }
+  body.hae-footer-visible.has-sticky-ticket { padding-bottom: 0; }
+  #hae-privacy-settings {
+    position: static;
+    display: inline-flex;
+    align-items: center;
+    width: fit-content;
+    margin: 12px 24px;
+    padding: 8px 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: var(--privacy-muted);
+    font-weight: 400;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  #hae-privacy-settings:hover { color: var(--privacy-text); background: transparent; }
+
+}
+@media (max-width: 360px) {
+  #hae-site-footer [data-public-footer-links] { column-gap: 4px; }
+}
+@media (max-width: 480px) {
+  #hae-privacy-controls { right: 12px; bottom: max(12px, env(safe-area-inset-bottom)); width: calc(100vw - 24px); max-width: none; max-height: calc(100dvh - 24px); padding: 20px; }
+  #hae-privacy-controls h2 { font-size: 20px; }
+  #hae-privacy-controls .hae-privacy-option { gap: 16px; }
+  #hae-privacy-settings { left: 12px; bottom: max(12px, env(safe-area-inset-bottom)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  #hae-privacy-controls *, #hae-privacy-controls *::before, #hae-privacy-settings { transition: none; }
+}
+@media (forced-colors: active) {
+  #hae-privacy-controls input[type="checkbox"] { appearance: auto; }
+  #hae-privacy-controls input[type="checkbox"]::before { display: none; }
+}

@@ -1,7 +1,7 @@
 import { canBuyTickets, normalizeGigDetails } from './gig-tools.js';
 import { destinationKey, isSocialProfile, sectionPriority, sectionLabel, linkCopy } from './links-presentation.js';
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-        import { doc, getDoc, getFirestore, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import { doc, getDoc, getFirestore, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
         import {
             createEmailSignupService,
             createSiteAnalytics,
@@ -10,7 +10,7 @@ import { destinationKey, isSocialProfile, sectionPriority, sectionLabel, linkCop
             isValidEmailAddress,
             normalizeImageUrl,
             normalizePublicUrl
-        } from "./public-site-utils.js";
+        } from "./public-site-utils.js?v=20261008-privacy-anchor";
 
         const isLocal =
             window.location.protocol === "file:" ||
@@ -22,7 +22,7 @@ import { destinationKey, isSocialProfile, sectionPriority, sectionLabel, linkCop
         const db = getFirestore(app);
 
         const pageParams = new URLSearchParams(window.location.search);
-        const { userId, campaign, source, medium } = getTrackingParams(pageParams);
+        const { campaign, source, medium } = getTrackingParams(pageParams);
         const pagePath = window.location.pathname || "/links.html";
         const pageName = pagePath.split("/").pop() || "links";
         const socialLinksRoot = document.getElementById("social-links");
@@ -36,16 +36,14 @@ import { destinationKey, isSocialProfile, sectionPriority, sectionLabel, linkCop
         const PUBLIC_GIG_TICKET_LINK_LIMIT = 24;
         const PUBLIC_LINKS_CACHE_KEY = "hae-public-links-v1";
 
-        const { logEvent, logPageViewOnce } = createSiteAnalytics({
+        const { logEvent, logPageViewOnce } = createSiteAnalytics({serverTimestamp,
             db,
             doc,
             setDoc,
             pagePath,
             pageName,
             isDisabled: isLocal,
-            getContext: () => ({
-                userId,
-                campaign,
+            getContext: () => ({                campaign,
                 source,
                 medium,
                 section: "links"

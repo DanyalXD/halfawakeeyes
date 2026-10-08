@@ -10,13 +10,60 @@ service cloud.firestore {
     }
 
     match /site-actions/{docId} {
-      allow create: if true;
-      allow read, update, delete: if isAdmin();
+      function safeText(value) {
+        return value is string && value.size() <= 100
+          && value.matches("[a-zA-Z0-9 _.,!()'&+\\-]*")
+          && !value.matches('.*([0-9]{7,}|[a-fA-F0-9]{24,}|[a-zA-Z0-9_\\-]{40,}).*');
+      }
+      function safeOrigin(value) {
+        return value == '' || (value is string && value.size() <= 200
+          && value.matches('https?://[a-zA-Z][a-zA-Z0-9\\-]*(\\.[a-zA-Z0-9\\-]+)+'));
+      }
+      allow create: if request.auth == null
+        && docId.matches('[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}')
+        && request.resource.data.keys().hasOnly([
+          'sessionId', 'statisticsVersion', 'action', 'page', 'pageName', 'target', 'label', 'href',
+          'elementType', 'actionSubtype', 'platform', 'section', 'outbound', 'campaign',
+          'campaignSlug', 'source', 'medium', 'referrer', 'browser', 'os', 'device',
+          'durationSeconds', 'timestamp', 'expiresAt'
+        ])
+        && request.resource.data.statisticsVersion == '2026-10-07'
+        && request.resource.data.sessionId.matches('[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}')
+        && request.resource.data.action in ['page_view', 'click', 'email_signup', 'video_play',
+          'ticket_redirect_continue', 'ticket_redirect_unavailable', 'page_exit']
+        && request.resource.data.page.matches('/(|(index|links|tickets|smartlink|privacy|epk)(\\.html)?/?|(join|join-us|store|shows|live-dates)/?|(shows|smartlink)/[a-zA-Z0-9_\\-]{1,60}/?|404\\.html|other)')
+        && !request.resource.data.page.matches('.*([0-9]{7,}|[a-fA-F0-9]{24,}|[a-zA-Z0-9_\\-]{40,}).*')
+        && safeText(request.resource.data.pageName)
+        && safeText(request.resource.data.target) && safeText(request.resource.data.label)
+        && safeText(request.resource.data.elementType) && safeText(request.resource.data.actionSubtype)
+        && safeText(request.resource.data.platform) && safeText(request.resource.data.section)
+        && safeText(request.resource.data.campaign) && safeText(request.resource.data.campaignSlug)
+        && safeText(request.resource.data.source) && safeText(request.resource.data.medium)
+        && safeOrigin(request.resource.data.href) && safeOrigin(request.resource.data.referrer)
+        && request.resource.data.outbound is bool
+        && request.resource.data.browser in ['Chrome', 'Firefox', 'Safari', 'Edge', 'Other']
+        && request.resource.data.os in ['Windows', 'macOS', 'Linux', 'Android', 'iOS', 'Other']
+        && request.resource.data.device in ['mobile', 'desktop', 'tablet']
+        && request.resource.data.durationSeconds is int
+        && request.resource.data.durationSeconds >= 0 && request.resource.data.durationSeconds <= 1800
+        && request.resource.data.timestamp == request.time
+        && request.resource.data.expiresAt is timestamp
+        && request.resource.data.expiresAt > request.time
+        && request.resource.data.expiresAt <= request.time + duration.value(2, 'h') + duration.value(1, 'm');
+      // Individual records stay server-side; admins use the authenticated aggregate API.
+      allow read, update: if false;
+      allow delete: if isAdmin();
+    }
+
+    match /analytics-daily/{docId} {
+      // Only the backend writes statistics and the authenticated callable returns them.
+      allow read, write: if false;
     }
 
     match /ad-tracking/{docId} {
-      allow create: if true;
-      allow read, update, delete: if isAdmin();
+      // Legacy collection is retired. Advertising is governed by the separate consent gate.
+      allow create, read, update: if false;
+      allow delete: if isAdmin();
     }
 
     match /gigs/{docId} {

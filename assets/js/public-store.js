@@ -1,4 +1,4 @@
-import { firebaseConfig } from './public-site-utils.js';
+import { firebaseConfig } from './public-site-utils.js?v=20261008-privacy-anchor';
 import { renderStore, storeFromHomepage } from './store-content.js?v=20261005-store-page';
 
 const status = document.getElementById('store-load-status');

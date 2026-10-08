@@ -131,17 +131,17 @@ export function setupWorkflows(api) {
     const results = await Promise.allSettled([
       getDocs(collection(db, 'gigs')),
       getDocs(collection(db, 'mailing-list-signups')),
-      getDocs(query(collection(db, 'site-actions'), where('timestamp', '>=', since))),
+      callAdminEmailFunction('getAdminAnalytics'),
       callAdminEmailFunction('listInboxMessages', { limit: 25, folder: 'inbox', search: '' })
     ]);
     if (!state.authUser) { overviewLoading = false; return; }
     const rows = i => results[i].status === 'fulfilled' ? results[i].value.docs.map(d => ({ ...d.data(), id: d.id })) : null;
-    const gigs = rows(0); const signups = rows(1); const logs = rows(2);
+    const gigs = rows(0); const signups = rows(1); const logs = results[2].status === 'fulfilled' ? results[2].value.entries || [] : null;
     const today = new Date(); today.setHours(0,0,0,0);
     const upcoming = gigs?.filter(g => g.id !== 'public-index' && String(g.hideFromLinks).toLowerCase() !== 'true' && new Date(`${g.date}T00:00:00`) >= today).sort((a,b) => a.date.localeCompare(b.date));
     const recent = signups?.filter(s => new Date(s.createdAt?.toDate ? s.createdAt.toDate() : s.createdAt) >= since).length;
     const messages = results[3].status === 'fulfilled' ? (results[3].value.messages || []).map(normalizeEmailMessage) : null;
-    const clicks = logs?.filter(l => (l.action === 'click' && (/ticket/i.test(l.label || '') || /ticket/i.test(l.section || ''))) || (l.action === 'ticket_redirect_continue' && l.actionSubtype !== 'auto')).length;
+    const clicks = logs?.filter(l=>l.kind==='total' && new Date(l.timestamp)>=since).reduce((n,l)=>n+(l.tickets || 0),0);
     const card = (label, value, note) => `<article class="manager-card"><p class="eyebrow">${escape(label)}</p><h3>${escape(value)}</h3><p>${escape(note)}</p></article>`;
     $('overview-cards').innerHTML = [
       card('Next public show', gigs ? upcoming[0]?.event || 'No upcoming shows' : 'Unavailable', upcoming?.[0] ? `${upcoming[0].date} · ${[upcoming[0].venue,upcoming[0].city].filter(Boolean).join(', ')}` : 'Manage dates in Gigs'),

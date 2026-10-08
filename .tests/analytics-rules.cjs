@@ -1,0 +1,55 @@
+// Run only via the isolated demo-project Firestore emulator (see ANALYTICS_PRIVACY.md).
+const assert=require('node:assert/strict');
+const {randomUUID}=require('node:crypto');
+const host=process.env.FIRESTORE_EMULATOR_HOST;
+if(!host || !/^(127\.0\.0\.1|localhost):\d+$/.test(host))throw Error('A localhost Firestore emulator is required.');
+const base=`http://${host}/v1/projects/demo-hae-analytics/databases/(default)/documents`;
+const valid={sessionId:randomUUID(),statisticsVersion:'2026-10-07',action:'page_view',page:'/links',pageName:'Links',target:'',label:'',href:'',elementType:'',actionSubtype:'',platform:'',section:'',outbound:false,campaign:'Autumn tour',campaignSlug:'',source:'instagram',medium:'social',referrer:'https://instagram.com',browser:'Chrome',os:'Windows',device:'desktop',durationSeconds:0,expiresAt:new Date(Date.now()+2*60*60000)};
+function field(value){return value instanceof Date?{timestampValue:value.toISOString()}:typeof value==='boolean'?{booleanValue:value}:typeof value==='number'?(Number.isInteger(value)?{integerValue:String(value)}:{doubleValue:value}):{stringValue:value};}
+async function create(changes={},collection='site-actions') {
+  const id=randomUUID(),payload={...valid,...changes};
+  for(const [key,value] of Object.entries(payload))if(value===undefined)delete payload[key];
+  const fields=Object.fromEntries(Object.entries(payload).map(([key,value])=>[key,field(value)]));
+  const write={update:{name:`projects/demo-hae-analytics/databases/(default)/documents/${collection}/${id}`,fields}};
+  if(!fields.timestamp)write.updateTransforms=[{fieldPath:'timestamp',setToServerValue:'REQUEST_TIME'}];
+  const response=await fetch(base+':commit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({writes:[write]})});
+  return {response,id};
+}
+(async()=>{
+  const allowed=await create();
+  if(!allowed.response.ok)throw Error(`Valid statistical event was rejected: ${await allowed.response.text()}`);
+  for(const changes of [
+    {userId:'fan@example.test'}, {viewport:'1920x1080'}, {ip:'192.0.2.1'}, {latitude:55.8},
+    {statisticsVersion:undefined}, {sessionId:'persistent-person'},
+    {href:'https://tickets.example/order?email=fan'}, {referrer:'https://social.example/private'},
+    {label:'fan@example.test'}, {page:'/account/fan@example.test'},
+    {page:'/links?email=fan@example.test'}, {page:'/shows/1234567890/'}, {page:'/smartlink/abcdef0123456789abcdef0123456789/'} ,
+    {expiresAt:new Date(Date.now()+3*60*60000)}, {timestamp:new Date(0)}
+  ]) {
+    const denied=await create(changes);assert.equal(denied.response.status,403,`Unsafe payload was accepted: ${Object.keys(changes).join(',')}`);
+  }
+  const raw=await fetch(base+'/site-actions/'+allowed.id);assert.equal(raw.status,403);
+  const ads=await create({},'ad-tracking');assert.equal(ads.response.status,403);
+  const aggregates=await create({},'analytics-daily');assert.equal(aggregates.response.status,403);
+  const aggregateRead=await fetch(base+'/analytics-daily/private');assert.equal(aggregateRead.status,403);
+  const oldSchema=await create({statisticsVersion:undefined,consentVersion:'2026-10-07'});assert.equal(oldSchema.response.status,403);
+  const extra=await create({page:'/shows/YWm5A0ZIUh1UBYqoDMVk/'});assert.equal(extra.response.status,200);
+  // Admin SDK writes bypass rules only in this localhost demo emulator.
+  const requireFunctions=require('node:module').createRequire(require('node:path').resolve(__dirname,'../functions/package.json'));
+  const {initializeApp}=requireFunctions('firebase-admin/app');
+  const {getFirestore}=requireFunctions('firebase-admin/firestore');
+  const {processAnalytics,buildAnalyticsFunctions}=require('../functions/analytics');
+  const db=getFirestore(initializeApp({projectId:'demo-hae-analytics'}));
+  const old=new Date(Date.now()-45*60000);
+  const seeds=Array.from({length:5},()=>({ref:db.collection('site-actions').doc(randomUUID()),data:{...valid,timestamp:old,sessionId:randomUUID()}}));
+  await Promise.all(seeds.map(seed=>seed.ref.set(seed.data)));
+  await Promise.all([processAnalytics(db),processAnalytics(db)]);
+  await processAnalytics(db);
+  for(const seed of seeds)assert.equal((await seed.ref.get()).exists,false);
+  const tools=buildAnalyticsFunctions(db,request=>assert.equal(request.auth?.token?.email,'admin@example.test'));
+  const report=await tools.getAdminAnalytics.run({auth:{token:{email:'admin@example.test'}}});
+  assert.ok(report.entries.some(e=>e.kind==='total' && e.views===5 && e.sessions===5));
+  assert.doesNotMatch(JSON.stringify(report),/sessionId|statisticsVersion|12:|userId/);
+  console.log('Emulator aggregation: transaction saved 5 views/sessions, deleted raw input and callable returned durable statistics.');
+  console.log('Firestore rules: valid reduced events accepted; 15 unsafe schemas, raw reads and legacy advertising writes rejected.');
+})().catch(error=>{console.error(error);process.exitCode=1;});

@@ -6,6 +6,9 @@ firebase-debug.*.log
 # Installed dependencies
 node_modules/
 
+# Generated Graphify analysis and cache
+graphify-out/
+
 # Generated browser captures and temporary design previews
 .tests/*.png
 .tests/*browser-profile*/

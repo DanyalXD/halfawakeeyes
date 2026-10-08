@@ -47,3 +47,6 @@ An SMTP timeout can make delivery uncertain; check Sent before retrying an uncon
 ## SumUp store
 
 See [SUMUP.md](SUMUP.md) for homepage product management, payment-history setup and deployment.
+## Analytics privacy
+
+See [the analytics audit and rollout instructions](../ANALYTICS_PRIVACY.md) for consent, reduced collection, the authenticated aggregate dashboard, 90-day retention, and the legacy-data migration. Deploy `getAdminAnalytics`, `cleanupAnalytics`, the changed weekly comparison and action-notification functions, public assets, rules and TTL configuration together. The migration is dry-run by default and is not run automatically on deployment.

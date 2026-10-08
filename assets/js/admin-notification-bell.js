@@ -41,7 +41,6 @@ export function setupNotificationBell({db,collection,doc,query,orderBy,limit,onS
     try{const saved=JSON.parse(localStorage.getItem(storageKey()) || '[]');if(Array.isArray(saved))read=new Set(saved.filter(id=>typeof id==='string').slice(-500));}catch{}
     const current=generation;
     const feeds=[
-      ['actions',query(collection(db,'site-actions'),orderBy('timestamp','desc'),limit(100))],
       ['signups',query(collection(db,'mailing-list-signups'),orderBy('createdAt','desc'),limit(25))],
       ['messages',doc(db,'admin-email-cache','inbox')]
     ];

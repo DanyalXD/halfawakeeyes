@@ -1,11 +1,11 @@
-import { firebaseConfig, createSiteAnalytics, getTrackingParams } from './public-site-utils.js';
-import { trackGigPixel } from './ticket-pixels.js';
+import { firebaseConfig, createSiteAnalytics, getTrackingParams, enableMetaPrivacy } from './public-site-utils.js?v=20261008-privacy-anchor';
+import { trackGigPixel } from './ticket-pixels.js?v=20261008-privacy-anchor';
 
-// Advertising pixels must still run if the separate site analytics SDK cannot load.
+// Both trackers check their own consent category.
 const analytics = Promise.all([
   import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js'),
   import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js')
-]).then(([{ initializeApp, getApps }, { doc, setDoc, getFirestore }]) => createSiteAnalytics({
+]).then(([{ initializeApp, getApps }, { doc, setDoc, serverTimestamp, getFirestore }]) => createSiteAnalytics({serverTimestamp,
   db: getFirestore(getApps()[0] || initializeApp(firebaseConfig)), doc, setDoc,
   pagePath: location.pathname, pageName: 'Tickets',
   isDisabled: ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname),
@@ -17,6 +17,7 @@ function logAnalytics(method, ...args) {
 }
 
 export function bindTicketAction(link, gig) {
+  enableMetaPrivacy(gig?.metaPixelId);
   if (link.dataset.ticketTracked) return;
   link.dataset.ticketTracked = 'true';
   const track = event => {
@@ -39,3 +40,7 @@ if (gigPage) {
     logAnalytics('logPageViewOnce', { label: gig.event, target: gig.id, section: 'tickets' }, `hae-gig-view:${gig.id}`);
   } catch { /* Keep the event page usable if tracking is unavailable. */ }
 }
+
+window.addEventListener('hae-consent-change', () => {
+  if (gigPage) {try {trackGigPixel(JSON.parse(gigPage.dataset.gigPage), 'GigTicketView');} catch {}}
+});

@@ -1,4 +1,4 @@
-import { createEmailSignupService, createSiteAnalytics, firebaseConfig, getTrackingParams, isValidEmailAddress } from './public-site-utils.js';
+import { createEmailSignupService, createSiteAnalytics, firebaseConfig, getTrackingParams, isValidEmailAddress } from './public-site-utils.js?v=20261008-privacy-anchor';
 
 const form = document.getElementById('signup-form');
 const input = document.getElementById('signup-email');
@@ -11,14 +11,14 @@ const setStatus = (text, error = false) => {
 
 async function initialise() {
   try {
-    const [{ initializeApp }, { getFirestore, doc, setDoc }] = await Promise.all([
+    const [{ initializeApp }, { getFirestore, doc, setDoc, serverTimestamp }] = await Promise.all([
       import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js'),
       import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js')
     ]);
     const db = getFirestore(initializeApp(firebaseConfig));
     const context = { ...getTrackingParams(), pageName: 'join', pagePath: location.pathname, section: 'mailing-list' };
     const service = createEmailSignupService({ db, doc, setDoc, getContext: () => context });
-    const analytics = createSiteAnalytics({ db, doc, setDoc, pageName: context.pageName, pagePath: context.pagePath,
+    const analytics = createSiteAnalytics({serverTimestamp, db, doc, setDoc, pageName: context.pageName, pagePath: context.pagePath,
       isDisabled: ['localhost', '127.0.0.1', ''].includes(location.hostname), getContext: () => context });
     void analytics.logPageViewOnce();
     button.disabled = false;

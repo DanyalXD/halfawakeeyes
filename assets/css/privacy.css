@@ -34,6 +34,8 @@ li + li { margin-top:8px; }
 .footer-note { color:#888; font-size:13px; margin-top:24px; }
 .footer-note + .footer-note { margin-top:4px; }
 .back-link { display:inline-flex; align-items:center; min-height:44px; margin-top:20px; font-size:14px; }
+.privacy-settings-action { display:inline-flex; align-items:center; min-height:44px; margin-top:16px; padding:10px 16px; border:1px solid #777; border-radius:4px; background:transparent; color:#efede8; font:600 14px/1.4 var(--font-body); cursor:pointer; }
+.privacy-settings-action:hover { background:#202020; }
 .skip-link { position:fixed; top:8px; left:8px; padding:12px; background:#eee; color:#111; z-index:10; transform:translateY(-200%); }
 .skip-link:focus { transform:none; }
 @media(max-width:800px) {

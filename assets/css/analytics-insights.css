@@ -20,6 +20,11 @@ body[data-admin-page="analytics"] .analytics-sidebar-subnav button.active { colo
 .insight-filters { margin-bottom:18px; }
 .admin-refresh .insight-filters .control-stack { margin:0; border:0; padding:0 18px 18px; background:none; }
 .insight-filters .controls > div:empty, .insight-filters .export-wrap:empty { display:none; }
+.admin-refresh .insight-filters .controls { grid-template-columns:minmax(0,1fr); }
+.admin-refresh .insight-filters .controls-secondary { grid-template-columns:repeat(2,minmax(0,1fr)); }
+.insight-filters .controls-secondary > div { min-width:0; }
+.insight-filters .controls-secondary label { display:block; margin-bottom:6px; }
+.admin-refresh .insight-filters :is(.form-control,.form-select) { width:100%; min-width:0; min-height:44px; }
 .insight-logs { margin-bottom:20px; }
 .admin-refresh .insight-logs .admin-data-workspace { border:0; padding:18px; }
 .insight-log-tools { display:flex; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:18px; }
@@ -33,9 +38,12 @@ body[data-admin-page="analytics"] .analytics-sidebar-subnav button.active { colo
 .insight-supporting .insight-builder-fields { grid-template-columns:1fr; gap:10px; }
 .insight-supporting .insight-builder > h3 { font-size:15px; margin:0 0 12px; }
 .insight-supporting .insight-ranking { gap:12px; margin-top:12px; }
-.admin-refresh [data-insight-section="reports"] .insight-disclosure-body { display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
-.admin-refresh [data-insight-section="reports"] #insight-report { flex:1; min-width:180px; margin:0; }
-.admin-refresh [data-insight-section="reports"] .helper-copy { width:100%; margin:0; }
+.admin-refresh [data-insight-section="reports"] .insight-disclosure-body { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:6px 16px; }
+[data-insight-section="reports"] label[for="insight-report"] { grid-column:1; grid-row:1; }
+[data-insight-section="reports"] label[for="insight-source"] { grid-column:2; grid-row:1; }
+.admin-refresh [data-insight-section="reports"] #insight-report { grid-column:1; grid-row:2; min-width:0; width:100%; margin:0; }
+.admin-refresh [data-insight-section="reports"] #insight-source { grid-column:2; grid-row:2; min-width:0; width:100%; margin:0; }
+.admin-refresh [data-insight-section="reports"] .helper-copy { grid-column:1/-1; width:100%; margin:0; padding-top:10px; }
 [data-insight-section="definitions"] { background:none; border:0; }
 .insight-toolbar { display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; }
 .insight-toolbar p { margin: 4px 0 0; }

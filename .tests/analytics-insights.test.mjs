@@ -3,6 +3,17 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 const source=fs.readFileSync('assets/js/analytics-insights.js','utf8');
 const {buildAnalytics,eventMetrics,analyticsDate,analyticsReports,matchesAnalyticsReport,compareAnalytics,buildCampaignLink,matchesAnalyticsSource,normalizePromotionMarkers}=await import(`data:text/javascript;base64,${Buffer.from(source).toString('base64')}`);
+test('daily aggregate buckets retain event counts and anonymous session metrics',()=>{
+  const model=buildAnalytics([
+    {action:'page_view',page:'/links',count:8,browser:'Chrome',device:'mobile',timestamp:'2026-10-07'},
+    {action:'click',section:'tickets',count:5,timestamp:'2026-10-07'},
+    {action:'session_summary',count:0,sessions:4,clickingSessions:2,bounces:1,sessionSeconds:120,entryPage:'/links',exitPage:'/tickets',timestamp:'2026-10-07'}
+  ]);
+  assert.equal(model.totals.views,8); assert.equal(model.totals.tickets,5);
+  assert.equal(model.sessions,4); assert.equal(model.uniqueClicks,2);
+  assert.equal(model.bounceRate,25); assert.equal(model.averageSessionSeconds,30);
+  assert.equal(model.bins[0].views,8); assert.deepEqual(model.ranked.devices,[['mobile',8]]);
+});
 test('normalises cached and Firestore timestamps without treating missing dates as epoch',()=>{
   assert.equal(analyticsDate(null),null); assert.equal(analyticsDate({}),null);
   assert.equal(analyticsDate({seconds:100}).getTime(),100000);
@@ -69,4 +80,15 @@ test('promotion markers validate calendar dates, trim labels and bound saved dat
  assert.deepEqual(normalizePromotionMarkers([{date:'2026-02-30',label:'Bad'},{date:'2026-09-01',label:' Launch '}]),[{date:'2026-09-01',label:'Launch'}]);
  assert.deepEqual(normalizePromotionMarkers(null),[]);
  assert.equal(normalizePromotionMarkers(Array.from({length:150},()=>({date:'2026-09-01',label:'A'}))).length,100);
+});
+
+test('separate breakdowns never multiply total counts and independent filters retain metrics',()=>{
+ const data=[{kind:'total',value:'',timestamp:'2026-10-07',views:8,clicks:5,tickets:3,signups:1,sessions:5,bounces:1,sessionSeconds:150},
+ {kind:'page',value:'/links',views:8,clicks:5,tickets:3,timestamp:'2026-10-07'},
+ {kind:'source',value:'Instagram',views:8,clicks:5,tickets:3,timestamp:'2026-10-07'},
+ {kind:'campaign',value:'tour',views:8,clicks:5,tickets:3,timestamp:'2026-10-07'}];
+ const model=buildAnalytics(data);assert.equal(model.totals.views,8);assert.equal(model.totals.tickets,3);assert.equal(model.bins[0].tickets,3);assert.equal(model.averageSessionSeconds,30);assert.equal(model.bounceRate,20);
+ assert.deepEqual(model.ranked.sources,[['Instagram',8]]);
+ const selected=data.filter(e=>matchesAnalyticsSource(e,'instagram'));assert.equal(selected.length,1);assert.equal(buildAnalytics(selected).totals.views,8);assert.equal(buildAnalytics(selected).sessions,0);
+ assert.equal(data.filter(e=>matchesAnalyticsReport(e,JSON.stringify(['campaign','tour']))).length,1);
 });

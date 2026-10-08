@@ -124,7 +124,7 @@ async function bootAdmin() {
     return;
   }
 
-  const assetVersion = isLocalAdminHost() ? String(Date.now()) : "20261005-sumup-collapse";
+  const assetVersion = isLocalAdminHost() ? String(Date.now()) : "20261008-privacy-anchor";
 
   if (!window.HAEAdminComponents?.load) {
     showComponentLoadError(new Error("Admin component loader is unavailable."));

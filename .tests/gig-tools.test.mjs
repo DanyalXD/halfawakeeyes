@@ -30,14 +30,22 @@ test('comparison excludes auto redirects and separates the two weeks', () => {
   assert.equal(result.sources.__proto__.clicks,1);
 });
 test('pixel calls are scoped by gig and disabled in local previews', async () => {
-  const pixelSource = await readFile(new URL('../assets/js/ticket-pixels.js',import.meta.url),'utf8');
+  const utilsSource = await readFile(new URL('../assets/js/public-site-utils.js',import.meta.url),'utf8');
+  const utilsUrl = `data:text/javascript;base64,${Buffer.from(utilsSource).toString('base64')}`;
+  const pixelSource = (await readFile(new URL('../assets/js/ticket-pixels.js',import.meta.url),'utf8')).replace("'./public-site-utils.js?v=20261008-privacy-anchor'", JSON.stringify(utilsUrl));
   const {trackGigPixel} = await import(`data:text/javascript;base64,${Buffer.from(pixelSource).toString('base64')}`);
   const calls=[]; globalThis.window={fbq:(...args)=>calls.push(args)};
   globalThis.location={hostname:'halfawakeeyes.co.uk',pathname:'/tickets/'};
+  globalThis.localStorage={getItem:()=>JSON.stringify({version:'2026-10-07',savedAt:Date.now(),marketing:true})};
   trackGigPixel({id:'a',metaPixelId:'123'}); trackGigPixel({id:'b',metaPixelId:'456'}); trackGigPixel({id:'a',metaPixelId:'123'});
   assert.equal(calls.filter(c=>c[0]==='init').length,2);
   assert.deepEqual(calls.filter(c=>c[0]==='trackSingleCustom').map(c=>c.slice(1,3)),[['123','GigTicketClick'],['456','GigTicketClick'],['123','GigTicketClick']]);
   location.hostname='localhost'; assert.equal(trackGigPixel({metaPixelId:'123'}),false);
   assert.equal(trackGigPixel({metaPixelId:'<script>'}),false);
   delete globalThis.window; delete globalThis.location;
+  delete globalThis.localStorage;
+});
+test('weekly comparison weights aggregate clicks and signup buckets',()=>{
+  const now=Date.now();const result=tools.summarizeTraffic([{action:'click',section:'tickets',count:5,timestamp:new Date(now-1000)}],[{count:2,createdAt:new Date(now-1000)}],now);
+  assert.deepEqual(result.clicks,[5,0]);assert.deepEqual(result.signups,[2,0]);
 });

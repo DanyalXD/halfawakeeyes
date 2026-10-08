@@ -19,12 +19,14 @@ module.exports = function buildAdminTools(db, assertAdmin) {
     assertAdmin(request);
     const now = Date.now(), since = Timestamp.fromMillis(now - 14 * 86400000);
     const [events, contacts] = await Promise.all([
-      db.collection('site-actions').where('timestamp','>=',since).get(),
+      db.collection('analytics-daily').where('timestamp','>=',new Date(now - 14 * 86400000).toISOString()).get(),
       db.collection('mailing-list-signups').where('updatedAt','>=',since).get()
     ]);
-    return {now, events:events.docs.map(doc => { const e = doc.data(); return {action:e.action || '', actionSubtype:e.actionSubtype || '', section:e.section || '', label:e.label || '', source:e.source || '', referrer:e.referrer || '', timestamp:e.timestamp?.toDate?.().toISOString() || ''}; }),
+    return {now, events:require('./analytics').publicAggregates(events.docs.map(doc => doc.data())).filter(e=>e.kind==='total'),
       // Document creation time cannot be reset by a repeat public signup.
-      signups:contacts.docs.map(doc => { const s = doc.data(); return {createdAt:doc.createTime.toDate().toISOString(), source:s.source || '', referrer:s.referrer || ''}; })};
+      signups:require('./analytics').aggregateAnalytics(contacts.docs.map(doc => {
+        const s = doc.data(); return {action:'email_signup', timestamp:doc.createTime, source:s.source || '', referrer:s.referrer || ''};
+      })).filter(bucket=>bucket.kind==='total').map(bucket => ({createdAt:bucket.timestamp, count:bucket.signups}))};
   });
   const record = async event => {
     const path = event.data.after.ref.path;

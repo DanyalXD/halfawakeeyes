@@ -1,13 +1,47 @@
 {
-  "indexes": [{
-    "collectionGroup": "content-history",
-    "queryScope": "COLLECTION",
-    "fields": [
-      { "fieldPath": "collection", "order": "ASCENDING" },
-      { "fieldPath": "savedAt", "order": "DESCENDING" }
-    ]
-  }],
+  "indexes": [
+    {
+      "collectionGroup": "content-history",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "collection",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "savedAt",
+          "order": "DESCENDING"
+        }
+      ]
+    }
+  ],
   "fieldOverrides": [
-    {"collectionGroup":"content-history", "fieldPath":"content", "indexes":[]}
+    {
+      "collectionGroup": "content-history",
+      "fieldPath": "content",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "site-actions",
+      "fieldPath": "expiresAt",
+      "ttl": true,
+      "indexes": [
+        {
+          "order": "ASCENDING",
+          "queryScope": "COLLECTION"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "analytics-daily",
+      "fieldPath": "expiresAt",
+      "ttl": true,
+      "indexes": [
+        {
+          "order": "ASCENDING",
+          "queryScope": "COLLECTION"
+        }
+      ]
+    }
   ]
 }

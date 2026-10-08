@@ -1,14 +1,16 @@
 import { requestedCampaignSlug as resolveCampaignSlug } from './campaign-route.js';
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { doc, getDoc, getFirestore, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { doc, getDoc, getFirestore, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
     import {
       createEmailSignupService,
       createSiteAnalytics,
+      hasTrackingConsent,
+      enableMetaPrivacy,
       firebaseConfig,
       getTrackingParams,
       isValidEmailAddress,
       normalizeTrackingValue
-    } from "./public-site-utils.js";
+    } from "./public-site-utils.js?v=20261008-privacy-anchor";
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
@@ -18,7 +20,7 @@ import { requestedCampaignSlug as resolveCampaignSlug } from './campaign-route.j
       window.location.hostname === "";
 
     const params = new URLSearchParams(window.location.search);
-    const { userId, source, medium, campaign: queryCampaign } = getTrackingParams(params);
+    const { source, medium, campaign: queryCampaign } = getTrackingParams(params);
     const pagePath = window.location.pathname || "/smartlink.html";
     const pageName = pagePath.split("/").pop() || "smartlink";
     const metaDescription = document.querySelector('meta[name="description"]');
@@ -49,6 +51,9 @@ import { requestedCampaignSlug as resolveCampaignSlug } from './campaign-route.j
     let activeCampaign = null;
     let activeMetaPixelId = "";
     let metaPageViewTracked = false;
+    window.addEventListener('hae-consent-change', () => {
+      if (activeCampaign?.metaPixelId) {initializeMetaPixel(activeCampaign.metaPixelId); trackMetaPageView();}
+    });
 
     const requestedCampaignSlug = resolveCampaignSlug(window.location.pathname, window.location.search);
 
@@ -77,16 +82,14 @@ import { requestedCampaignSlug as resolveCampaignSlug } from './campaign-route.j
       }
     }
 
-    const { logEvent, logPageViewOnce: logTrackedPageViewOnce } = createSiteAnalytics({
+    const { logEvent, logPageViewOnce: logTrackedPageViewOnce } = createSiteAnalytics({serverTimestamp,
       db,
       doc,
       setDoc,
       pagePath,
       pageName,
       isDisabled: isFileMode,
-      getContext: () => ({
-        userId,
-        campaign: activeCampaign?.title || queryCampaign,
+      getContext: () => ({        campaign: activeCampaign?.title || queryCampaign,
         campaignSlug: activeCampaign?.slug || requestedCampaignSlug,
         source,
         medium,
@@ -192,7 +195,8 @@ import { requestedCampaignSlug as resolveCampaignSlug } from './campaign-route.j
     }
 
     function initializeMetaPixel(pixelId) {
-      if (!pixelId || activeMetaPixelId === pixelId) {
+      enableMetaPrivacy(pixelId);
+      if (!hasTrackingConsent('marketing') || isFileMode || ['localhost','127.0.0.1','[::1]'].includes(location.hostname) || !/^\d+$/.test(pixelId) || activeMetaPixelId === pixelId) {
         return;
       }
 
@@ -219,26 +223,27 @@ import { requestedCampaignSlug as resolveCampaignSlug } from './campaign-route.j
         })(window, document, "script", "https://connect.facebook.net/en_US/fbevents.js");
       }
 
+      window.fbq('set', 'autoConfig', false, pixelId);
       window.fbq("init", pixelId);
       activeMetaPixelId = pixelId;
       metaPageViewTracked = false;
     }
 
     function trackMetaPageView() {
-      if (!activeMetaPixelId || metaPageViewTracked || typeof window.fbq !== "function") {
+      if (!hasTrackingConsent('marketing') || !activeMetaPixelId || metaPageViewTracked || typeof window.fbq !== "function") {
         return;
       }
 
-      window.fbq("track", "PageView");
+      window.fbq("trackSingle", activeMetaPixelId, "PageView");
       metaPageViewTracked = true;
     }
 
     function trackMetaClick(eventName, details = {}) {
-      if (!activeMetaPixelId || typeof window.fbq !== "function") {
+      if (!hasTrackingConsent('marketing') || !activeMetaPixelId || typeof window.fbq !== "function") {
         return;
       }
 
-      window.fbq("trackCustom", eventName, {
+      window.fbq("trackSingleCustom", activeMetaPixelId, eventName, {
         campaign_name: activeCampaign?.title || "",
         destination_label: details.label || "",
         destination_url: details.url || "",

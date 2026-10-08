@@ -1,0 +1,124 @@
+// Real homepage layout checks, with all third-party requests blocked.
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const {chromium} = require(process.env.PLAYWRIGHT_MODULE_PATH || 'playwright');
+const root = path.resolve(__dirname, '..');
+const origin = 'http://127.0.0.1';
+const viewports = [
+  {width:1440,height:900,name:'desktop'},
+  {width:390,height:844,name:'mobile'},
+  {width:841,height:463,name:'short-desktop'},
+  {width:320,height:568}, {width:768,height:1024}, {width:1024,height:768}
+];
+(async () => {
+  const browser = await chromium.launch({channel:'chrome',headless:true});
+  try {
+    for (const viewport of viewports) {
+      const context = await browser.newContext({viewport});
+      await context.route('**/*', async route => {
+        const url = new URL(route.request().url());
+        if (url.origin !== origin || !url.pathname.startsWith('/HAE/')) {await route.abort(); return;}
+        const file = path.resolve(root, url.pathname.slice('/HAE/'.length));
+        if (!file.startsWith(root + path.sep) || !fs.existsSync(file)) {await route.fulfill({status:404,body:''}); return;}
+        const types = {'.html':'text/html','.js':'text/javascript','.css':'text/css','.ttf':'font/ttf','.otf':'font/otf'};
+        await route.fulfill({path:file,contentType:types[path.extname(file)]});
+      });
+      const page = await context.newPage();
+      await page.goto(origin + '/HAE/index.html');
+      const panel = page.locator('#hae-privacy-controls');
+      await panel.waitFor();
+      await page.evaluate(() => document.fonts.ready);
+      const layout = await panel.evaluate(el => {
+        const rect = el.getBoundingClientRect();
+        return {x:rect.x,y:rect.y,right:rect.right,bottom:rect.bottom,overflow:el.scrollWidth>el.clientWidth,background:getComputedStyle(el).backgroundColor};
+      });
+      assert.ok(layout.x >= 0 && layout.y >= 0 && layout.right <= viewport.width && layout.bottom <= viewport.height);
+      assert.equal(layout.overflow, false);
+      assert.equal(layout.background, 'rgb(20, 20, 20)');
+      assert.equal(await page.locator('[data-hae-privacy-styles]').count(), 1);
+      assert.equal(await page.getByRole('button',{name:'Privacy settings',exact:true}).isVisible(), true);
+      assert.equal(await page.getByRole('switch',{name:'Statistical analytics',exact:true}).isChecked(), true);
+      assert.equal(await page.getByRole('switch',{name:'Marketing / Meta',exact:true}).count(), 0);
+      assert.equal(await panel.getByRole('link',{name:'Privacy policy',exact:true}).getAttribute('href'), origin + '/HAE/privacy.html');
+      for (const selector of ['.hae-privacy-save','[data-reject]','[data-close]']) {
+        assert.ok((await page.locator(selector).boundingBox()).height >= 44);
+      }
+      if (viewport.name) await page.screenshot({path:path.join(__dirname,'privacy-panel-'+viewport.name+'.png')});
+      // Closing the initial notice keeps the page position and leaves choices unsaved.
+      await page.getByRole('button',{name:'Close privacy preferences',exact:true}).focus();
+      assert.equal(await page.evaluate(() => localStorage.getItem('hae-privacy-choice')), null);
+      const scrollBeforeClose = await page.evaluate(() => window.scrollY);
+      await page.keyboard.press('Escape');
+      assert.equal(await panel.isVisible(), false);
+      assert.equal(await page.evaluate(() => window.scrollY), scrollBeforeClose);
+      const settings = page.getByRole('button',{name:'Privacy settings',exact:true});
+      if (viewport.width <= 800) {
+        assert.equal(await settings.evaluate(el => getComputedStyle(el).position), 'static');
+        assert.equal(await settings.evaluate(el => !!el.closest('footer')), true);
+        const settingsBounds = await settings.boundingBox();
+        assert.ok(settingsBounds.height >= 44);
+        const footerLinks = page.locator('#hae-site-footer [data-public-footer-links] > a');
+        for (const link of await footerLinks.all()) {
+          const bounds = await link.boundingBox();
+          assert.ok(Math.abs(bounds.y - settingsBounds.y) < 1, 'Footer links and settings share one row');
+        }
+        const copyright = await page.locator('#hae-site-footer .hae-footer-copyright').boundingBox();
+        assert.ok(copyright.y >= settingsBounds.y + settingsBounds.height, 'Copyright sits below the link row');
+        for (const action of await page.locator('.hero-actions a').all()) {
+          const bounds = await action.boundingBox();
+          assert.ok(bounds.y + bounds.height <= settingsBounds.y);
+        }
+        if (viewport.name === 'mobile') {
+          await page.screenshot({path:path.join(__dirname,'privacy-settings-mobile.png')});
+          await page.locator('body > footer').screenshot({path:path.join(__dirname,'privacy-settings-mobile-footer.png')});
+        }
+      } else {
+        assert.equal(await settings.evaluate(el => getComputedStyle(el).position), 'static');
+        assert.equal(await settings.evaluate(el => !!el.closest('#hae-site-footer')), true);
+      }
+      await settings.scrollIntoViewIfNeeded();
+      await settings.focus();
+      await page.keyboard.press('Enter');
+      assert.equal(await page.evaluate(() => document.activeElement.name), 'analytics');
+      const checkAnchor = async () => {
+        await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+        const box = await panel.boundingBox(), trigger = await settings.boundingBox();
+        assert.equal(await settings.isVisible(), true, 'The footer button stays visible while preferences are open');
+        assert.equal(await settings.getAttribute('aria-expanded'), 'true');
+        assert.ok(Math.abs(box.y + box.height + 8 - trigger.y) <= 1, 'Preferences open above the footer button: '+JSON.stringify({box,trigger}));
+        assert.ok(box.x >= 0 && box.y >= 0 && box.x+box.width <= page.viewportSize().width && box.y+box.height <= page.viewportSize().height);
+        assert.equal(await settings.evaluate(el => {const r=el.getBoundingClientRect();return el.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2));}), true, 'The popup does not cover its button');
+      };
+      await checkAnchor();
+      if (viewport.name === 'desktop' || viewport.name === 'mobile') {
+        await page.screenshot({path:path.join(__dirname,'privacy-anchored-'+viewport.name+'.png')});
+        await page.evaluate(() => window.scrollBy(0,-8));
+        await checkAnchor();
+        await page.setViewportSize({width:viewport.width===1440?1024:320,height:viewport.height});
+        await settings.scrollIntoViewIfNeeded();
+        await checkAnchor();
+        await page.setViewportSize({width:viewport.width,height:viewport.height});
+        await settings.scrollIntoViewIfNeeded();
+        await checkAnchor();
+      }
+      await settings.click();
+      assert.equal(await panel.isVisible(), false, 'The visible button can close the popup');
+      await settings.click();
+      assert.equal(await panel.isVisible(), true);
+      await checkAnchor();
+      assert.equal(await page.getByRole('switch',{name:'Marketing / Meta',exact:true}).count(), 0);
+      await page.getByRole('switch',{name:'Statistical analytics',exact:true}).focus();
+      await page.keyboard.press('Space');
+      assert.equal(await page.locator('[data-state="analytics"]').textContent(), 'Off');
+      assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('hae-privacy-choice')).analytics), false);
+      assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('hae-privacy-choice')).marketing), false);
+      await page.keyboard.press('Tab');
+      assert.equal(await page.evaluate(() => document.activeElement.textContent), 'Save choices');
+      await page.keyboard.press('Enter');
+      assert.equal(await panel.isVisible(), false);
+      console.log(`Homepage privacy panel fits ${viewport.width}x${viewport.height}; keyboard and analytics-only choices pass.`);
+      await context.close();
+    }
+  } finally {await browser.close();}
+})().catch(error => {console.error(error);process.exitCode = 1;});

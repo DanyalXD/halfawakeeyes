@@ -11,9 +11,11 @@
         href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600&family=Source+Sans+3:wght@400;500;600&display=swap"
         rel="stylesheet">
       <link rel="stylesheet" href="assets/css/theme.css?v=20260725-public-theme" />
-      <link rel="stylesheet" href="assets/css/privacy.css?v=20260906-redesign" />
+      <link rel="stylesheet" href="assets/css/privacy.css?v=20261008-privacy-anchor" />
+    <link rel="stylesheet" data-hae-privacy-styles href="assets/css/privacy-controls.css?v=20261008-privacy-anchor">
+    <script type="module" src="assets/js/privacy-controls.js?v=20261008-privacy-anchor"></script>
 </head>
-<body>
+<body data-privacy-page>
     <a class="skip-link" href="#policy-content">Skip to privacy policy</a>
     <div class="shell">
         <nav class="page-nav" aria-label="Site navigation">
@@ -27,7 +29,7 @@
             </div>
             <div class="hero-copy">
                 <p>This page explains what data Half Awake Eyes collects through the website, why it is collected, and how to get in touch if you have any questions.</p>
-                <span class="updated-pill">Updated 6 September 2026</span>
+                <span class="updated-pill">Updated 8 October 2026</span>
             </div>
         </header>
 
@@ -35,8 +37,8 @@
             <main id="policy-content">
                 <section class="panel">
                     <h2 id="collection">What We Collect</h2>
-                    <p>Half Awake Eyes operates this website and uses Firebase, a Google service, to collect limited analytics data such as page views, link clicks, video interactions, ticket redirects, and smart-link activity. This helps us understand general engagement with our music, shows, and content.</p>
-                    <p>The data stored may include a timestamp, page path, random session ID, viewport size, referrer, campaign or UTM details, a tracking identifier where one is included in a shared link, and interaction details such as the link or button used. These identifiers can link activity within a visit or campaign; they are not a guarantee of anonymity. Ticket-button clicks do not tell us whether you completed a purchase.</p>
+                    <p>Half Awake Eyes operates this website. Statistical analytics run by default, using Firebase, a Google service, solely to understand and improve use of this website. They measure page views, content interactions, outbound clicks, signup actions and ticket redirects. You can object free of charge at any time: open Privacy settings on any public page and switch Statistical analytics off. Previous explicit analytics refusals remain effective.</p>
+                    <p>Analytics records contain a timestamp, a recognised public page path, a temporary random session ID, public interaction labels, campaign/source tags, the referring and destination website origins, and broad browser, operating-system and device categories. We remove URL queries and fragments, recipient IDs, exact viewport dimensions and obvious email addresses or numeric identifiers. We do not collect raw IP addresses, precise location, fingerprints, browsing account IDs or session replay in our analytics database. Session IDs are pseudonymous rather than guaranteed anonymous. Temporary individual-level processing produces daily totals with separate page, source, campaign and device breakdowns, rather than linked visitor profiles. Breakdowns with fewer than five events and session metrics with fewer than five sessions are withheld from admin reports. Admins cannot browse individual visitors or journeys. Ticket clicks are not completed purchases.</p>
                 </section>
 
                 <section class="panel">
@@ -57,24 +59,26 @@
 
                 <section class="panel">
                     <h2 id="cookies">Cookies and Browser Storage</h2>
-                    <p>The site uses session storage in your browser to keep a random session ID, avoid duplicate page-view logs, and limit repeated analytics events during a visit. This storage is temporary and is normally cleared when your browser session ends.</p>
-                    <p>Some ticket or smart-link pages may load Meta Pixel if a campaign has been configured with a Pixel ID. This can use cookies and send event and device information to Meta. The Join Us page does not load Meta Pixel. Where you choose to exclude your own visits from our site analytics, that preference is saved in local storage until you clear it; it does not control third-party pixels.</p>
+                    <p>Unless you opt out, session storage holds a random tab-session ID and an event counter. It expires after 30 minutes of inactivity, at most one hour, or when the tab session ends. There is no permanent visitor ID or first-party analytics cookie. A preference in local storage remembers analytics objections until you change or clear it; it contains no visitor ID. Marketing consent is separate and expires after 180 days. The analytics switch applies immediately and does not enable marketing. If browser storage is unavailable, analytics fail closed; an unsaved choice is explained on screen. An optional exclusion preference also uses local storage.</p>
+                    <p>Configured ticket, show and smart-link Meta Pixels load only after you separately allow Meta advertising. They may use cookies and share event and device information with Meta. Privacy settings on ordinary pages controls statistical analytics only. The separate Meta option appears on pages configured to use a pixel and on this Privacy page. Use Manage privacy choices below to withdraw marketing consent at any time. Withdrawing advertising consent revokes the pixel, removes known first-party Meta cookies and reloads the page; it cannot erase data already sent to Meta. Do Not Track and Global Privacy Control also prevent statistical analytics and marketing. The Spotify player loads automatically when you open a page containing it and connects to Spotify.</p>
+                    <button type="button" class="privacy-settings-action" data-open-privacy-settings data-analytics-ignore="true" aria-controls="hae-privacy-controls">Manage privacy choices</button>
                 </section>
 
                 <section class="panel">
                     <h2 id="purposes">Why We Process This Data</h2>
-                    <p>We rely on our legitimate interest in understanding how visitors interact with our website, music, videos, shows, and promotional materials. Mailing list emails rely on consent, as explained above. We use our legitimate interests to respond to enquiries, operate and secure the site, administer subscriptions and maintain opt-out records. A legitimate-interest basis for data processing does not replace any consent required for cookies or similar tracking technologies.</p>
+                    <p>We use statistical analytics under the UK PECR statistical purposes exception where its conditions apply, solely to improve this website, with a simple means to object. We rely on legitimate interests for the temporary processing needed to produce site-improvement statistics; you can object using Privacy settings. Meta advertising requires separate affirmative consent. Mailing list emails rely on separate signup consent, as explained above. We use our legitimate interests to respond to enquiries, operate and secure the site, administer subscriptions and maintain opt-out records. Refusing analytics does not prevent you from using the site, ticket links or signup forms.</p>
                 </section>
 
                 <section class="panel">
                     <h2 id="providers">Third-Party Processing</h2>
                     <p>Firebase may process technical information, such as IP addresses, as part of providing its infrastructure and security services. We use Firebase to store signup records, analytics, unsubscribe records and cached mailbox information. IONOS provides our band mailbox and email delivery, processing recipient addresses and message contents. These providers may process information outside the UK. You can contact us for information about the arrangements that apply to your data.</p>
-                    <p>Where Meta Pixel is enabled for a ticket or smart-link campaign, Meta may receive event information such as page views or outbound ticket clicks. We use these events for campaign measurement. Meta also processes information under its own privacy policy. Ticket providers, music platforms, embedded services and social networks have their own privacy practices when you use their services. Our website also requests fonts from Google Fonts on some pages, which sends technical request information to Google.</p>
+                    <p>If you allow Meta advertising and a ticket or smart-link campaign has a configured Pixel, Meta may receive page views, outbound ticket clicks and technical request information, including IP addresses and its own identifiers. Meta also processes information under its own privacy policy. Ticket providers, music platforms, embedded services and social networks have their own privacy practices when you use their services. The embedded Spotify player loads automatically and sends technical request information to Spotify. Our website also requests fonts from Google Fonts on some pages, which sends technical request information to Google.</p>
                 </section>
 
                 <section class="panel">
                     <h2 id="retention">Keeping and Removing Data</h2>
-                    <p>Signup records are stored while we manage the mailing list. Unsubscribed contacts and opt-out records may remain so we can respect your preference. Analytics, correspondence and signup records do not currently have an automatic expiry; please contact us to request removal or ask what records we hold. We may need to retain a limited opt-out record to avoid contacting you again.</p>
+                    <p>Every 15 minutes, a backend job processes tab sessions idle for at least 30 minutes, saves daily aggregate counts and deletes the processed raw records atomically. A completed session normally appears after 30-45 idle minutes; raw records normally remain less than one hour and 45 minutes from the first event. Raw events expire after two hours, with a separate 15-minute cleanup and Firestore TTL as backstops. Deletion can lag during provider or job failures; TTL is asynchronous. Already aggregated statistics expire after 90 days, and reports exclude older totals. Administrative reports are kept in memory rather than a persistent analytics cache. Hosting and provider logs and backups have separate retention arrangements.</p>
+                    <p>Signup records are stored while we manage the mailing list. Unsubscribed contacts and opt-out records may remain so we can respect your preference. Correspondence and signup records do not currently have an automatic expiry; please contact us to request removal or ask what records we hold. We may need to retain a limited opt-out record to avoid contacting you again.</p>
                 </section>
 
                 <section class="panel">
@@ -86,7 +90,7 @@
                 <section class="panel">
                     <h2 id="contact">Contact</h2>
                     <p>Half Awake Eyes is responsible for the personal data described here. If you have questions about this policy, want to request deletion of mailing list data, or want to request deletion of logged data associated with a campaign or identifier, contact <a href="mailto:halfawakeeyes@gmail.com">halfawakeeyes@gmail.com</a>.</p>
-                    <p class="footer-note">Updated 6 September 2026.</p>
+                    <p class="footer-note">Updated 8 October 2026.</p>
                     <p class="footer-note">&copy; <span data-current-year></span> Half Awake Eyes. All rights reserved.</p>
                     <a class="back-link" href="./">Back to website</a>
                 </section>

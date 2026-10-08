@@ -1070,26 +1070,8 @@ exports.notifyOnSiteActionCreated = onDocumentCreated({
   document: "site-actions/{actionId}",
   maxInstances: 5
 }, async (event) => {
-  const data = event.data?.data() || {};
-  const action = String(data.action || "").trim();
+  // Statistical browsing never produces individual action notifications.
 
-  if (!action) {
-    return;
-  }
-
-  await sendAdminPushNotification({
-    title: getSiteActionTitle(action),
-    body: getSiteActionBody(data),
-    tag: `hae-site-action-${action}-${event.params.actionId}`,
-    data: {
-      type: "site-action",
-      action,
-      actionId: event.params.actionId,
-      actionSubtype: data.actionSubtype || "",
-      pageName: data.pageName || data.sourcePage || data.page || ""
-    },
-    isEnabled: (settings) => Boolean(settings.siteActions?.[action])
-  });
 });
 
 exports.notifyOnMailingListSignupCreated = onDocumentCreated({
@@ -1284,3 +1266,4 @@ exports.emailUnsubscribe = onRequest({region:'us-central1',maxInstances:3,timeou
 
 Object.assign(exports, require("./admin-tools")(db, assertAdmin));
 Object.assign(exports, require("./sumup")(assertAdmin));
+Object.assign(exports, require('./analytics').buildAnalyticsFunctions(db, assertAdmin));

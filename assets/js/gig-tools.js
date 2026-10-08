@@ -30,10 +30,11 @@ export function summarizeTraffic(events, signups, now = Date.now()) {
   };
   const count = (item, key, time) => {
     const p = period(time); if (p < 0) return;
-    result[key][p]++;
-    if (!p) { const label = source(item); result.sources[label] ||= { clicks: 0, signups: 0 }; result.sources[label][key]++; }
+    const amount = key === 'clicks' && item.kind === 'total' ? item.tickets || 0 : item.count ?? 1;
+    result[key][p] += amount;
+    if (!p) { const label = source(item); result.sources[label] ||= { clicks: 0, signups: 0 }; result.sources[label][key] += amount; }
   };
-  events.filter(e => (e.action === 'click' && /ticket/i.test(`${e.section || ''} ${e.label || ''}`)) || (e.action === 'ticket_redirect_continue' && e.actionSubtype !== 'auto')).forEach(e => count(e, 'clicks', e.timestamp));
+  events.filter(e => e.kind === 'total' || (e.action === 'click' && /ticket/i.test(`${e.section || ''} ${e.label || ''}`)) || (e.action === 'ticket_redirect_continue' && e.actionSubtype !== 'auto')).forEach(e => count(e, 'clicks', e.timestamp));
   signups.forEach(s => count(s, 'signups', s.createdAt || s.updatedAt));
   return result;
 }

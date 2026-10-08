@@ -1,3 +1,6 @@
+import { installPrivacyControls } from './public-site-utils.js?v=20261008-privacy-anchor';
+import { installPublicFooter } from './public-footer.js?v=20261008-privacy-anchor';
+
 const params = new URLSearchParams(location.search);
 let id = params.get('gig');
 if (!id) {
@@ -39,8 +42,10 @@ try {
   }
   next.body.querySelectorAll('script').forEach(node => node.remove());
   document.body.replaceWith(next.body);
+  installPublicFooter();
+  installPrivacyControls();
   await import('./gig-page.js');
-  await import('./public-ticket-actions.js');
+  await import('./public-ticket-actions.js?v=20261008-privacy-anchor');
 } catch (error) {
   if (!document.querySelector('[data-gig-ticket]:not([hidden])')) {
     showError(error.message === 'missing' ? 'Show not found' : 'Could not load this show. Please refresh to try again.');

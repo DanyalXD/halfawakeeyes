@@ -1,5 +1,5 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-        import { getFirestore, doc, getDoc, setDoc, getDocs, collection, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, setDoc, serverTimestamp, getDocs, collection, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
         import {
             createSiteAnalytics,
             firebaseConfig,
@@ -8,7 +8,7 @@
             normalizePublicUrl,
             normalizeText,
             PUBLIC_MIRROR_DOC_ID
-        } from "./public-site-utils.js";
+        } from "./public-site-utils.js?v=20261008-privacy-anchor";
 
         const isLocal =
             window.location.protocol === "file:" ||
@@ -19,19 +19,17 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        const { userId, campaign, source, medium } = getTrackingParams(new URLSearchParams(window.location.search));
+        const { campaign, source, medium } = getTrackingParams(new URLSearchParams(window.location.search));
         const pagePath = window.location.pathname || "/";
         const pageName = pagePath.split("/").pop() || "home";
-        const { logEvent, logPageViewOnce } = createSiteAnalytics({
+        const { logEvent, logPageViewOnce } = createSiteAnalytics({serverTimestamp,
             db,
             doc,
             setDoc,
             pagePath,
             pageName,
             isDisabled: isLocal,
-            getContext: () => ({
-                userId,
-                campaign,
+            getContext: () => ({                campaign,
                 source,
                 medium
             })
@@ -45,7 +43,7 @@
 
             document.addEventListener("click", (e) => {
                 const el = e.target.closest("a, button");
-                if (el) {
+                if (el && !el.closest('[data-analytics-ignore]')) {
                     const text = normalizeText(el.innerText || el.getAttribute("aria-label") || el.getAttribute("title") || "");
                     const section = el.closest("section")?.id || (el.closest("header") ? "hero" : "");
                     let details = {

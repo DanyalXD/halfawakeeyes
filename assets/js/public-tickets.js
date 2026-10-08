@@ -1,8 +1,8 @@
 import { canBuyTickets, gigDetailLabel } from './gig-tools.js';
-import { bindTicketAction } from './public-ticket-actions.js';
+import { bindTicketAction } from './public-ticket-actions.js?v=20261008-privacy-anchor';
 import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { doc, getDoc, getFirestore } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { firebaseConfig, normalizePublicUrl, PUBLIC_MIRROR_DOC_ID } from "./public-site-utils.js";
+import { firebaseConfig, normalizePublicUrl, PUBLIC_MIRROR_DOC_ID } from "./public-site-utils.js?v=20261008-privacy-anchor";
 
 const list = document.getElementById("public-show-list");
 const db = getFirestore(getApps()[0] || initializeApp(firebaseConfig));

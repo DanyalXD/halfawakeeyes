@@ -17,12 +17,13 @@ export function eventMetrics(entry) {
   };
 }
 export function sourceName(entry) {
+  if (entry.kind === 'source') return entry.value;
   if (entry.source) return String(entry.source);
   if (entry.referrer) { try { return new URL(entry.referrer).hostname; } catch { return 'Unknown referrer'; } }
   return 'Direct / unrecorded';
 }
 export function matchesAnalyticsSource(entry, source) {
-  return !source || sourceName(entry).toLowerCase() === source.toLowerCase();
+  return !source || (!entry.kind || entry.kind === 'source') && sourceName(entry).toLowerCase() === source.toLowerCase();
 }
 export function normalizePromotionMarkers(markers) {
   if (!Array.isArray(markers)) return [];
@@ -30,20 +31,34 @@ export function normalizePromotionMarkers(markers) {
     .slice(0,100).map(item=>({date:item.date,label:item.label.trim().slice(0,100)})).sort((a,b)=>a.date.localeCompare(b.date));
 }
 export function buildAnalytics(entries, {from = '', to = ''} = {}) {
+  if (entries.some(entry=>entry.kind)) return buildStatisticalAnalytics(entries,{from,to});
   const totals = {views:0, clicks:0, tickets:0, signups:0};
   const clickSessions = new Set();
   let untrackedClicks = 0;
-  const sessions = new Set(), ranked = {pages:new Map(), links:new Map(), sources:new Map(), campaigns:new Map()};
+  const sessions = new Set(), ranked = {events:new Map(), pages:new Map(), links:new Map(), sources:new Map(), campaigns:new Map(),
+    browsers:new Map(), operatingSystems:new Map(), devices:new Map(), entries:new Map(), exits:new Map(), navigation:new Map()};
+  let aggregateSessions = 0, aggregateClicks = 0, bounces = 0, sessionSeconds = 0;
   const dated = [];
-  const add = (map, label) => map.set(String(label), (map.get(String(label)) || 0) + 1);
+  const add = (map, label, count = 1) => map.set(String(label), (map.get(String(label)) || 0) + count);
   for (const entry of entries) {
     const flags = eventMetrics(entry);
-    for (const key of Object.keys(totals)) totals[key] += Number(flags[key]);
+    const count = Number.isFinite(entry.count) ? entry.count : 1;
+    for (const key of Object.keys(totals)) totals[key] += Number(flags[key]) * count;
+    if (entry.action === 'session_summary') {
+      aggregateSessions += entry.sessions || 0; aggregateClicks += entry.clickingSessions || 0;
+      bounces += entry.bounces || 0; sessionSeconds += entry.sessionSeconds || 0;
+      add(ranked.entries, entry.entryPage || 'Unknown', entry.sessions || 0);
+      add(ranked.exits, entry.exitPage || 'Unknown', entry.sessions || 0);
+    }
+    if (entry.action === 'navigation') add(ranked.navigation, entry.label, count);
     if (entry.sessionId && entry.sessionId !== 'unknown') sessions.add(entry.sessionId);
-    if (flags.views) { add(ranked.pages, entry.pageName || entry.page || 'Unrecorded page'); add(ranked.sources, sourceName(entry)); }
-    if (flags.clicks) { if (entry.sessionId && entry.sessionId !== 'unknown') clickSessions.add(entry.sessionId); else untrackedClicks++; add(ranked.links, entry.label || entry.href || entry.target || 'Unlabelled link'); if (entry.campaignSlug || entry.campaign) add(ranked.campaigns, entry.campaignSlug || entry.campaign); }
+    if (flags.views) {
+      add(ranked.pages, entry.page || entry.pageName || 'Unrecorded page', count); add(ranked.sources, sourceName(entry), count);
+      add(ranked.browsers, entry.browser || 'Other', count); add(ranked.operatingSystems, entry.os || 'Other', count); add(ranked.devices, entry.device || 'Unknown', count);
+    }
+    if (flags.clicks) { if (entry.sessionId && entry.sessionId !== 'unknown') clickSessions.add(entry.sessionId); else if (entry.count == null) untrackedClicks++; add(ranked.links, entry.label || entry.href || entry.target || 'Unlabelled link', count); if (entry.campaignSlug || entry.campaign) add(ranked.campaigns, entry.campaignSlug || entry.campaign, count); }
     const date = analyticsDate(entry.timestamp);
-    if (date) dated.push({day:dayNumber(date), flags});
+    if (date) dated.push({day:dayNumber(date), flags, count});
   }
   const days = dated.map(item => item.day);
   const start = from ? dayNumber(new Date(`${from}T00:00:00`)) : days.length ? days.reduce((a,b)=>Math.min(a,b)) : null;
@@ -54,14 +69,43 @@ export function buildAnalytics(entries, {from = '', to = ''} = {}) {
     const day = start+index*step, last = Math.min(end, day+step-1);
     return {label: dayLabel(day)+(last>day ? ` – ${dayLabel(last)}` : ''), views:0, clicks:0, tickets:0, signups:0};
   }) : [];
-  for (const {day,flags} of dated) { const bin = bins[Math.floor((day-start)/step)]; if (day >= start && day <= end && bin) for (const key of Object.keys(totals)) bin[key] += Number(flags[key]); }
-  return {start,end,totals, uniqueClicks:clickSessions.size, untrackedClicks, sessions:sessions.size, bins, step, undated:entries.length-dated.length,
+  for (const {day,flags,count} of dated) { const bin = bins[Math.floor((day-start)/step)]; if (day >= start && day <= end && bin) for (const key of Object.keys(totals)) bin[key] += Number(flags[key])*count; }
+  return {start,end,totals, uniqueClicks:clickSessions.size + aggregateClicks, untrackedClicks, sessions:sessions.size + aggregateSessions,
+    bounceRate:aggregateSessions ? bounces / aggregateSessions * 100 : null, averageSessionSeconds:aggregateSessions ? sessionSeconds / aggregateSessions : null,
+    bins, step, undated:entries.length-dated.length,
     ranked:Object.fromEntries(Object.entries(ranked).map(([key,map])=>[key,[...map].sort((a,b)=>b[1]-a[1] || a[0].localeCompare(b[0]))])),
     invalidRange:Boolean(from && to && from > to)};
+}
+function buildStatisticalAnalytics(entries, options) {
+  // Reuse calendar/trend handling using only totals or one selected marginal report.
+  const kind=['total','campaign','source','page','link'].find(kind=>entries.some(e=>e.kind===kind));
+  const selected=entries.filter(e=>e.kind===kind);
+  const events=selected.flatMap(e=>Object.entries({views:'page_view',clicks:'click',signups:'email_signup'}).map(([metric,action])=>({action,count:e[metric] || 0,timestamp:e.timestamp})));
+  const model=buildAnalytics(events,options);
+  model.totals.tickets=selected.reduce((n,e)=>n+(e.tickets || 0),0);
+  model.totals.outboundClicks=selected.reduce((n,e)=>n+(e.outboundClicks || 0),0);
+  const sessionRows=entries.filter(e=>e.kind==='total');
+  model.sessions=sessionRows.reduce((n,e)=>n+(e.sessions || 0),0);
+  model.uniqueClicks=sessionRows.reduce((n,e)=>n+(e.clickingSessions || 0),0);
+  model.averageSessionSeconds=model.sessions ? sessionRows.reduce((n,e)=>n+(e.sessionSeconds || 0),0)/model.sessions : null;
+  model.bounceRate=model.sessions ? sessionRows.reduce((n,e)=>n+(e.bounces || 0),0)/model.sessions*100 : null;
+  const ranks={event:['events','count'],page:['pages','views'],source:['sources','views'],campaign:['campaigns','clicks'],link:['links','clicks'],browser:['browsers','views'],os:['operatingSystems','views'],device:['devices','views'],entry:['entries','count'],exit:['exits','count'],navigation:['navigation','count']};
+  for (const [kind,[key,metric]] of Object.entries(ranks)) {
+    const counts=new Map(); for(const e of entries.filter(e=>e.kind===kind)) counts.set(e.value,(counts.get(e.value) || 0)+(e[metric] || 0));
+    model.ranked[key]=[...counts].filter(([,count])=>count>0).sort((a,b)=>b[1]-a[1] || a[0].localeCompare(b[0]));
+  }
+  for (const bin of model.bins) bin.tickets=0;
+  for (const e of selected) {const date=analyticsDate(e.timestamp),day=date && dayNumber(date);const bin=model.bins[Math.floor((day-model.start)/model.step)];if(bin && day>=model.start && day<=model.end) bin.tickets+=e.tickets || 0;}
+  return model;
 }
 export function analyticsReports(entries) {
   const reports = new Map();
   for (const entry of entries) {
+    if (entry.kind) {
+      if (entry.kind==='campaign') reports.set(JSON.stringify(['campaign',entry.value]),'Campaign: '+entry.value);
+      if (entry.kind==='link' && entry.tickets) reports.set(JSON.stringify(['gig',entry.value]),'Ticket link: '+entry.value);
+      continue;
+    }
     if (entry.campaignSlug || entry.campaign) {
       const kind = entry.campaignSlug ? 'release' : 'campaign';
       const value = String(entry.campaignSlug || entry.campaign);
@@ -75,6 +119,7 @@ export function matchesAnalyticsReport(entry, report) {
   if (!report) return true;
   try {
     const [kind,value] = JSON.parse(report);
+    if (entry.kind) return entry.value === value && (kind==='campaign' || kind==='release' ? entry.kind==='campaign' : kind==='gig' && entry.kind==='link' && entry.tickets>0);
     if (kind === 'release') return String(entry.campaignSlug || '') === value;
     if (kind === 'campaign') return String(entry.campaign || '') === value;
     if (kind === 'gig') return String(entry.label || '') === value && (entry.section === 'tickets' || entry.section === 'Shows');
@@ -108,7 +153,7 @@ export function renderAnalyticsInsights(entries, options = {}) {
     root = document.createElement('section'); root.id = 'analytics-insights'; root.setAttribute('aria-label','Analytics overview'); grid.after(root);
     const page = document.getElementById('analytics-page');
     const subnav = document.createElement('nav'); subnav.className='analytics-subnav'; subnav.setAttribute('aria-label','Analytics pages');
-    subnav.innerHTML='<button type="button" data-analytics-view="overview">Overview</button><button type="button" data-analytics-view="actions">Actions</button>';
+    subnav.innerHTML='<button type="button" data-analytics-view="overview">Aggregate overview</button>';
     page.prepend(subnav);
     const parent = document.querySelector('.nav-link[data-page="analytics"]');
     if (parent) {
@@ -128,13 +173,14 @@ export function renderAnalyticsInsights(entries, options = {}) {
     const workspace = document.querySelector('#analytics-page .admin-data-workspace');
     if (workspace) {
       const logs = document.createElement('section'); logs.className='insight-disclosure insight-logs';
-      const summary = document.createElement('h3'); summary.textContent='Activity log';
+      const summary = document.createElement('h3'); summary.textContent='Aggregate activity';
       workspace.before(logs); logs.append(summary,workspace);
       const view = document.querySelector('#analytics-page .view-toggle');
       const size = document.getElementById('page-size');
       const exportButton = document.getElementById('export-csv');
       const tools = document.createElement('div'); tools.className='insight-log-tools';
-      if(view) tools.append(view); if(size) tools.append(size); if(exportButton) tools.append(exportButton);
+      if(view) tools.append(view); if(size) tools.append(size);
+      if(exportButton) {exportButton.textContent='Export aggregate CSV'; root.before(exportButton);}
       workspace.prepend(tools);
     }
   }
@@ -145,7 +191,7 @@ export function renderAnalyticsInsights(entries, options = {}) {
   const model = buildAnalytics(entries, options);
   let markers=[]; let ownExcluded=false;
   try {markers=normalizePromotionMarkers(JSON.parse(localStorage.getItem('hae-promotion-markers') || '[]'));ownExcluded=localStorage.getItem('hae-exclude-own-analytics')==='1';} catch {}
-  const sources = [...new Set((options.allEntries || entries).map(entry=>sourceName(entry).toLowerCase()))].sort();
+  const sources = [...new Set((options.allEntries || entries).filter(entry=>!entry.kind || entry.kind==='source').map(entry=>sourceName(entry).toLowerCase()))].sort();
   if(options.source && !sources.includes(options.source)) sources.push(options.source);
 
   const reports = analyticsReports(options.allEntries || entries);
@@ -160,6 +206,7 @@ export function renderAnalyticsInsights(entries, options = {}) {
     return `${percent>0?'+':''}${percent}% vs previous ${previous.toLocaleString()}`;
   };
   grid.innerHTML = Object.entries(metrics).map(([key,label])=>`<article class="stat-card"><div class="label">${label}</div><div class="value">${model.totals[key].toLocaleString()}</div><div class="detail insight-definition">${key==='tickets'?'Recorded actions, not ticket sales':key==='signups'?'Successful forms, may include repeat signups':key==='views'?'Recorded page loads':'Includes manual ticket redirects'}</div>${change(key)?`<div class="insight-change">${change(key)}</div>`:''}</article>`).join('');
+  grid.innerHTML += `<article class="stat-card"><div class="label">Approximate visits</div><div class="value">${(entries.some(e=>e.kind) && !entries.some(e=>e.sessions) ? 'Unavailable' : model.sessions.toLocaleString())}</div><div class="detail">Temporary tab sessions; shown after at least 5 sessions</div></article><article class="stat-card"><div class="label">Average session duration</div><div class="value">${model.averageSessionSeconds == null ? '—' : Math.round(model.averageSessionSeconds)+'s'}</div><div class="detail">Estimated from first and last recorded events</div></article><article class="stat-card"><div class="label">Single-page sessions</div><div class="value">${model.bounceRate == null ? '—' : Math.round(model.bounceRate)+'%'}</div><div class="detail">Bounce rate: sessions with exactly one recorded page view</div></article>`;
   const ranks = (key,title,description) => {
     const rows = model.ranked[key], max = rows[0]?.[1] || 1;
     return `<article class="insight-panel"><h3>${title}</h3><p class="helper-copy">${description}</p>${rows.length ? `<ol class="insight-ranking">${rows.slice(0,6).map(([label,count])=>`<li><div><span title="${escape(label)}">${escape(label)}</span><strong>${count.toLocaleString()}</strong></div><div class="insight-track"><span style="width:${count/max*100}%"></span></div></li>`).join('')}</ol>${rows.length>6?`<p class="helper-copy">Top 6 of ${rows.length}</p>`:''}` : '<p class="insight-empty">No matching activity recorded.</p>'}</article>`;
@@ -168,15 +215,15 @@ export function renderAnalyticsInsights(entries, options = {}) {
   const source = model.ranked.sources[0], link = model.ranked.links[0];
   if (source) observations.push(`${source[0]} recorded ${source[1]} of ${model.totals.views} page views in this report.`);
   if (link) observations.push(`${link[0]} was among the top links with ${link[1]} recorded clicks.`);
-  if (model.totals.clicks) observations.push(`${model.uniqueClicks} tracked sessions clicked; ${model.untrackedClicks} clicks had no usable session ID.`);
+  if (model.totals.clicks) observations.push(`${model.uniqueClicks} approximate clicking sessions in published session totals.`);
   if (!observations.length) observations.push('No page views or clicks match this report yet. Try a wider date range.');
-  root.innerHTML = `<div class="insight-toolbar"><div><strong>Activity overview</strong><p class="helper-copy">${entries.length.toLocaleString()} events · ${model.sessions.toLocaleString()} sessions</p></div><div class="insight-presets" aria-label="Quick date range">${[[7,'7 days'],[28,'28 days'],[90,'90 days'],[0,'All time']].map(([days,label])=>`<button type="button" class="btn ghost-button" data-days="${days}">${label}</button>`).join('')}</div></div>
-    <details class="insight-disclosure" data-disclosure="reports" ${options.report?'open':''}><summary>${options.report?escape(reports.find(([value])=>value===options.report)?.[1] || 'Selected report'):'Report'}</summary><div class="insight-disclosure-body"><label for="insight-report">Choose a report</label><select id="insight-report" class="form-select"><option value="">All activity</option>${reports.map(([value,label])=>`<option value="${escape(value)}" ${options.report===value?'selected':''}>${escape(label)}</option>`).join('')}</select><label for="insight-source">Source</label><select id="insight-source" class="form-select"><option value="">All sources</option>${sources.map(source=>`<option value="${escape(source)}" ${options.source===source?'selected':''}>${escape(source)}</option>`).join('')}</select><p class="helper-copy">Matches recorded campaign IDs or gig labels. Gigs with the same label are grouped together.</p></div></details>
+  root.innerHTML = `<div class="insight-toolbar"><div><strong>Activity overview</strong><p class="helper-copy">${entries.length.toLocaleString()} aggregate buckets · ${model.sessions.toLocaleString()} sessions</p></div><div class="insight-presets" aria-label="Quick date range">${[[7,'7 days'],[28,'28 days'],[90,'90 days'],[0,'All time']].map(([days,label])=>`<button type="button" class="btn ghost-button" data-days="${days}">${label}</button>`).join('')}</div></div>
+    <details class="insight-disclosure" data-disclosure="reports" ${options.report?'open':''}><summary>${options.report?escape(reports.find(([value])=>value===options.report)?.[1] || 'Selected report'):'Report'}</summary><div class="insight-disclosure-body"><label for="insight-report">Choose a report</label><select id="insight-report" class="form-select"><option value="">All activity</option>${reports.map(([value,label])=>`<option value="${escape(value)}" ${options.report===value?'selected':''}>${escape(label)}</option>`).join('')}</select><label for="insight-source">Source</label><select id="insight-source" class="form-select"><option value="">All sources</option>${sources.map(source=>`<option value="${escape(source)}" ${options.source===source?'selected':''}>${escape(source)}</option>`).join('')}</select><p class="helper-copy">Campaign and source reports use separate totals. Selecting one clears the other; these dimensions are never combined.</p></div></details>
     <article class="insight-panel insight-trend"><div class="insight-toolbar"><div><h3>Activity over time</h3><p class="helper-copy">${model.step===1?'Daily totals':`${model.step}-day totals`} · dates with no recorded activity show zero.</p></div><label>Show <select id="insight-metric" class="form-select">${Object.entries(metrics).map(([key,label])=>`<option value="${key}" ${selectedMetric===key?'selected':''}>${label}</option>`).join('')}</select></label></div><div id="insight-chart"></div>${model.undated?`<p class="helper-copy">${model.undated} events without a usable timestamp are excluded from the chart.</p>`:''}</article>
-    <section class="insight-panel insight-promotions"><h3>Promotion markers</h3><form id="insight-marker-form" class="insight-marker-form"><label>Date<input type="date" name="date" class="form-control" required></label><label>Promotion<input name="label" class="form-control" placeholder="Instagram post, email or ad launch" maxlength="100" required></label><button type="submit" class="btn ghost-button">Add marker</button></form><p class="helper-copy">Saved in this browser. Markers annotate dates, without claiming the promotion caused a change.</p><div id="insight-marker-list"></div><p id="insight-marker-status" role="status"></p></section>
+    <section class="insight-panel insight-promotions"><h3>Website changes</h3><form id="insight-marker-form" class="insight-marker-form"><label>Date<input type="date" name="date" class="form-control" required></label><label>Promotion<input name="label" class="form-control" placeholder="Website update or new content" maxlength="100" required></label><button type="submit" class="btn ghost-button">Add marker</button></form><p class="helper-copy">Saved in this browser. Markers help compare website updates with aggregate use; they do not measure advertising performance.</p><div id="insight-marker-list"></div><p id="insight-marker-status" role="status"></p></section>
     <div class="insight-rankings">${ranks('links','Most clicked links','Recorded link clicks, including repeat clicks.')}${ranks('sources','Traffic sources','Source or referring domain on page-view events.')}</div>
-    <details class="insight-disclosure" data-disclosure="breakdown"><summary>Audience & campaigns</summary><div class="insight-disclosure-body"><ul class="insight-observations">${observations.map(text=>`<li>${escape(text)}</li>`).join('')}</ul><p class="helper-copy">${model.uniqueClicks.toLocaleString()} unique clicking sessions · ${model.totals.clicks.toLocaleString()} total clicks. Sessions are not individual people.</p><div class="insight-rankings">${ranks('pages','Popular pages','Recorded page views.')}${ranks('campaigns','Campaign engagement','Recorded campaign clicks.')}</div></div></details>
-    <details class="insight-disclosure" data-disclosure="definitions"><summary>Counting notes${comparison?` · compared with ${comparison.label}`:''}</summary><div class="insight-disclosure-body helper-copy">${comparison && !comparison.count?'No events were recorded in the previous period. ':''}${comparison?'Comparisons use loaded events with the same filters. Missing records can affect the result.':'Choose a date range to compare with the preceding period.'} Page views count recorded page loads; link clicks include manual ticket redirects. Ticket clicks are not sales. Signup actions may include repeat signups. Dates without recorded activity show zero. Unique clicks count each tracked session once; clicks without session IDs are excluded from unique counts.</div></details>
+    <details class="insight-disclosure" data-disclosure="breakdown"><summary>Pages & campaigns</summary><div class="insight-disclosure-body"><ul class="insight-observations">${observations.map(text=>`<li>${escape(text)}</li>`).join('')}</ul><p class="helper-copy">${model.uniqueClicks.toLocaleString()} unique clicking sessions · ${model.totals.clicks.toLocaleString()} total clicks. Sessions are not individual people.</p><div class="insight-rankings">${ranks('pages','Popular pages','Recorded page views.')}${ranks('campaigns','Campaign engagement','Recorded campaign clicks.')}</div></div></details>
+    <details class="insight-disclosure" data-disclosure="definitions"><summary>Counting notes${comparison?` · compared with ${comparison.label}`:''}</summary><div class="insight-disclosure-body helper-copy">${comparison && !comparison.count?'No events were recorded in the previous period. ':''}${comparison?'Comparisons use loaded events with the same filters. Missing records can affect the result.':'Choose a date range to compare with the preceding period.'} Page views count recorded page loads; link clicks include manual ticket redirects. Ticket clicks are not sales. Signup actions may include repeat signups. Dates without recorded activity show zero. Unique clicks count each temporary tab session once; clicks without session IDs are excluded from unique counts.</div></details>
     <details class="insight-panel insight-builder" data-disclosure="builder"><summary>Campaign link builder</summary><p class="helper-copy">Create a tagged link for a social post, email or QR code. Existing destination parameters are preserved; source, medium and campaign tags are replaced. External destinations need their own analytics.</p><form id="insight-link-form"><div class="insight-builder-fields">${[['destination','Destination URL','url'],['source','Source (e.g. instagram)','text'],['medium','Medium (e.g. social, email, qr)','text'],['campaign','Campaign name','text']].map(([key,label,type])=>`<label>${label}<input class="form-control" name="${key}" type="${type}" required value="${escape(linkDraft[key])}"></label>`).join('')}</div><button class="btn ghost-button" type="submit">Generate link</button></form><label for="insight-link-output">Tagged link</label><textarea id="insight-link-output" class="form-control" readonly rows="3"></textarea><button class="btn ghost-button" type="button" id="insight-copy-link" disabled>Copy link</button><p id="insight-link-status" role="status" class="helper-copy"></p></details>`;
   function chart() {
     const holder = root.querySelector('#insight-chart');
@@ -189,6 +236,7 @@ export function renderAnalyticsInsights(entries, options = {}) {
     }).join('');
     holder.innerHTML = `<p class="helper-copy">${metrics[selectedMetric]} · scale 0–${max.toLocaleString()}</p><svg class="insight-chart" viewBox="0 0 900 190" role="img" aria-label="${metrics[selectedMetric]} over time. Exact values in the chart data below."><line x1="0" y1="180" x2="900" y2="180" stroke="#555"/>${model.bins.map((bin,index)=>`<rect x="${index*barWidth+barWidth*.12}" y="${height-bin[selectedMetric]/max*height}" width="${barWidth*.76}" height="${bin[selectedMetric]/max*height}" rx="2"><title>${escape(bin.label)}: ${bin[selectedMetric]} ${metrics[selectedMetric].toLowerCase()}</title></rect>`).join('')}${markerLines}</svg><div class="insight-axis"><span>${escape(model.bins[0].label)}</span><span>${escape(model.bins.at(-1).label)}</span></div><details class="insight-data"><summary>View chart data</summary><div class="table-responsive"><table><thead><tr><th scope="col">Date</th><th scope="col">${metrics[selectedMetric]}</th></tr></thead><tbody>${model.bins.map(bin=>`<tr><th scope="row">${escape(bin.label)}</th><td>${bin[selectedMetric]}</td></tr>`).join('')}</tbody></table></div></details>`;
   }
+  root.insertAdjacentHTML('beforeend', `<div class="insight-rankings">${ranks('events','Event totals','Daily counts by event type; small totals are withheld.')}${ranks('devices','Device types','Broad categories per page view; no viewport dimensions.')}${ranks('browsers','Browsers','Browser family, without version.')}${ranks('operatingSystems','Operating systems','OS family, without version.')}${ranks('entries','Entry pages','First recorded page in a temporary tab session.')}${ranks('exits','Exit pages','Last recorded page; abrupt closes can miss events.')}${ranks('navigation','Navigation paths','Aggregate page-to-page transitions; no individual journeys.')}</div><p class="helper-copy">Statistical analytics run by default; opt-outs and blockers reduce coverage. Completed sessions appear after about 30-45 idle minutes. Daily breakdowns below 5 events and session metrics below 5 sessions are withheld. Breakdowns are separate and cannot be joined. Aggregate totals expire after 90 days. Sessions rotate after 30 idle minutes or one hour. No location lookup, performance monitoring or error messages are collected.</p>`);
   chart();
   const markerList=root.querySelector('#insight-marker-list'), markerStatus=root.querySelector('#insight-marker-status');
   function showMarkers(){
@@ -258,6 +306,6 @@ function syncAnalyticsSubview() {
 }
 
 export function setAnalyticsSubview(view) {
-  analyticsSubview = view === 'actions' ? 'actions' : 'overview';
+  analyticsSubview = 'overview';
   syncAnalyticsSubview();
 }

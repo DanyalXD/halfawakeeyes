@@ -1,5 +1,5 @@
 import { canBuyTickets, gigDetailLabel } from './gig-tools.js';
-import { createEmailSignupService, firebaseConfig, getTrackingParams, normalizePublicUrl, PUBLIC_MIRROR_DOC_ID } from './public-site-utils.js';
+import { createEmailSignupService, firebaseConfig, getTrackingParams, normalizePublicUrl, PUBLIC_MIRROR_DOC_ID } from './public-site-utils.js?v=20261008-privacy-anchor';
 import { applyHomeContent } from './home-content.js';
 import { renderStore } from './store-content.js?v=20261005-merch-spacing';
 
