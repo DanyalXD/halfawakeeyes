@@ -1,0 +1,37 @@
+#ticket-tracker-page { min-width: 0; max-width: 100%; }
+#ticket-tracker { min-width: 0; width: 100%; padding: 24px; color: var(--text); background: var(--bg-elevated); border: 1px solid var(--line-strong); border-radius: 12px; }
+.tracker-picker { display: flex; align-items: center; gap: 12px; margin: 16px 0; }
+.tracker-picker select { flex: 1; min-width: 0; }
+.tracker-header, .tracker-actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.tracker-header h2 { margin: 8px 0; font-size: 24px; }
+.tracker-header p, .tracker-help { color: var(--muted); line-height: 1.5; }
+#tracker-status { min-height: 24px; }
+#tracker-fields { margin: 0; padding: 0; border: 0; min-width: 0; }
+.tracker-settings { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 16px; }
+.tracker-settings label { display: grid; gap: 8px; }
+.tracker-summary { display: grid; grid-template-columns: repeat(5,minmax(0,1fr)); gap: 16px; padding: 20px 0; margin-bottom: 16px; border-block: 1px solid var(--line-strong); }
+.tracker-summary span { display: block; color: var(--muted); font-size: 13px; }
+.tracker-summary strong { display: block; margin-top: 6px; font-size: 22px; font-variant-numeric: tabular-nums; }
+.tracker-actions { justify-content: flex-start; }
+#tracker-save { margin-left: auto; }
+.tracker-scroll { overflow: auto; max-height: 46dvh; border: 1px solid var(--line-strong); border-radius: 8px; }
+.tracker-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px; }
+.tracker-table th, .tracker-table td { padding: 10px; border-bottom: 1px solid var(--line); text-align: left; white-space: nowrap; }
+.tracker-table thead th { position: sticky; top: 0; background: var(--bg-elevated); z-index: 1; }
+.tracker-table .form-control { min-width: 150px; }
+.tracker-table [data-field="name"], .tracker-table [data-field="notes"] { min-width: 200px; }
+.tracker-table [data-amount] { font-variant-numeric: tabular-nums; }
+.tracker-table select[data-field="status"] { min-width: 110px; }
+#ticket-tracker :focus-visible { outline: 2px solid var(--accent-strong); outline-offset: 2px; }
+@media(max-width: 700px) {
+  #ticket-tracker { padding: 16px; }
+  .tracker-picker { flex-wrap: wrap; }
+  .tracker-picker label { width: 100%; }
+  .tracker-header h2 { font-size: 20px; }
+  .tracker-settings, .tracker-summary { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; }
+  .tracker-summary strong { font-size: 18px; }
+  #ticket-tracker .form-control { font-size: 16px; min-height: 44px; width: 100%; }
+  #ticket-tracker .btn { min-height: 44px; }
+  #tracker-save { margin-left: 0; }
+  .tracker-scroll { max-height: 55dvh; }
+}

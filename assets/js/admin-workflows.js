@@ -16,6 +16,7 @@ export function mountWorkflows() {
   nav.insertAdjacentHTML('beforeend', '<li class="nav-item"><a class="nav-link tab-label" href="#" data-page="homepage">Homepage</a></li>');
   mountStore();
   const icons = {
+    'ticket-tracker': '<path d="M3 6h18v4a2 2 0 0 0 0 4v4H3v-4a2 2 0 0 0 0-4zM15 6v12"/>',
     sumup: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M7 15h3"/>',
     store: '<path d="M3 7h18l-2-4H5zM4 7v14h16V7M9 21v-8h6v8"/>',
     overview: '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',

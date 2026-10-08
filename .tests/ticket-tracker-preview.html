@@ -1,0 +1,21 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><base href="../"><title>Ticket tracker preview</title>
+<link rel="stylesheet" href="assets/css/admin.css"><link rel="stylesheet" href="assets/css/admin-design.css"><link rel="stylesheet" href="assets/css/ticket-tracker.css"></head>
+<body class="admin-refresh"><main><h1>Gig tracker preview</h1><button id="tracker-nav" class="btn">Ticket Tracker page</button><button id="open-tracker" class="btn">Casey tickets</button><button id="other-tracker" class="btn">Other gig</button><div class="dashboard-content"></div></main>
+<script type="module">
+import {setupTicketTracker} from './assets/js/admin-ticket-tracker.js';
+window.fixtureState={authUser:{uid:'synthetic-admin'},activePage:'gigs'};
+window.records=new Map([['gigs/show-1',{}],['gigs/show-2',{}]]);
+window.failSave=false;window.failLoad=false;window.holdLoad=null;window.holdSave=null;
+const snapshot=ref=>({exists:()=>records.has(ref),data:()=>structuredClone(records.get(ref))});
+const api={state:fixtureState,db:{},doc:(_db,collection,id)=>`${collection}/${id}`,
+collection:(_db,name)=>name,getDocs:async()=>({docs:[show,{...show,id:'show-2',event:'Another show'}].map(gig=>({id:gig.id,data:()=>gig}))}),
+getDoc:async ref=>{if(holdLoad)await holdLoad;if(failLoad)throw Error('Offline');return snapshot(ref);},
+runTransaction:async (_db,action)=>{if(holdSave)await holdSave;if(failSave)throw Error('Offline. Your edits are still here.');return action({get:async ref=>snapshot(ref),set:(ref,value)=>records.set(ref,structuredClone(value))});},
+setActivePage:async page=>{window.destination=page;fixtureState.activePage=page;document.querySelector('#ticket-tracker-page')?.classList.toggle('active',page==='ticket-tracker');if(page==='ticket-tracker')await tracker.load();}};
+window.tracker=setupTicketTracker(api);
+window.show={id:'show-1',event:'Casey show',date:'2026-11-14',venue:'Glasgow',ticketPrice:'22.50'};
+document.querySelector('#open-tracker').onclick=()=>tracker.open(show);
+document.querySelector('#tracker-nav').onclick=()=>api.setActivePage('ticket-tracker');
+document.querySelector('#other-tracker').onclick=()=>tracker.open({...show,id:'show-2',event:'Another show'});
+window.previewReady=true;
+</script></body></html>

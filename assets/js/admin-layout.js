@@ -1,4 +1,5 @@
 const descriptions = {
+  'ticket-tracker':'Track ticket sales, payments and promoter shares for each gig.',
   store:'Manage the product cards shown on your website.',
   sumup:'Payments, payouts, receipts and refunds from your SumUp account.',
   overview:'Your shows, audience and latest activity at a glance.',

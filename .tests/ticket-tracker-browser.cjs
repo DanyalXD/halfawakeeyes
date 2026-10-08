@@ -1,0 +1,85 @@
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const path=require('node:path');
+const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH || 'playwright');
+const root=path.resolve(__dirname,'..'),origin='https://hae-preview.test';
+(async()=>{
+  const browser=await chromium.launch({channel:'chrome',headless:true});
+  try {
+    for(const width of [1440,390,320]) {
+      const context=await browser.newContext({viewport:{width,height:1000},acceptDownloads:true});
+      const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
+      page.on('dialog',dialog=>dialog.accept());
+      await context.route('**/*',async route=>{
+        const url=new URL(route.request().url());if(url.origin!==origin)return route.abort();
+        const file=path.resolve(root,'.'+decodeURIComponent(url.pathname));
+        if(!file.startsWith(root+path.sep)||!fs.existsSync(file))return route.fulfill({status:404,body:''});
+        await route.fulfill({path:file,contentType:file.endsWith('.js')?'text/javascript':file.endsWith('.css')?'text/css':file.endsWith('.html')?'text/html':undefined});
+      });
+      await page.goto(origin+'/.tests/ticket-tracker-preview.html');await page.waitForFunction(()=>window.previewReady);
+      assert.equal(await page.locator('dialog#ticket-tracker').count(),0);
+      await page.locator('#tracker-nav').click();
+      await page.waitForFunction(()=>document.querySelector('#tracker-select').options.length===3);
+      assert.equal(await page.locator('#tracker-form').isVisible(),false);
+      await page.locator('#tracker-select').selectOption('show-1');
+      await page.waitForFunction(()=>!document.querySelector('#tracker-fields').disabled);
+      assert.equal(await page.locator('#tracker-fee').count(),0);
+      assert.match(await page.locator('#tracker-fee-note').innerText(),/2.5%/);
+      await page.locator('#open-tracker').click();await page.waitForFunction(()=>!document.querySelector('#tracker-fields').disabled);
+      assert.equal(await page.locator('#tracker-price').inputValue(),'22.50');
+      await page.locator('#tracker-promoter').fill('16');
+      await page.locator('#tracker-add').click();
+      await page.getByLabel('Name, ticket 1',{exact:true}).fill('Andrea Scotland');
+      await page.getByLabel('SumUp transaction reference, ticket 1').fill('TX12345');
+      await page.getByLabel('SumUp payout reference, ticket 1').fill('PAYOUT123');
+      await page.locator('#tracker-add').click();
+      await page.getByLabel('Name, ticket 2',{exact:true}).fill('Mark Dargie');
+      await page.getByLabel('Payment method, ticket 2',{exact:true}).selectOption('bank');
+      await page.getByLabel('Payment status, ticket 2').selectOption('paid');
+      await page.locator('#tracker-add').click(); // blank placeholder excluded
+      let summary=await page.locator('#tracker-summary').innerText();
+      assert.match(summary,/2 \/ 30/);assert.match(summary,/£45.00/);assert.match(summary,/£12.44/);assert.match(summary,/£32.00/);
+      await page.locator('#tracker-save').click();await page.waitForFunction(()=>document.querySelector('#tracker-status').textContent==='Tracker saved.');
+      await page.locator('#tracker-back').click();await page.locator('#open-tracker').click();await page.waitForFunction(()=>!document.querySelector('#tracker-fields').disabled);
+      assert.equal(await page.getByLabel('SumUp payout reference, ticket 1').inputValue(),'PAYOUT123');
+      const box=await page.locator('#ticket-tracker').boundingBox();assert.ok(box.x>=0 && box.x+box.width<=width+1);
+      const scroll=await page.locator('.tracker-scroll').evaluate(el=>({client:el.clientWidth,scroll:el.scrollWidth}));assert.ok(scroll.scroll>scroll.client);
+      await page.screenshot({path:path.join(root,`.tests/ticket-tracker-${width}.png`)});
+      const download=page.waitForEvent('download');await page.locator('#tracker-export').click();
+      const artifact=await download;const csv=fs.readFileSync(await artifact.path(),'utf8');assert.match(csv,/PAYOUT123/);assert.match(csv,/22.50/);
+      await page.getByLabel('Name, ticket 3',{exact:true}).fill('<img src=x onerror=alert(1)>');
+      await page.locator('#tracker-save').click();await page.waitForFunction(()=>document.querySelector('#tracker-status').textContent==='Tracker saved.');
+      await page.locator('#tracker-reload').click();await page.waitForFunction(()=>!document.querySelector('#tracker-fields').disabled);
+      assert.equal(await page.locator('#tracker-rows img').count(),0);
+      await page.getByLabel('Remove ticket 3',{exact:true}).click();assert.equal(await page.locator('#tracker-rows tr').count(),2);
+      await page.evaluate(()=>window.failSave=true);await page.locator('#tracker-save').click();await page.waitForFunction(()=>document.querySelector('#tracker-status').textContent.includes('Offline'));
+      assert.equal(await page.locator('#tracker-rows tr').count(),2);assert.equal(await page.locator('#tracker-fields').isDisabled(),false);
+      await page.evaluate(()=>{window.failSave=false;records.get('admin-ticket-trackers/show-1').revision++;});
+      await page.locator('#tracker-save').click();await page.waitForFunction(()=>document.querySelector('#tracker-status').textContent.includes('Another admin'));
+      await page.locator('#tracker-reload').click();await page.waitForFunction(()=>!document.querySelector('#tracker-fields').disabled);
+      assert.equal(await page.locator('#tracker-rows tr').count(),3);
+      await page.locator('#tracker-sumup').click();assert.equal(await page.evaluate(()=>destination),'sumup');
+      await page.locator('#tracker-nav').click();
+      await page.getByLabel('Notes, ticket 1',{exact:true}).fill('Keep this draft');
+      await page.locator('#tracker-sumup').click();await page.locator('#tracker-nav').click();
+      assert.equal(await page.getByLabel('Notes, ticket 1',{exact:true}).inputValue(),'Keep this draft');
+      page.removeAllListeners('dialog');page.once('dialog',dialog=>dialog.dismiss());
+      await page.locator('#tracker-select').selectOption('show-2');
+      assert.equal(await page.locator('#tracker-select').inputValue(),'show-1');
+      page.on('dialog',dialog=>dialog.accept());
+      await page.locator('#other-tracker').click();await page.waitForFunction(()=>!document.querySelector('#tracker-fields').disabled);assert.equal(await page.locator('#tracker-rows tr').count(),0);
+      await page.evaluate(()=>{fixtureState.authUser=null;document.dispatchEvent(new Event('hae-admin-account-changing'));});
+      assert.equal(await page.locator('#tracker-form').isVisible(),false);assert.equal(await page.locator('#tracker-rows tr').count(),0);
+      await page.evaluate(()=>{fixtureState.authUser={uid:'synthetic-admin'};window.holdLoad=new Promise(resolve=>window.releaseLoad=resolve);tracker.open(show);});
+      await page.evaluate(()=>{fixtureState.authUser=null;document.dispatchEvent(new Event('hae-admin-account-changing'));window.releaseLoad();});
+      assert.equal(await page.locator('#tracker-rows tr').count(),0);
+      await page.evaluate(async()=>{fixtureState.authUser={uid:'synthetic-admin'};window.holdLoad=null;window.failLoad=true;await tracker.open(show);});
+      assert.match(await page.locator('#tracker-status').innerText(),/Could not load/);
+      await page.evaluate(()=>window.failLoad=false);
+      await page.locator('#tracker-refresh-gigs').click();await page.waitForFunction(()=>!document.querySelector('#tracker-fields').disabled);
+      assert.equal(await page.locator('#tracker-rows tr').count(),3);
+      assert.deepEqual(errors,[]);console.log(`Tracker create/edit/save/reload, totals, references, export, conflict, isolation and layout passed at ${width}px.`);
+      await context.close();
+    }
+  } finally {await browser.close();}
+})().catch(error=>{console.error(error);process.exitCode=1;});

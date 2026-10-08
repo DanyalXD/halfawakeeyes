@@ -71,6 +71,26 @@ service cloud.firestore {
       allow create, update, delete: if isAdmin();
     }
 
+    // Kept outside publicly readable gigs and their public mirrors.
+    match /admin-ticket-trackers/{gigId} {
+      function validTracker() {
+        let data = request.resource.data;
+        let s = data.settings;
+        return data.keys().hasOnly(['settings', 'tickets', 'revision'])
+          && s.keys().hasOnly(['price', 'promoter', 'capacity', 'feeBps'])
+          && s.price is int && s.price >= 0 && s.price <= 10000000
+          && s.promoter is int && s.promoter >= 0 && s.promoter <= s.price
+          && s.capacity is int && s.capacity >= 0 && s.capacity <= 500
+          && s.feeBps is int && s.feeBps >= 0 && s.feeBps <= 10000
+          && data.tickets is list && data.tickets.size() <= 500
+          && data.revision is int
+          && existsAfter(/databases/$(database)/documents/gigs/$(gigId));
+      }
+      allow read, delete: if isAdmin();
+      allow create: if isAdmin() && validTracker() && request.resource.data.revision == 1;
+      allow update: if isAdmin() && validTracker() && request.resource.data.revision == resource.data.revision + 1;
+    }
+
     match /links/{docId} {
       allow read: if true;
       allow create, update, delete: if isAdmin();
