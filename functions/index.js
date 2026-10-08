@@ -95,7 +95,7 @@ exports.getPublicEventPage = onRequest({
 
   if (!gig) {
     response.set("Cache-Control", "public, max-age=60, s-maxage=300");
-    response.status(404).send("<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><meta name=\"robots\" content=\"noindex, follow\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><title>Show Not Found | Half Awake Eyes</title></head><body><main><h1>Show not found</h1><p><a href=\"/tickets/\">View all live dates</a></p></main></body></html>");
+    response.status(404).send("<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><meta name=\"robots\" content=\"noindex, follow\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><title>Show Not Found | Half Awake Eyes</title></head><body><main><h1>Show not found</h1><p><a href=\"/live-dates/\">View all live dates</a></p></main></body></html>");
     return;
   }
 

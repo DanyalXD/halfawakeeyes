@@ -1,0 +1,32 @@
+.live-dates-page { min-height: 100vh; display: flex; flex-direction: column; background: var(--ink); }
+.live-dates-page .site-header { background: rgba(8,8,8,.96); }
+.live-dates-page .site-header nav a[aria-current="page"] { border-color: currentColor; }
+.live-dates-main { flex: 1; padding-top: 80px; }
+.live-dates-section { padding: clamp(3rem,6vw,6rem) 6vw clamp(4rem,8vw,8rem); }
+.shows { width: min(100%,1120px); margin-inline: auto; }
+.shows-heading { padding-bottom: clamp(2.5rem,5vw,4.5rem); }
+.shows-heading h1 { margin: .75rem 0 1.25rem; font-size: clamp(4rem,10vw,9rem); line-height: .95; }
+.shows-intro { margin: 0; color: var(--muted); max-width: 36rem; }
+.show-list { border-top: 1px solid var(--line-strong); }
+.show-row { display: grid; grid-template-columns: 120px minmax(0,1fr) auto; align-items: center; gap: 2rem; padding: 2rem 0; border-bottom: 1px solid var(--line); }
+.show-date { display: grid; gap: .5rem; font-family: var(--font-label); text-transform: uppercase; }
+.show-date span { color: var(--paper); font-size: 2.75rem; line-height: 1; }
+.show-date small { color: var(--muted); font-size: .8rem; letter-spacing: .12em; }
+.show-info h3 { margin: 0 0 .5rem; font-size: clamp(1.5rem,3vw,2.5rem); line-height: 1.2; overflow-wrap: anywhere; }
+.show-info h3 a { text-decoration: none; }
+.show-info h3 a:hover { text-decoration: underline; text-underline-offset: .2em; }
+.show-info p { margin: .25rem 0; color: var(--muted); }
+.show-info p:last-child { font-size: .875rem; }
+.show-row .button { min-width: 140px; min-height: 44px; }
+.show-state { margin: 0; padding: 3rem 0; color: var(--muted); }
+.show-state a { text-decoration: underline; }
+.live-dates-page :focus-visible { outline: 2px solid var(--paper); outline-offset: 5px; }
+@media(max-width:800px) {
+  .live-dates-main { padding-top: 60px; }
+  .live-dates-section { padding: 3rem 1.25rem 4rem; }
+  .shows-heading h1 { font-size: clamp(3.5rem,17vw,6rem); }
+  .show-row { grid-template-columns: 64px minmax(0,1fr); gap: 1rem; padding: 1.5rem 0; align-items: start; }
+  .show-date span { font-size: 2.25rem; }
+  .show-date small { font-size: .7rem; letter-spacing: .06em; }
+  .show-row .button { grid-column: 2; justify-self: start; }
+}
