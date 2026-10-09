@@ -9,13 +9,18 @@
   --blue: #bdbdbd;
   --accent-strong: #ffffff;
 }
-html { scroll-padding-bottom: var(--links-footer-height, 104px); }
-body.links-page { padding-bottom: var(--links-footer-height, 104px); }
-.links-page #hae-site-footer { position: fixed; inset: auto 0 0; z-index: 100; padding: 4px 12px max(4px, env(safe-area-inset-bottom)); }
+html { scroll-padding-bottom: var(--links-footer-height, 45px); }
+body.links-page { padding-bottom: var(--links-footer-height, 45px); }
+.links-page #hae-site-footer { position: fixed; inset: auto 0 0; z-index: 100; padding: 0 20px env(safe-area-inset-bottom); background: #080808; border-top: 1px solid #202020; }
 .links-page #hae-site-footer .hae-footer-brand, .links-page #hae-site-footer .hae-footer-copyright { display: none; }
-.links-page #hae-site-footer [data-public-footer-links] { justify-content: center; width: 100%; gap: 0 12px; }
-.links-privacy-note { display: inline-flex; align-items: center; flex-wrap: wrap; justify-content: center; gap: 0 8px; min-height: 44px; color: inherit; font: inherit; }
-.links-privacy-note button { display: inline-flex; align-items: center; min-height: 44px; padding: 4px 0; border: 0; background: transparent; color: inherit; font: inherit; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.links-page #hae-site-footer [data-public-footer-links] { justify-content: space-between; width: 100%; max-width: 592px; margin: 0 auto; gap: 0 12px; }
+.links-privacy-note { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 0 8px; min-height: 44px; color: #999; font: inherit; }
+.links-privacy-note > [title] { font-size: 11px; }
+.links-privacy-note button { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; min-width: 44px; padding: 0 4px; border: 0; background: transparent; color: #ccc; font: 500 12px/1.4 Arial, sans-serif; cursor: pointer; }
+.links-privacy-note button:hover { color: #fff; }
+.links-page #hae-site-footer #hae-privacy-settings { gap: 8px; color: #ccc; font-weight: 500; }
+.links-page #hae-site-footer #hae-privacy-settings::after { content: ''; width: 6px; height: 6px; border-top: 1px solid #888; border-left: 1px solid #888; transform: translateY(2px) rotate(45deg); }
+.links-privacy-note:has([data-analytics-status]:not(:empty)) > [title] { display: none; }
 .links-privacy-note button[hidden] { display: none; }
 .links-privacy-note [role="status"]:empty { display: none; }
 .links-privacy-note :focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }

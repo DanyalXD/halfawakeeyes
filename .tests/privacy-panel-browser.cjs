@@ -50,7 +50,7 @@ const viewports = [
           await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
           const bounds=await footer.boundingBox();
           assert.ok(Math.abs(bounds.y+bounds.height-viewport.height)<1, 'Footer stays at viewport bottom');
-          assert.ok(bounds.height <= 105, 'Sticky footer stays compact');
+          assert.ok(bounds.height <= 46, 'Privacy-only footer fits a slim single row');
           if (atEnd) {
             const content=await page.locator('main').boundingBox();
             assert.ok(content.y+content.height<=bounds.y+1, 'Reserved space keeps the page end above the footer');

@@ -21,8 +21,9 @@ export function installPublicFooter() {
   brand.href = new URL('../../index.html', import.meta.url).href;
   const links = document.createElement('nav');
   links.dataset.publicFooterLinks = '';
-  links.setAttribute('aria-label', 'Footer navigation');
-  for (const [label, page] of [['Home', 'index.html'], ['Press & bookings', 'epk.html'], ['Privacy', 'privacy.html']]) {
+  links.setAttribute('aria-label', analyticsNotice ? 'Privacy controls' : 'Footer navigation');
+  const navigation = analyticsNotice ? [] : [['Home', 'index.html'], ['Press & bookings', 'epk.html'], ['Privacy', 'privacy.html']];
+  for (const [label, page] of navigation) {
     const link = document.createElement('a');
     link.textContent = label;
     link.href = new URL('../../' + page, import.meta.url).href;

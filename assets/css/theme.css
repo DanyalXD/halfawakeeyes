@@ -21,3 +21,11 @@
   --font-label: "Oswald", sans-serif;
   --font-display: "Roabla", "Oswald", sans-serif;
 }
+
+/* The shared mobile menu changes from two bars into a close icon. */
+.site-header .nav-toggle span { transition: transform .2s ease; transform-origin: center; }
+.site-header .nav-toggle[aria-expanded="true"] span:first-child { transform: translateY(3px) rotate(45deg); }
+.site-header .nav-toggle[aria-expanded="true"] span:last-child { transform: translateY(-3px) rotate(-45deg); }
+@media (prefers-reduced-motion: reduce) {
+  .site-header .nav-toggle span { transition: none; }
+}
