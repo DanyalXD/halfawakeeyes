@@ -1,6 +1,6 @@
 export const homeDefaults = {
   releaseTitle: 'Half Awake Eyes',
-  releaseDescription: 'Our first six tracks, all in one place. Play the EP below or listen wherever you usually find us.',
+  releaseDescription: 'Our first six tracks, all in one place. Listen on your favourite music platform.',
   releaseArtwork: 'assets/images/ep-cover-800.webp',
   firstTrack: 'The Taste of Death',
   spotify: 'https://open.spotify.com/album/1McajSMOYTvWAYRFi19CG2',
@@ -23,13 +23,14 @@ export function validateHomeContent(input) {
   const result = {};
   for (const key of Object.keys(homeDefaults)) {
     let value = String(input[key] ?? homeDefaults[key]).trim();
+    if (key === 'releaseDescription' && value === 'Our first six tracks, all in one place. Play the EP below or listen wherever you usually find us.') value = homeDefaults.releaseDescription;
     // Migrate saved homepage content that still uses the previous store.
     if (key === 'merchUrl' && value === 'https://halfawakeeyes.bigcartel.com/product/the-taste-of-death-t-shirt') value = homeDefaults.merchUrl;
     if (!value || value.length > 600) throw new Error('Complete every field (maximum 600 characters).');
     if (['releaseArtwork', 'merchImage', 'spotify', 'bandcamp', 'youtube', 'merchUrl'].includes(key) && !safeContentUrl(value, key === 'releaseArtwork' || key === 'merchImage')) throw new Error('Use an HTTPS link or an image from assets/images/.');
     result[key] = value;
   }
-  if (!/^https:\/\/open\.spotify\.com\/album\/[a-zA-Z0-9]+(?:\?.*)?$/.test(result.spotify)) throw new Error('Use a Spotify album link for the EP player.');
+  if (!/^https:\/\/open\.spotify\.com\/album\/[a-zA-Z0-9]+(?:\?.*)?$/.test(result.spotify)) throw new Error('Use a Spotify album link for the EP.');
   return result;
 }
 
@@ -48,11 +49,4 @@ export function applyHomeContent(input, root = document) {
   ['spotify', 'bandcamp', 'youtube'].forEach((key, index) => { const a = root.querySelectorAll('.streaming-links a')[index]; if (a) a.href = data[key]; });
   root.querySelectorAll('.merch a').forEach(a => a.href = data.merchUrl);
   root.querySelector('.merch-product')?.setAttribute('aria-label', `Shop ${data.merchTitle}`);
-  const player = root.querySelector('.music-content iframe');
-  if (player) {
-    const id = new URL(data.spotify).pathname.split('/')[2];
-    const src = `https://open.spotify.com/embed/album/${id}?utm_source=generator&theme=0`;
-    if (player.getAttribute('src') !== src) player.src = src;
-    player.title = `${data.releaseTitle} on Spotify`;
-  }
 }

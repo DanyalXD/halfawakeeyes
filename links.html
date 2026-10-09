@@ -31,7 +31,7 @@
     <script type="module" src="assets/js/privacy-controls.js?v=20261008-privacy-anchor"></script>
 </head>
 
-<body>
+<body class="links-page">
     <main class="page">
         <section class="profile-shell">
             <div class="profile-top">
@@ -64,6 +64,11 @@
             </section>
 
             <div class="footer">
+                <div class="links-privacy-note" data-analytics-ignore="true">
+                    <span title="We use site statistics to improve this page.">Site analytics</span>
+                    <button type="button" data-disable-analytics aria-label="Turn analytics off" hidden>Turn off</button>
+                    <span data-analytics-status role="status"></span>
+                </div>
                 <span>&copy; <span data-current-year></span> Half Awake Eyes</span>
                 <a href="privacy.html" data-link-label="Privacy policy">Privacy Policy</a>
             </div>

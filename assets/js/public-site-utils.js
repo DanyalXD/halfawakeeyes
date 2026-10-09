@@ -71,14 +71,6 @@ export function enableMetaPrivacy(pixelId) {
   return true;
 }
 
-function hasCurrentMarketingChoice() {
-  let choice = memoryChoice;
-  try {choice ||= JSON.parse(localStorage.getItem(CONSENT_KEY) || 'null');} catch {return false;}
-  const savedAt = choice?.marketingSavedAt ?? choice?.savedAt;
-  return choice?.version === CONSENT_VERSION && typeof choice.marketing === 'boolean' &&
-    Number.isFinite(savedAt) && Date.now() >= savedAt && Date.now() - savedAt < 180 * 86400000;
-}
-
 function positionPrivacyControls() {
   const panel = document.getElementById('hae-privacy-controls');
   const button = document.getElementById('hae-privacy-settings');
@@ -90,7 +82,7 @@ function positionPrivacyControls() {
   const viewportBottom = viewportTop + (viewport?.height || window.innerHeight);
   const bounds = button.getBoundingClientRect();
   if (bounds.bottom <= viewportTop || bounds.top >= viewportBottom || bounds.right <= viewportLeft || bounds.left >= viewportRight) {
-    // Initial notices stay on screen while the footer is below the fold.
+    // Keep manually opened preferences on screen if the footer leaves the viewport.
     for (const property of ['left', 'right', 'top', 'bottom', 'max-height', 'max-width']) panel.style.removeProperty(property);
     return;
   }
@@ -119,6 +111,8 @@ export function installPrivacyControls() {
   }
   const panel = document.createElement('section');
   panel.id = 'hae-privacy-controls';
+  // Preferences are available on demand without covering the page on arrival.
+  panel.hidden = true;
   panel.setAttribute('aria-labelledby', 'hae-privacy-heading');
   panel.innerHTML = `<form>
     <div class="hae-privacy-header">
@@ -177,12 +171,23 @@ export function installPrivacyControls() {
   };
   button.addEventListener('click', () => panel.hidden ? open() : hide());
   document.querySelectorAll('[data-open-privacy-settings]').forEach(control => control.addEventListener('click', open));
+  document.querySelectorAll('[data-disable-analytics]').forEach(control => {
+    const message = control.parentElement.querySelector('[data-analytics-status]');
+    const refresh = () => {
+      control.hidden = !hasTrackingConsent();
+      message.textContent = control.hidden ? 'Analytics are off.' : '';
+    };
+    control.addEventListener('click', () => {
+      const saved = saveTrackingConsent({analytics: false});
+      refresh();
+      if (!saved) message.textContent = 'Analytics are off for this page. Your browser could not save this for future visits.';
+    });
+    window.addEventListener('hae-consent-change', refresh);
+    refresh();
+  });
   panel.addEventListener('hae-meta-available', () => {
     updateMetaScope();
-    if (!hasCurrentMarketingChoice()) {
-      panel.hidden = false; button.setAttribute('aria-expanded', 'true');
-      positionPrivacyControls();
-    }
+    positionPrivacyControls();
   });
   // Closing discards a staged marketing choice; only Save can grant permission.
   panel.querySelector('[data-close]').addEventListener('click', hide);
@@ -212,12 +217,7 @@ export function installPrivacyControls() {
   document.body.append(panel);
   const footer = document.querySelector('[data-public-footer-links]') || document.querySelector('body > footer > div') || document.querySelector('body > footer, .footer');
   (footer || document.body).append(button);
-  try {
-    const choice = JSON.parse(localStorage.getItem(CONSENT_KEY) || 'null');
-    panel.hidden = choice?.analytics === false || choice?.version === CONSENT_VERSION && Date.now() >= choice.savedAt && Date.now() - choice.savedAt < 180 * 86400000;
-  } catch {}
   updateMetaScope();
-  if (metaPixelConfigured && !hasCurrentMarketingChoice()) panel.hidden = false;
   syncChoices(); button.setAttribute('aria-expanded', String(!panel.hidden));
   privacyPositionObserver?.disconnect();
   if ('ResizeObserver' in window) {

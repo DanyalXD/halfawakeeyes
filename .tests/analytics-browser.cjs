@@ -48,6 +48,8 @@ await live.start();
         await route.fulfill({path:file,contentType:type});
       });
       await page.goto(preview+'/fixture'); await page.waitForFunction(()=>window.previewReady);
+      assert.equal(await page.locator('#hae-privacy-controls').isVisible(),false);
+      await page.getByRole('button',{name:'Privacy settings',exact:true}).click();
       assert.equal(await page.locator('#hae-privacy-controls').isVisible(),true);
       assert.equal(await page.locator('input[name=analytics]').isChecked(),true);
       assert.equal(await page.locator('input[name=marketing]').isChecked(),false);
@@ -111,11 +113,13 @@ await live.start();
       if(file.startsWith(root+path.sep)&&fs.existsSync(file))await route.fulfill({path:file,contentType:file.endsWith('.js')?'text/javascript':file.endsWith('.html')?'text/html':undefined});
       else await route.fulfill({status:404,body:''});
     });
-    await page.goto(preview+'/index.html');
-    assert.equal(media.length,1);
-    assert.equal(await page.locator('.music-content iframe').isVisible(),true);
-    assert.equal(await page.getByRole('button',{name:'Load Spotify player (connects to Spotify)'}).count(),0);
-    console.log('Actual homepage requests Spotify on page load without a button click. All external requests were intercepted.');
+    for (const name of ['index.html', 'epk.html']) {
+      await page.goto(preview+'/'+name);
+      assert.equal(await page.locator('iframe').count(),0);
+      assert.ok(await page.locator('a[href^="https://open.spotify.com/album/"]').count() > 0);
+      assert.equal(media.length,0);
+    }
+    console.log('Homepage and EPK retain Spotify links without loading Spotify embeds. All external requests were intercepted.');
     await context.close();
   } finally {await browser.close();}
 })().catch(error=>{console.error(error);process.exitCode=1;});

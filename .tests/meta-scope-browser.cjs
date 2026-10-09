@@ -46,13 +46,17 @@ function fixture(show = false) {
       const open = async () => page.getByRole('button',{name:'Privacy settings',exact:true}).click();
       const choice = () => page.evaluate(key => JSON.parse(localStorage.getItem(key)), preferenceKey);
       await page.goto(origin + '/plain'); await page.waitForFunction(() => window.scopeReady);
+      assert.equal(await panel.isVisible(), false);
+      await open();
       assert.equal(await marketing.isVisible(), false, 'Ordinary pages only show statistical analytics');
       assert.equal(await analytics.isChecked(), true);
       assert.equal(metaRequests().length, 0);
       await save.click();
       assert.equal((await choice()).marketingSavedAt, 0, 'Analytics-only save does not record a Meta refusal');
-      // A pixel configured after an analytics-only save must still offer a separate decision.
+      // Late pixel configuration exposes the separate choice without opening the panel.
       await page.evaluate(() => window.privacyUtils.enableMetaPrivacy('123'));
+      assert.equal(await panel.isVisible(), false);
+      await open();
       assert.equal(await panel.isVisible(), true);
       assert.equal(await marketing.isVisible(), true);
       assert.equal(await marketing.isChecked(), false);
@@ -91,9 +95,11 @@ function fixture(show = false) {
       await page.goto(origin + '/show'); await page.waitForFunction(() => window.scopeReady);
       assert.equal(await page.evaluate(() => Boolean(window.fbq)), false);
       assert.equal(metaRequests().length, 1, 'Withdrawal prevents subsequent Meta loading');
-      // An analytics objection must not suppress the first decision on a configured page.
+      // An analytics objection persists; marketing remains available on demand.
       await page.evaluate(key => localStorage.setItem(key, JSON.stringify({version:'2026-10-07',savedAt:Date.now(),analytics:false,marketing:false,marketingSavedAt:0})), preferenceKey);
       await page.reload(); await page.waitForFunction(() => window.scopeReady);
+      assert.equal(await panel.isVisible(), false);
+      await open();
       assert.equal(await panel.isVisible(), true);
       assert.equal(await analytics.isChecked(), false);
       assert.equal(await marketing.isChecked(), false);
@@ -101,6 +107,9 @@ function fixture(show = false) {
       // The actual show loader replaces the body; its preferences must survive that render.
       await page.goto(origin + '/shows/?gig=synthetic-show');
       await page.locator('[data-gig-page]').waitFor();
+      await panel.waitFor({state:'attached'});
+      assert.equal(await panel.isVisible(), false);
+      await open();
       await page.locator('[data-meta-option]').waitFor({state:'visible'});
       assert.equal(await panel.count(), 1);
       assert.equal(await analytics.isChecked(), false);

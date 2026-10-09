@@ -48,7 +48,7 @@ main > section, #release { min-height: auto; }
 h2, .release-spotlight .release-title { font-family: var(--font-display); font-size: clamp(2.4rem,4vw,3.8rem); line-height: 1.12; font-weight: 400; letter-spacing: -.025em; padding: 0; border: 0; color: var(--paper); margin-bottom: 1.3rem; }
 .section-intro { color: #b8b8b8; font-size: 1.05rem; max-width: 52ch; }
 .section-divider { display: none; }
-.release-spotlight { max-width: none; grid-template-columns: minmax(0,1.1fr) minmax(0,.9fr); gap: 5rem; align-items: center; }
+.release-spotlight { max-width: none; grid-template-columns: minmax(0,1fr); align-items: center; }
 .release-kicker { padding: 0; border: 0; background: none; color: #aaa; font-size: .75rem; letter-spacing: .14em; }
 .release-meta { gap: 1rem; margin: 2rem 0; }
 .release-meta-item { padding: 0 0 0 1rem; background: none; border: 0; border-left: 1px solid var(--line); border-radius: 0; box-shadow: none; font-size: .9rem; }

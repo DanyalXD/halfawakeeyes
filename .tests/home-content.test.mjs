@@ -36,7 +36,7 @@ test('content rendering uses text and updates music, artwork and shop destinatio
   assert.equal(node('#music-title').textContent, '<b>New EP</b>');
   assert.equal(node('#music-title').innerHTML, undefined);
   assert.equal(node('.merch-price').textContent, '£30');
-  assert.match(node('.music-content iframe').src, /embed\/album\/NewAlbum123/);
+  assert.equal(nodes.has('.music-content iframe'), false);
   assert.equal(streaming[0].href, 'https://open.spotify.com/album/NewAlbum123');
   assert.ok(merch.every(a => a.href === homeDefaults.merchUrl));
 });

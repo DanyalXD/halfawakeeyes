@@ -5,7 +5,8 @@ const path = require('node:path');
 const {chromium} = require(process.env.PLAYWRIGHT_MODULE_PATH || 'playwright');
 const root = path.resolve(__dirname, '..');
 const origin = 'https://hae-footer-preview.test';
-const pages = ['index.html','links.html','epk.html','smartlink.html','404.html','tickets.html','tickets/index.html','store/index.html','join-us/index.html','privacy.html','shows/index.html?gig=synthetic-footer','shows/NdwHYTIzYcVyqHAXyMHI/index.html'];
+// Links has a dedicated sticky footer, covered by privacy-panel-browser.cjs.
+const pages = ['index.html','epk.html','smartlink.html','404.html','tickets.html','tickets/index.html','store/index.html','join-us/index.html','privacy.html','shows/index.html?gig=synthetic-footer','shows/NdwHYTIzYcVyqHAXyMHI/index.html'];
 (async () => {
   const browser = await chromium.launch({channel:'chrome',headless:true});
   try {

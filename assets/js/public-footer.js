@@ -7,6 +7,7 @@ export function installPublicFooter() {
   footerObserver?.disconnect();
 
   const settings = document.getElementById('hae-privacy-settings');
+  const analyticsNotice = document.querySelector('.links-page .links-privacy-note');
   document.querySelectorAll('footer, .footer, .footer-links').forEach(footer => footer.remove());
   document.querySelectorAll('p.footer-note').forEach(note => {
     if (note.querySelector('[data-current-year]')) note.remove();
@@ -27,12 +28,20 @@ export function installPublicFooter() {
     link.href = new URL('../../' + page, import.meta.url).href;
     links.append(link);
   }
+  if (analyticsNotice) links.append(analyticsNotice);
   if (settings) links.append(settings);
   const copyright = document.createElement('p');
   copyright.className = 'hae-footer-copyright';
   copyright.textContent = '\u00a9 ' + new Date().getFullYear();
   footer.append(brand, links, copyright);
   document.body.append(footer);
+  if (analyticsNotice) {
+    const reserveSpace = () => document.documentElement.style.setProperty('--links-footer-height', footer.getBoundingClientRect().height + 'px');
+    reserveSpace();
+    // Follow wrapping, zoom, and saved-choice messages rather than assuming a fixed height.
+    if ('ResizeObserver' in window) new ResizeObserver(reserveSpace).observe(footer);
+    else window.addEventListener('resize', reserveSpace);
+  }
   if ('IntersectionObserver' in window) {
     footerObserver = new IntersectionObserver(([entry]) => {
       document.body.classList.toggle('hae-footer-visible', entry.isIntersecting);
