@@ -12,7 +12,7 @@ export function validateStore(input) {
       result[key] = value;
     }
     if (!safeContentUrl(result.image, true)) throw new Error('Use an HTTPS image or a path in assets/images/.');
-    if (!safeContentUrl(result.url) || new URL(result.url).hostname !== new URL(storeUrl).hostname) throw new Error('Use a product link from half-awake-eyes.sumupstore.com.');
+    if (!safeContentUrl(result.url)) throw new Error('Use an HTTPS product link.');
     result.visible = product.visible !== false;
     result.soldOut = product.soldOut === true;
     return result;
@@ -22,7 +22,7 @@ export function validateStore(input) {
 export function storeFromHomepage(home = {}) {
   const data = { ...homeDefaults, ...home };
   return { products: [{ title: data.merchTitle, price: data.merchPrice, description: data.merchAvailability,
-    image: data.merchImage, url: data.merchUrl.includes('sumupstore.com') ? data.merchUrl : storeUrl, visible: true, soldOut: false }] };
+    image: data.merchImage, url: safeContentUrl(data.merchUrl) ? data.merchUrl : storeUrl, visible: true, soldOut: false }] };
 }
 
 export function renderStore(input, root, { standalone = false, featured = false } = {}) {
@@ -35,9 +35,9 @@ export function renderStore(input, root, { standalone = false, featured = false 
     return element;
   };
   const heading = make('div', '', 'store-heading');
-  if (featured) heading.append(make('h2', 'official merch'), make('p', 'Find your fit. Sizes and checkout on SumUp.'));
+  if (featured) heading.append(make('h2', 'official merch'), make('p', 'Find your fit. Follow a product link for sizes and checkout.'));
   else heading.append(make('p', 'Official merch', 'eyebrow'), make(standalone ? 'h1' : 'h2', 'The store.'));
-  if (!featured) heading.append(make('p', 'Choose your size and complete your purchase securely on SumUp.'));
+  if (!featured) heading.append(make('p', 'Follow a product link to choose your size and complete checkout.'));
   const browse = make('a', featured ? 'Shop all \u2197' : 'View all products on SumUp \u2197', 'button button-outline');
   browse.href = storeUrl; browse.target = '_blank'; browse.rel = 'noopener noreferrer';
   if (!featured || !products.some(product => product.visible)) heading.append(browse);
@@ -49,7 +49,7 @@ export function renderStore(input, root, { standalone = false, featured = false 
       const item = make(product.soldOut ? 'div' : 'a', '', 'merch-item');
       if (!product.soldOut) {
         item.href = product.url;
-        item.setAttribute('aria-label', `Shop ${product.title} on SumUp`);
+        item.setAttribute('aria-label', `Shop ${product.title}`);
       }
       item.append(img, make('h3', product.title), make('p', product.soldOut ? 'Sold out' : product.price, 'merch-price'));
       if (!product.soldOut) item.append(make('span', 'View sizes \u2197', 'merch-action'));
@@ -59,7 +59,7 @@ export function renderStore(input, root, { standalone = false, featured = false 
     if (product.soldOut) card.append(make('p', 'Sold out', 'eyebrow'));
     else {
       const buy = make('a', featured ? 'Choose size \u2197' : 'Choose options & buy \u2197', 'button button-solid');
-      buy.href = product.url; buy.target = '_blank'; buy.rel = 'noopener noreferrer'; buy.setAttribute('aria-label', `Choose options and buy ${product.title} on SumUp`); card.append(buy);
+      buy.href = product.url; buy.target = '_blank'; buy.rel = 'noopener noreferrer'; buy.setAttribute('aria-label', `Choose options and buy ${product.title}`); card.append(buy);
     }
     grid.append(card);
   }

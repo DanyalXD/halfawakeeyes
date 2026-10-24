@@ -9,7 +9,7 @@ const { validateStore, storeFromHomepage, renderStore, storeUrl } = await import
 test('existing merch seeds product cards; unsafe links and oversized catalogues are rejected', () => {
   const initial = storeFromHomepage();
   assert.equal(validateStore(initial).products[0].url, storeUrl);
-  for (const url of ['javascript:alert(1)', 'https://half-awake-eyes.sumupstore.com.evil.test/product', 'https://user:secret@half-awake-eyes.sumupstore.com/product', 'http://half-awake-eyes.sumupstore.com/product']) {
+  for (const url of ['javascript:alert(1)', 'data:text/html,test', '/product/shirt', 'https://user:secret@half-awake-eyes.sumupstore.com/product', 'http://half-awake-eyes.sumupstore.com/product']) {
     assert.throws(() => validateStore({products:[{...initial.products[0], url}]}));
   }
   assert.throws(() => validateStore({products:[{...initial.products[0], image:'assets/images/../private.png'}]}));
@@ -17,16 +17,25 @@ test('existing merch seeds product cards; unsafe links and oversized catalogues 
   assert.deepEqual(validateStore({products:[]}), {products:[]});
 });
 
+test('products and homepage fallback preserve links from any HTTPS store', () => {
+  const product = storeFromHomepage().products[0];
+  for (const url of ['https://example.com/products/shirt?size=large', 'https://halfawakeeyes.bigcartel.com/product/shirt', storeUrl]) {
+    assert.equal(validateStore({products:[{...product, url}]}).products[0].url, url);
+    assert.equal(storeFromHomepage({merchUrl:url}).products[0].url, url);
+  }
+  assert.equal(storeFromHomepage({merchUrl:'javascript:alert(1)'}).products[0].url, storeUrl);
+});
+
 test('hidden products and sold-out buy buttons are excluded; content stays text', () => {
   const node = tag => ({tag, children:[], classList:{remove(){},add(){}}, append(...nodes){this.children.push(...nodes);}, replaceChildren(...nodes){this.children=nodes;}, setAttribute(key,value){this[key]=value;}});
   const root = node('section'); root.ownerDocument = {createElement:node};
   const product = storeFromHomepage().products[0];
-  renderStore({products:[{...product,title:'<img onerror=alert(1)>',soldOut:true},{...product,visible:false},{...product,title:'Available'}]}, root);
+  renderStore({products:[{...product,title:'<img onerror=alert(1)>',soldOut:true},{...product,visible:false},{...product,title:'Available',url:'https://example.com/product'}]}, root);
   const cards = root.children[1].children;
   assert.equal(cards.length,2);
   assert.equal(cards[0].children.find(n => n.tag === 'h3').textContent,'<img onerror=alert(1)>');
   assert.equal(cards[0].children.some(n => n.tag === 'a'),false);
-  assert.equal(cards[1].children.find(n => n.tag === 'a').href,storeUrl);
+  assert.equal(cards[1].children.find(n => n.tag === 'a').href,'https://example.com/product');
   renderStore({products:[product]}, root, {standalone:true});
   assert.equal(root.children[0].children[1].tag, 'h1');
   assert.equal(root.children[1].children[0].children[0].src, '../assets/images/merch-taste-of-death.png');

@@ -1,18 +1,18 @@
 # SumUp store setup
 
-The website uses the existing Half Awake Eyes SumUp Online Store. Product buttons
-open that store for size selection, shipping and checkout. No new payment checkout
+The website uses the existing Half Awake Eyes SumUp Online Store. Product cards also accept HTTPS links to any other online store. Product buttons
+open the linked store for size selection, shipping and checkout. No new payment checkout
 or duplicate inventory is created.
 
 ## Homepage and admin
 
 Deploy the changed static files and `firestore.rules`. In Admin → Website Store, edit the
-product cards, paste each item's public SumUp product URL, preview, and publish.
+product cards, paste each item's public HTTPS product URL from any store, preview, and publish.
 The first visit seeds the editor from the existing featured merchandise.
 
 Cards are stored in `site-content/store`, publicly readable and writable only by
 the existing admin accounts. Cards are manually curated display content: changing
-a card's price or sold-out label does **not** change the SumUp product or stock.
+a card's price or sold-out label does **not** change the linked product or stock.
 Publish up to 24 cards, reorder them, or hide individual cards. Publishing an empty
 list leaves a link to the full store. Until the first publish, or if the store
 document cannot load, the existing homepage merchandise remains the fallback.

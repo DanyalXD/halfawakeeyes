@@ -12,7 +12,7 @@ export function mountStore() {
         <div class="workflow-actions"><a class="btn ghost-button" href="store/" target="_blank" rel="noopener noreferrer">View website Store page &nearr;</a></div>
       </div>
       <form id="store-form" class="manager-card">
-        <h3>Website products</h3><p>Paste links to your existing SumUp products. Publishing updates your Store page and replaces the homepage merch section. Names, images and prices here are display copies: update them when you change SumUp. Sizes, stock and checkout stay in SumUp.</p>
+        <h3>Website products</h3><p>Paste HTTPS product links from any online store. Publishing updates your Store page and replaces the homepage merch section. Names, images and prices here are display copies: update them when you change the original product. Sizes, stock and checkout stay with the linked store.</p>
         <fieldset id="store-controls" disabled><div id="store-editor"></div><div class="workflow-actions"><button type="button" id="store-add" class="btn ghost-button">Add product</button><button type="button" id="store-preview-button" class="btn ghost-button">Preview</button><button class="btn btn-accent">Publish products</button></div></fieldset>
         <p id="store-status" role="status">Load the Store page to edit products.</p>
       </form>
@@ -39,7 +39,7 @@ export function setupStore(api) {
   let loaded = false, busy = false, generation = 0;
   function addProduct(product = {}) {
     const fieldset = document.createElement('fieldset');
-    fieldset.innerHTML = `<legend>Product</legend><div class="workflow-grid">${Object.entries({title:'Product name',price:'Displayed price (e.g. £20.00)',description:'Description / sizes',image:'Image URL or assets/images/ path',url:'SumUp product URL'}).map(([key,label]) => `<label>${label}<input class="form-control" data-field="${key}" maxlength="600" ${key !== 'description' ? 'required' : ''} value="${escape(product[key] || '')}"></label>`).join('')}</div><div class="workflow-actions"><label><input type="checkbox" data-field="visible" ${product.visible !== false ? 'checked' : ''}> Show on website</label><label><input type="checkbox" data-field="soldOut" ${product.soldOut ? 'checked' : ''}> Display as sold out</label><button type="button" class="btn ghost-button" data-move="-1">Move up</button><button type="button" class="btn ghost-button" data-move="1">Move down</button><button type="button" class="btn ghost-button" data-remove>Remove card</button></div>`;
+    fieldset.innerHTML = `<legend>Product</legend><div class="workflow-grid">${Object.entries({title:'Product name',price:'Displayed price (e.g. £20.00)',description:'Description / sizes',image:'Image URL or assets/images/ path',url:'Product URL (https://...)'}).map(([key,label]) => `<label>${label}<input class="form-control" data-field="${key}" maxlength="600" ${key !== 'description' ? 'required' : ''} value="${escape(product[key] || '')}"></label>`).join('')}</div><div class="workflow-actions"><label><input type="checkbox" data-field="visible" ${product.visible !== false ? 'checked' : ''}> Show on website</label><label><input type="checkbox" data-field="soldOut" ${product.soldOut ? 'checked' : ''}> Display as sold out</label><button type="button" class="btn ghost-button" data-move="-1">Move up</button><button type="button" class="btn ghost-button" data-move="1">Move down</button><button type="button" class="btn ghost-button" data-remove>Remove card</button></div>`;
     $('store-editor').append(fieldset); numberProducts();
   }
   function numberProducts() {

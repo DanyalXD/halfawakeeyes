@@ -24,8 +24,6 @@ export function validateHomeContent(input) {
   for (const key of Object.keys(homeDefaults)) {
     let value = String(input[key] ?? homeDefaults[key]).trim();
     if (key === 'releaseDescription' && value === 'Our first six tracks, all in one place. Play the EP below or listen wherever you usually find us.') value = homeDefaults.releaseDescription;
-    // Migrate saved homepage content that still uses the previous store.
-    if (key === 'merchUrl' && value === 'https://halfawakeeyes.bigcartel.com/product/the-taste-of-death-t-shirt') value = homeDefaults.merchUrl;
     if (!value || value.length > 600) throw new Error('Complete every field (maximum 600 characters).');
     if (['releaseArtwork', 'merchImage', 'spotify', 'bandcamp', 'youtube', 'merchUrl'].includes(key) && !safeContentUrl(value, key === 'releaseArtwork' || key === 'merchImage')) throw new Error('Use an HTTPS link or an image from assets/images/.');
     result[key] = value;

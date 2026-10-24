@@ -10,6 +10,8 @@ test('defaults and edited content validate without accepting extra fields', () =
   const edited = validateHomeContent({ ...homeDefaults, merchPrice: ' £25.00 ', ignored: true });
   assert.equal(edited.merchPrice, '£25.00');
   assert.equal('ignored' in edited, false);
+  const merchUrl = 'https://halfawakeeyes.bigcartel.com/product/the-taste-of-death-t-shirt';
+  assert.equal(validateHomeContent({ ...homeDefaults, merchUrl }).merchUrl, merchUrl);
 });
 
 test('rejects unsafe destinations and invalid Spotify embeds', () => {
